@@ -72,4 +72,39 @@ namespace LaplaceKernel
       }
   }
 
+  template <int dim>
+  void
+  double_body_kernel(const Tensor<1, dim> &x,const Tensor<1, dim> &x0, Tensor<1, dim> &D, double &d)
+  {
+//    switch (dim)
+//      {
+//        case 2:
+//          break;
+//        case 3:
+
+          // Non reflected kernel:
+          Tensor<1, dim> R = x0-x;
+          kernels(R,D,d);
+
+          // Reflected kernel:
+          R     = x0;
+          R[2] *= -1.0;
+          R    -= x;
+
+          double d1;
+          Tensor<1, dim> D1;
+          kernels(R,D1,d1);
+          d += d1;
+          D += D1;
+
+//          break;
+//        default:
+//          Assert(false, ExcInternalError());
+//      }
+
+  }
+
+
+
+
 } // namespace LaplaceKernel

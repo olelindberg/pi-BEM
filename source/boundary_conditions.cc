@@ -184,6 +184,8 @@ template <int dim>
 void
 BoundaryConditions<dim>::solve_problem()
 {
+  std::cout << "Solving boundary conditions ...\n";
+
   potential.set_time(0);
   wind.set_time(0);
 
@@ -217,10 +219,13 @@ BoundaryConditions<dim>::solve_problem()
         shift = potential.value(support_points[*bem.this_cpu_set.begin()]) -
                 phi(*bem.this_cpu_set.begin());
       MPI_Bcast(&shift, 1, MPI_DOUBLE, 0, mpi_communicator);
+
+      std::cout << "shift is " << shift << "\n";
       vector_shift(phi, shift);
     }
 
-  // bem.compute_gradients(phi, dphi_dn);
+  bem.compute_gradients(phi, dphi_dn);
+    std::cout << "Solving boundary conditions - done\n";
 }
 
 template <int dim>
@@ -287,12 +292,16 @@ BoundaryConditions<dim>::prepare_bem_vectors()
             // "<<-normals_sys_solution(local_dof_indices[j])<<std::endl;
             bool dirichlet = false;
             bool neumann   = false;
+
             for (auto dbound : comp_dom.dirichlet_boundary_ids)
+            {
               if (cell->material_id() == dbound)
                 {
                   dirichlet = true;
                   break;
                 }
+            }
+
             if (dirichlet)
               {
                 // tmp_rhs(local_dof_indices[j]) = node_coors[j](0);
@@ -319,9 +328,11 @@ BoundaryConditions<dim>::prepare_bem_vectors()
                     // normals_sys_solution(local_dof_indices[j]);
                     // dphi_dn(local_dof_indices[j]) =
                     // normals_sys_solution(local_dof_indices[j]);
+
                     Vector<double> imposed_pot_grad(dim);
                     wind.vector_value(support_points[local_dof_indices[j]],
                                       imposed_pot_grad);
+
                     // Point<dim> imposed_potential_gradient;
                     double tmp_dphi_dn = 0;
                     double normy       = 0;
@@ -351,7 +362,9 @@ BoundaryConditions<dim>::prepare_bem_vectors()
                                        bem.vector_normals_solution[vec_index];
                         normy += bem.vector_normals_solution[vec_index] *
                                  bem.vector_normals_solution[vec_index];
+
                       }
+
                     // Assert(std::fabs(normy-1.)<tol, ExcMessage("you are using
                     // wrongly the normal vector"));
                     tmp_rhs(local_dof_indices[j]) = tmp_dphi_dn;

@@ -2,6 +2,11 @@
 
 #include "../include/computational_domain.h"
 
+#include <Bnd_Box.hxx>
+#include <BRep_Tool.hxx>
+#include <BRepBndLib.hxx>
+
+
 #include <deal.II/grid/grid_reordering.h>
 #include <deal.II/grid/grid_tools.h>
 
@@ -563,19 +568,28 @@ ComputationalDomain<dim>::refine_and_resize(const unsigned int refinement_level)
   double max_tol = 0;
   if (use_cad_surface_and_curves)
     {
-      pcout << "Color Files" << endl;
+      pcout << "Color Files" << std::endl;
       unsigned int ii    = 1;
       bool         go_on = true;
       while (go_on == true)
         {
-          std::string color_filename = (input_cad_path + "Color_" +
+          std::string   color_filename = (input_cad_path + "Color_" +
                                         Utilities::int_to_string(ii) + ".iges");
-          ifstream    f(color_filename);
+          std::ifstream f(color_filename);
           if (f.good())
             {
-              pcout << ii << "-th file exists" << endl;
-              TopoDS_Shape surface =
-                OpenCASCADE::read_IGES(color_filename, 1e-3);
+              pcout << ii << "-th file exists" << std::endl;
+              TopoDS_Shape surface = OpenCASCADE::read_IGES(color_filename, 1e-3);
+
+              Bnd_Box bndbox;
+              BRepBndLib::Add(surface, bndbox, Standard_False);
+              pcout << "Bounding box of loaded shape:\n";
+              pcout << "Lower corner    : " << bndbox.CornerMin().X() << "," << bndbox.CornerMin().Y() << "," << bndbox.CornerMin().Z() << "\n";
+              pcout << "Upper corner    : " << bndbox.CornerMax().X() << "," << bndbox.CornerMax().Y() << "," << bndbox.CornerMax().Z() << "\n";
+              pcout << "Box side length : " << bndbox.CornerMax().X() - bndbox.CornerMin().X() << "," 
+                                            << bndbox.CornerMax().Y() - bndbox.CornerMin().Y() << "," 
+                                            << bndbox.CornerMax().Z() - bndbox.CornerMin().Z() << "\n";
+
               cad_surfaces.push_back(surface);
             }
           else
@@ -583,17 +597,17 @@ ComputationalDomain<dim>::refine_and_resize(const unsigned int refinement_level)
           ii++;
         }
 
-      pcout << "Edge Files" << endl;
+      pcout << "Edge Files" << std::endl;
       ii    = 1;
       go_on = true;
       while (go_on == true)
         {
-          std::string edge_filename = (input_cad_path + "Curve_" +
+          std::string   edge_filename = (input_cad_path + "Curve_" +
                                        Utilities::int_to_string(ii) + ".iges");
-          ifstream    f(edge_filename);
+          std::ifstream f(edge_filename);
           if (f.good())
             {
-              pcout << ii << "-th file exists" << endl;
+              pcout << ii << "-th file exists" << std::endl;
               TopoDS_Shape curve = OpenCASCADE::read_IGES(edge_filename, 1e-3);
               cad_curves.push_back(curve);
             }
@@ -605,24 +619,24 @@ ComputationalDomain<dim>::refine_and_resize(const unsigned int refinement_level)
 
       for (unsigned int i = 0; i < cad_surfaces.size(); ++i)
         {
-          pcout << i << endl;
+          pcout << i << std::endl;
           max_tol =
             fmax(max_tol, OpenCASCADE::get_shape_tolerance(cad_surfaces[i]));
-          pcout << max_tol << endl;
+          pcout << max_tol << std::endl;
         }
       for (unsigned int i = 0; i < cad_curves.size(); ++i)
         {
-          pcout << i + cad_surfaces.size() << endl;
+          pcout << i + cad_surfaces.size() << std::endl;
           max_tol =
             fmax(max_tol, OpenCASCADE::get_shape_tolerance(cad_curves[i]));
-          pcout << max_tol << endl;
+          pcout << max_tol << std::endl;
         }
 
       const double tolerance = cad_to_projectors_tolerance_ratio * max_tol;
 
 
 
-      pcout << "Used tolerance is: " << tolerance << endl;
+      pcout << "Used tolerance is: " << tolerance << std::endl;
       for (unsigned int i = 0; i < cad_surfaces.size(); ++i)
         {
           normal_to_mesh_projectors.push_back(
@@ -693,7 +707,7 @@ ComputationalDomain<dim>::refine_and_resize(const unsigned int refinement_level)
       // the number of cells refined in this cycle is reported before
       // proceeding with the next one
       pcout << "Aspect Ratio Reduction Cycle: " << cycles_counter << " ("
-            << refinedCellCounter << ")" << endl;
+            << refinedCellCounter << ")" << std::endl;
       tria.execute_coarsening_and_refinement();
 
       // the following commented lines are here for debug puroposes: if
@@ -853,7 +867,7 @@ ComputationalDomain<dim>::refine_and_resize(const unsigned int refinement_level)
           // refinement is carried out and the make_edges_conformal function is
           // called to check no edge presents non comformities
           pcout << "Curvature Based Local Refinement Cycle: " << cycles_counter
-                << " (" << refinedCellCounter << ")" << endl;
+                << " (" << refinedCellCounter << ")" << std::endl;
           tria.execute_coarsening_and_refinement();
           make_edges_conformal();
           cycles_counter++;
