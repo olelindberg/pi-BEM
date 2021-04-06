@@ -18,6 +18,11 @@
 SET(TARGET bem_fma)
 SET(_main source/main.cc)
 
+
+set(OPENCASCADE_DIR /home/ole/dev/tools/oce-0.18.3)
+message("OpenCASCADE directory:")
+message(${OPENCASCADE_DIR})
+
 # Set the _main variable to empty if you don't want an executable
 # but only a library
 #SET(_main "")
@@ -92,14 +97,15 @@ FOREACH(_build_type ${_d2_build_types})
 
 	# Add all files, except the main file, to the library
 	ADD_LIBRARY(${_lib} SHARED ${_files})
-  	FOREACH(_dim 2 3)
+
+  FOREACH(_dim 3)
 		SET(_exe "${TARGET}_${_dim}d${${_build_type}_postfix}")
 		MESSAGE("-- Configuring executable ${_exe}")
 		ADD_EXECUTABLE(${_exe} ${_main})
 		target_compile_definitions(${_exe} PUBLIC DEAL_II_DIMENSION=${_dim})
 		TARGET_LINK_LIBRARIES(${_exe} ${_lib})
 		D2K_SETUP_TARGET(${_exe} ${_BUILD_TYPE})
-    	ENDFOREACH()
+ 	ENDFOREACH()
 
 	# Compile an executable only if required by the user
 	#IF(NOT "${_main}" STREQUAL "")
@@ -116,12 +122,15 @@ FOREACH(_build_type ${_d2_build_types})
 ENDFOREACH()
 
 INCLUDE_DIRECTORIES(${D2K_DIR}/include)
+INCLUDE_DIRECTORIES(${OPENCASCADE_DIR}/include/oce)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
-if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/tests AND BEM_ENABLE_TESTING)
+
+
+#if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/tests AND BEM_ENABLE_TESTING)
   ADD_SUBDIRECTORY(tests)
-  ENABLE_TESTING()
-endif()
+#  ENABLE_TESTING()
+#endif()
 
 
 # Doxygen

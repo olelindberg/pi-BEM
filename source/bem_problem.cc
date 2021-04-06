@@ -784,9 +784,13 @@ BEMProblem<dim>::assemble_system()
                 {
                   for (unsigned int q = 0; q < n_q_points; ++q)
                     {
-//                      const Tensor<1, dim> R = q_points[q] - support_points[i];
-//                      LaplaceKernel::kernels(R, D, s);
-                      LaplaceKernel::double_body_kernel(support_points[i],q_points[q],D,s);
+                      //                      const Tensor<1, dim> R =
+                      //                      q_points[q] - support_points[i];
+                      //                      LaplaceKernel::kernels(R, D, s);
+                      LaplaceKernel::double_body_kernel(support_points[i],
+                                                        q_points[q],
+                                                        D,
+                                                        s);
                       // if(support_points[i][0]==0.25&&support_points[i][1]==0.25)
                       //   pcout<<"D "<<D<<" s "<<s<<" , ";
                       for (unsigned int j = 0; j < fe->dofs_per_cell; ++j)
@@ -1036,13 +1040,15 @@ BEMProblem<dim>::assemble_system()
 
                   for (unsigned int q = 0; q < singular_quadrature->size(); ++q)
                     {
+                      //                      const Tensor<1, dim> R =
+                      //                        singular_q_points[q] -
+                      //                        support_points[i];
+                      //                      LaplaceKernel::kernels(R, D, s);
 
-
-//                      const Tensor<1, dim> R =
-//                        singular_q_points[q] - support_points[i];
-//                      LaplaceKernel::kernels(R, D, s);
-
-                      LaplaceKernel::double_body_kernel(support_points[i],singular_q_points[q],D,s);
+                      LaplaceKernel::double_body_kernel(support_points[i],
+                                                        singular_q_points[q],
+                                                        D,
+                                                        s);
 
 
                       for (unsigned int j = 0; j < fe->dofs_per_cell; ++j)
@@ -1213,13 +1219,13 @@ BEMProblem<dim>::vmult(TrilinosWrappers::MPI::Vector &      dst,
 
   if (solution_method == "Direct")
     {
-       // Matrix vector product A*t:
-       // A = (alpha + N)*phi - D*phi_n
-       // t = [phi_n,phi]^T
-       // See equation 11, 12 and 13 in [Giuliani, 2018].
+      // Matrix vector product A*t:
+      // A = (alpha + N)*phi - D*phi_n
+      // t = [phi_n,phi]^T
+      // See equation 11, 12 and 13 in [Giuliani, 2018].
 
-//      dirichlet_matrix.vmult(dst, serv_dphi_dn);
-//      dst *= -1;
+      //      dirichlet_matrix.vmult(dst, serv_dphi_dn);
+      //      dst *= -1;
       neumann_matrix.vmult_add(dst, serv_phi);
       serv_phi.scale(alpha);
       dst += serv_phi;
@@ -1270,17 +1276,17 @@ BEMProblem<dim>::compute_rhs(TrilinosWrappers::MPI::Vector &      dst,
   serv_dphi_dn.scale(neumann_nodes);
 
 
-   // Right hand side of the linear system A*t=b where
-   // A = (alpha + N)*phi - D*phi_n
-   // t = [phi_n,phi]^T
-   // b = -(alpha + N)*phi + D*phi_n
-   // See equation 11, 12 and 13 in [Giuliani, 2018].
+  // Right hand side of the linear system A*t=b where
+  // A = (alpha + N)*phi - D*phi_n
+  // t = [phi_n,phi]^T
+  // b = -(alpha + N)*phi + D*phi_n
+  // See equation 11, 12 and 13 in [Giuliani, 2018].
   if (solution_method == "Direct")
     {
-//      neumann_matrix.vmult(dst, serv_phi);
-//      serv_phi.scale(alpha);
-//      dst += serv_phi;
-//      dst *= -1;
+      //      neumann_matrix.vmult(dst, serv_phi);
+      //      serv_phi.scale(alpha);
+      //      dst += serv_phi;
+      //      dst *= -1;
 
       dirichlet_matrix.vmult_add(dst, serv_dphi_dn);
     }
