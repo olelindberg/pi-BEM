@@ -1,6 +1,7 @@
 
 
 #include "../include/computational_domain.h"
+#include "my_utilities.h"
 
 #include <deal.II/grid/grid_reordering.h>
 #include <deal.II/grid/grid_tools.h>
@@ -11,6 +12,8 @@
 #include <Bnd_Box.hxx>
 
 #include "Teuchos_TimeMonitor.hpp"
+
+#include <boost/filesystem.hpp>
 
 Teuchos::RCP<Teuchos::Time> readDomainTime      = Teuchos::TimeMonitor::getNewTimer ("Read domain");
 Teuchos::RCP<Teuchos::Time> refineAndResizeTime = Teuchos::TimeMonitor::getNewTimer ("Refine and resize");
@@ -79,11 +82,13 @@ ComputationalDomain<dim>::declare_parameters (ParameterHandler &prm)
 
   prm.declare_entry ("Input grid format", "inp", Patterns::Anything ());
 
-  prm.declare_entry ("Input path to CAD files", "./", Patterns::Anything ());
+  prm.declare_entry ("Input path to CAD files", "", Patterns::Anything ());
 
   prm.declare_entry ("Number of cycles", "2", Patterns::Integer ());
 
   prm.declare_entry ("Max aspect ratio", "3.5", Patterns::Double ());
+
+  prm.declare_entry ("Max length", "1000.0", Patterns::Double ());
 
   prm.declare_entry ("Use iges surfaces and curves", "false", Patterns::Bool ());
 
@@ -124,6 +129,7 @@ ComputationalDomain<dim>::parse_parameters (ParameterHandler &prm)
   input_cad_path                    = prm.get ("Input path to CAD files");
   n_cycles                          = prm.get_integer ("Number of cycles");
   max_element_aspect_ratio          = prm.get_double ("Max aspect ratio");
+  max_element_length                = prm.get_double ("Max length");
   use_cad_surface_and_curves        = prm.get_bool ("Use iges surfaces and curves");
   surface_curvature_refinement      = prm.get_bool ("Surface curvature adaptive refinement");
   cells_per_circle                  = prm.get_double ("Cells per circle");
@@ -221,13 +227,15 @@ ComputationalDomain<dim>::parse_parameters (ParameterHandler &prm)
 
 template <int dim>
 void
-ComputationalDomain<dim>::read_domain ()
+ComputationalDomain<dim>::read_domain (std::string input_path)
 {
   Teuchos::TimeMonitor localTimer (*readDomainTime);
   std::cout << "Reading domain ...\n";
 
+  std::string grid_filename = boost::filesystem::path(input_path).append(input_grid_name + "." + input_grid_format).string();
+  std::cout << "Reading grid file: " << grid_filename << std::endl;
   std::ifstream in;
-  in.open (input_grid_name + "." + input_grid_format);
+  in.open (grid_filename);
   GridIn<dim - 1, dim> gi;
   gi.attach_triangulation (tria);
   if (input_grid_format == "vtk")
@@ -515,7 +523,7 @@ ComputationalDomain<dim>::create_initial_mesh ()
 
 template <>
 void
-ComputationalDomain<2>::refine_and_resize (const unsigned int refinement_level)
+ComputationalDomain<2>::refine_and_resize (const unsigned int refinement_level, std::string input_path)
 {
   pcout << "Refining and resizing mesh as required" << std::endl;
   tria.refine_global (refinement_level);
@@ -530,7 +538,7 @@ ComputationalDomain<2>::refine_and_resize (const unsigned int refinement_level)
 
 template <int dim>
 void
-ComputationalDomain<dim>::refine_and_resize (const unsigned int refinement_level)
+ComputationalDomain<dim>::refine_and_resize (const unsigned int refinement_level, std::string input_path)
 {
   Teuchos::TimeMonitor localTimer (*refineAndResizeTime);
   pcout << "Refining and resizing ... " << std::endl;
@@ -543,21 +551,15 @@ ComputationalDomain<dim>::refine_and_resize (const unsigned int refinement_level
     bool         go_on = true;
     while (go_on == true)
     {
-      std::string   color_filename = (input_cad_path + "Color_" + Utilities::int_to_string (ii) + ".iges");
-      std::ifstream f (color_filename);
+      std::string color_filename = (input_cad_path + "Color_" + Utilities::int_to_string (ii) + ".iges");
+      std::string cad_surface_filename = boost::filesystem::path(input_path).append(color_filename).string();
+
+      std::ifstream f(cad_surface_filename);
       if (f.good ())
       {
         pcout << ii << "-th file exists" << std::endl;
-        TopoDS_Shape surface = OpenCASCADE::read_IGES (color_filename, 1e-3);
-
-        Bnd_Box bndbox;
-        BRepBndLib::Add (surface, bndbox, Standard_False);
-        pcout << "Bounding box of loaded shape:\n";
-        pcout << "Lower corner    : " << bndbox.CornerMin ().X () << "," << bndbox.CornerMin ().Y () << "," << bndbox.CornerMin ().Z () << "\n";
-        pcout << "Upper corner    : " << bndbox.CornerMax ().X () << "," << bndbox.CornerMax ().Y () << "," << bndbox.CornerMax ().Z () << "\n";
-        pcout << "Box side length : " << bndbox.CornerMax ().X () - bndbox.CornerMin ().X () << "," << bndbox.CornerMax ().Y () - bndbox.CornerMin ().Y () << ","
-              << bndbox.CornerMax ().Z () - bndbox.CornerMin ().Z () << "\n";
-
+        std::cout << "Reading CAD surface file: " << cad_surface_filename << std::endl;
+        TopoDS_Shape surface = OpenCASCADE::read_IGES (cad_surface_filename, 1e-3);
         cad_surfaces.push_back (surface);
       }
       else
@@ -570,12 +572,14 @@ ComputationalDomain<dim>::refine_and_resize (const unsigned int refinement_level
     go_on = true;
     while (go_on == true)
     {
-      std::string   edge_filename = (input_cad_path + "Curve_" + Utilities::int_to_string (ii) + ".iges");
-      std::ifstream f (edge_filename);
+      std::string edge_filename      = (input_cad_path + "Curve_" + Utilities::int_to_string (ii) + ".iges");
+      std::string cad_curve_filename = boost::filesystem::path(input_path).append(edge_filename).string();
+      std::ifstream f (cad_curve_filename);
       if (f.good ())
       {
         pcout << ii << "-th file exists" << std::endl;
-        TopoDS_Shape curve = OpenCASCADE::read_IGES (edge_filename, 1e-3);
+        std::cout << "Reading CAD curve file: " << cad_curve_filename << std::endl;
+        TopoDS_Shape curve = OpenCASCADE::read_IGES (cad_curve_filename, 1e-3);
         cad_curves.push_back (curve);
       }
       else
@@ -585,15 +589,11 @@ ComputationalDomain<dim>::refine_and_resize (const unsigned int refinement_level
 
     for (unsigned int i = 0; i < cad_surfaces.size (); ++i)
     {
-      pcout << i << std::endl;
       max_tol = fmax (max_tol, OpenCASCADE::get_shape_tolerance (cad_surfaces[i]));
-      pcout << max_tol << std::endl;
     }
     for (unsigned int i = 0; i < cad_curves.size (); ++i)
     {
-      pcout << i + cad_surfaces.size () << std::endl;
       max_tol = fmax (max_tol, OpenCASCADE::get_shape_tolerance (cad_curves[i]));
-      pcout << max_tol << std::endl;
     }
 
     const double tolerance = cad_to_projectors_tolerance_ratio * max_tol;
@@ -603,7 +603,8 @@ ComputationalDomain<dim>::refine_and_resize (const unsigned int refinement_level
     for (unsigned int i = 0; i < cad_surfaces.size (); ++i)
     {
       pcout << "Creating normal to mesh projection manifold " << i << "\n";
-      normal_to_mesh_projectors.push_back (std::make_shared<OpenCASCADE::NormalToMeshProjectionManifold<2, 3> > (cad_surfaces[i], tolerance));
+//      normal_to_mesh_projectors.push_back (std::make_shared<OpenCASCADE::NormalToMeshProjectionManifold<2, 3> > (cad_surfaces[i], tolerance));
+      normal_to_mesh_projectors.push_back (std::make_shared<MyNormalToMeshProjectionManifold<2, 3> > (cad_surfaces[i], tolerance));
     }
 
     for (unsigned int i = 0; i < cad_curves.size (); ++i)
@@ -653,7 +654,7 @@ ComputationalDomain<dim>::refine_and_resize (const unsigned int refinement_level
       double max_extent = cell->extent_in_direction (max_extent_dim);
       // if the aspect ratio exceeds the prescribed maximum value, the cell
       // is refined
-      if (max_extent > max_element_aspect_ratio * min_extent)
+      if (max_extent > max_element_aspect_ratio * min_extent || max_extent > max_element_length)
       {
         cell->set_refine_flag (RefinementCase<2>::cut_axis (max_extent_dim));
         refinedCellCounter++;
@@ -773,7 +774,8 @@ ComputationalDomain<dim>::refine_and_resize (const unsigned int refinement_level
           // ...and used to set up a line intersection to project the
           // cell center on the CAD surface along the direction
           // specified by the previously computed cell normal
-          Point<3> projection = OpenCASCADE::line_intersection (neededShape, cell->center (), n, tolerance);
+//          Point<3> projection = OpenCASCADE::line_intersection (neededShape, cell->center (), n, tolerance);
+          Point<3> projection =   my_line_intersection<3>(neededShape, cell->center (), n, tolerance);
           //                  // in correspondence with the projected
           //                  point, we ask all the
           //                  // surface differential forms
@@ -803,16 +805,6 @@ ComputationalDomain<dim>::refine_and_resize (const unsigned int refinement_level
           // corresponding to the minimum curvature radius
           cell_size = 2.0 * dealii::numbers::PI / cells_per_circle * curvature_radius;
 
-          if (cell->diameter () > cell_size)
-          {
-            cout << cell << endl;
-            cout << nn0 << endl;
-            cout << nn1 << endl;
-            cout << nn2 << endl;
-            cout << nn3 << endl;
-            cout << n << endl;
-            cout << cell << "  material id: " << int (cell->material_id ()) << endl;
-          }
         }
         else
         {
@@ -830,7 +822,6 @@ ComputationalDomain<dim>::refine_and_resize (const unsigned int refinement_level
         // ---which for us means 10xtolerance)
         if ((cell->diameter () > cell_size) && (cell->diameter () > 10 * tolerance))
         {
-          cout << "Cell Diam: " << cell->diameter () << "  Target Cell Size: " << cell_size << endl;
           cell->set_refine_flag ();
           refinedCellCounter++;
         }

@@ -84,7 +84,7 @@
 #include "../include/ass_leg_function.h"
 #include "../include/local_expansion.h"
 #include "../include/multipole_expansion.h"
-//#include "../include/my_manifold_lib.h"
+#include "../include/my_manifold_lib.h"
 
 using namespace dealii;
 using namespace deal2lkit;
@@ -136,14 +136,14 @@ public:
   /// from file
 
   void
-  read_domain();
+  read_domain(std::string input_path = "");
 
   /// method to refine the imported mesh
   /// according to the level requested in
   /// the parameters file
 
   void
-  refine_and_resize(const unsigned int refinement_level);
+  refine_and_resize(const unsigned int refinement_level, std::string input_path = "");
 
   void
   conditional_refine_and_resize(const unsigned int refinement_level);
@@ -220,6 +220,7 @@ public:
   /// maximum cell aspect ratio
 
   double max_element_aspect_ratio;
+  double max_element_length;
 
   // flag to assess if the software will look for cad surfaces (form files
   // Color_*.iges) and curves (from files Curve_*.iges), and use such geometries
@@ -290,9 +291,14 @@ public:
 
   /// vectors containing the CAD surfaces and curves projectors
   /// to be (optionally) used for refinement of the triangulation
+//  std::vector<
+//    std::shared_ptr<OpenCASCADE::NormalToMeshProjectionManifold<2, 3>>>
+//    normal_to_mesh_projectors;
+    
   std::vector<
-    std::shared_ptr<OpenCASCADE::NormalToMeshProjectionManifold<2, 3>>>
+    std::shared_ptr<MyNormalToMeshProjectionManifold<2, 3>>>
     normal_to_mesh_projectors;
+
   std::vector<
     std::shared_ptr<OpenCASCADE::ArclengthProjectionLineManifold<2, 3>>>
     line_projectors;

@@ -56,7 +56,7 @@ subsection BoundaryConditions<3>
 end
 subsection ComputationalDomain<3>
   set Input grid format = inp
-  set Input grid name   = meshCheckUniqueVtx
+  set Input grid name   = mesh
   set Max aspect ratio = 3
   set Max length = 150000.0
   set Number of cycles  = 0

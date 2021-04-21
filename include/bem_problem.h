@@ -186,6 +186,10 @@ public:
   assemble_system();
 
 
+
+void dynamic_pressure(const Functions::ParsedFunction<dim>& wind, TrilinosWrappers::MPI::Vector& pressure);
+
+
   /// The next three methods are
   /// needed by the GMRES solver:
   /// the first provides result of

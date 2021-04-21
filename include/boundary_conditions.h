@@ -112,10 +112,10 @@ public:
   solve_problem();
 
   void
-  output_results(const std::string);
+  output_results(const std::string filename);
 
   void
-  compute_errors();
+  compute_errors(std::string output_path = "");
 
   const TrilinosWrappers::MPI::Vector &
   get_phi();
@@ -125,6 +125,20 @@ public:
 
 
   std::string output_file_name;
+
+const  Functions::ParsedFunction<dim>& get_wind() const
+{
+  return wind;
+}
+
+  TrilinosWrappers::MPI::Vector& get_pressure()
+  {
+    return pressure;
+  }
+  const TrilinosWrappers::MPI::Vector& get_pressure() const
+  {
+    return pressure;
+  }
 
 protected:
   Functions::ParsedFunction<dim> wind;
@@ -146,6 +160,7 @@ protected:
   TrilinosWrappers::MPI::Vector tmp_rhs;
   TrilinosWrappers::MPI::Vector phi;
   TrilinosWrappers::MPI::Vector dphi_dn;
+  TrilinosWrappers::MPI::Vector pressure;
 
   MPI_Comm mpi_communicator;
 

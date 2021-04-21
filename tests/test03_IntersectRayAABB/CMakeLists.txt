@@ -1,22 +1,5 @@
-##
-# CMake script for large project, with one executable
-# and a library of objects, optionally
-# depending on deal2lkit.
-#
-# The structure of the directory is assumed to be:
-# ./source: containing implementations and one file with "int main()"
-# ./include: containing all class declarations
-# ./tests: containing pairs of files: test.cc/test.output to test
-#
-# If you set the environemnt variable D2K_DIR,
-# everything will work out of the box
-##
-
-# Set the name of the project and target
-# If your application follows the structure above, you don't need to
-# specify anything else.
-SET(TARGET bem_fma)
-SET(_main source/main.cc)
+SET(TARGET test03_IntersectRayAABB)
+SET(_main test03_IntersectRayAABB.cc)
 
 
 set(OPENCASCADE_DIR /home/ole/dev/tools/oce-0.18.3)
@@ -70,10 +53,6 @@ endif()
 FIND_PACKAGE(deal2lkit 1.0 REQUIRED
   HINTS ${D2K_DIR} $ENV{D2K_DIR} $ENV{DEAL2LKIT_DIR}
   )
-
-
-FIND_PACKAGE(Boost 1.56 REQUIRED COMPONENTS filesystem program_options)
-
 D2K_INITIALIZE_CACHED_VARIABLES()
 
 # We one library and one target for each type of deal.II library
@@ -94,15 +73,10 @@ FOREACH(_build_type ${_d2_build_types})
 	MESSAGE("-- Found ${_build_type} version of deal.II.")
 	MESSAGE("-- Found ${_build_type} version of deal2lkit.")
 
-	SET(_lib "${TARGET}-lib${_p}")
-	MESSAGE("-- Configuring library ${_lib}")
 
 	STRING(TOUPPER "${_build_type}" _BUILD_TYPE)
 
-	# Add all files, except the main file, to the library
-	ADD_LIBRARY(${_lib} SHARED ${_files})
-
-  FOREACH(_dim 3)
+     FOREACH(_dim 3)
 		SET(_exe "${TARGET}_${_dim}d${${_build_type}_postfix}")
 		MESSAGE("-- Configuring executable ${_exe}")
 		ADD_EXECUTABLE(${_exe} ${_main})
@@ -110,52 +84,8 @@ FOREACH(_build_type ${_d2_build_types})
 		TARGET_LINK_LIBRARIES(${_exe} ${_lib})
     target_link_libraries(${_exe} Boost::program_options Boost::filesystem)
 		D2K_SETUP_TARGET(${_exe} ${_BUILD_TYPE})
-    
  	ENDFOREACH()
 
-	# Compile an executable only if required by the user
-	#IF(NOT "${_main}" STREQUAL "")
-	#    SET(_exe "${TARGET}${${_build_type}_postfix}")
-	#    MESSAGE("-- Configuring executable ${_exe}")
-	#    ADD_EXECUTABLE(${_exe} ${_main})
-	#    TARGET_LINK_LIBRARIES(${_exe} ${_lib})
-	#    D2K_SETUP_TARGET(${_exe} ${_BUILD_TYPE})
-	#ENDIF()
-
-	D2K_SETUP_TARGET(${_lib} ${_BUILD_TYPE})
-  SET(TEST_LIBRARIES_${_BUILD_TYPE} ${_lib})
   ENDIF()
 ENDFOREACH()
-
-INCLUDE_DIRECTORIES(${D2K_DIR}/include)
-INCLUDE_DIRECTORIES(${OPENCASCADE_DIR}/include/oce)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/include)
-
-
-
-#if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/tests AND BEM_ENABLE_TESTING)
-  ADD_SUBDIRECTORY(tests)
-#  ENABLE_TESTING()
-#endif()
-
-
-# Doxygen
-if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in)
-    find_package(Doxygen)
-    if(DOXYGEN_FOUND)
-    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile @ONLY)
-    add_custom_target(doc
-    ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
-    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-    COMMENT "Generating API documentation with Doxygen" VERBATIM
-    )
-    endif(DOXYGEN_FOUND)
-endif()
-
-
-ADD_CUSTOM_TARGET(indent
-  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-  COMMAND ./scripts/indent
-)
-
 

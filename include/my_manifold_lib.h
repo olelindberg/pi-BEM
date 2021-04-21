@@ -23,13 +23,8 @@
 //#  include <deal.II/opencascade/manifold_lib.h>
 #  include <deal.II/opencascade/utilities.h>
 
-// opencascade needs "HAVE_CONFIG_H" to be exported...
-#  define HAVE_CONFIG_H
-#  include <Adaptor3d_Curve.hxx>
-#  include <Adaptor3d_HCurve.hxx>
-#  include <BRepAdaptor_Curve.hxx>
-#  undef HAVE_CONFIG_H
 #include <unordered_map>
+
 
 DEAL_II_NAMESPACE_OPEN
 
@@ -111,11 +106,10 @@ DEAL_II_NAMESPACE_OPEN
       const ArrayView<const Point<spacedim>> &surrounding_points,
       const Point<spacedim> &                 candidate) const override;
 
-    mutable std::unordered_map <std::size_t, Tensor<1, spacedim> > projections_cache;
-
+    
   protected:
 
-
+    mutable std::unordered_map <std::size_t, Tensor<1, spacedim> > projections_cache;
 
     /**
      * The topological shape which is used internally to project points. You
@@ -124,6 +118,10 @@ DEAL_II_NAMESPACE_OPEN
      * in the IGES file.
      */
     const TopoDS_Shape sh;
+    
+     /**
+     * .
+     */
 
     /**
      * Relative tolerance used by this class to compute distances.

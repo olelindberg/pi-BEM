@@ -56,7 +56,7 @@ subsection BoundaryConditions<3>
 end
 subsection ComputationalDomain<3>
   set Input grid format = inp
-  set Input grid name   = ./naca0012
+  set Input grid name   = naca0012
   set Number of cycles  = 1
   subsection Boundary Conditions ID Numbers
     set Dirichlet boundary ids = 1,0,110,110

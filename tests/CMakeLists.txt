@@ -1,5 +1,7 @@
 add_subdirectory(test01_cad_import_and_curvature_refinement)
 add_subdirectory(test02_make_edges_conformal)
+add_subdirectory(test03_IntersectRayAABB)
+add_subdirectory(test04_my_line_intersection)
 INCLUDE_DIRECTORIES(${D2K_INCLUDE_DIRS})
 DEAL_II_PICKUP_TESTS()
 

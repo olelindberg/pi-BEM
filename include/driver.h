@@ -110,7 +110,7 @@ public:
 
 
   void
-  run();
+  run(std::string input_path = "",std::string output_path = "");
 
 protected:
   ConditionalOStream pcout;
