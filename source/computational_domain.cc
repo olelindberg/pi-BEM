@@ -232,7 +232,7 @@ ComputationalDomain<dim>::read_domain (std::string input_path)
   Teuchos::TimeMonitor localTimer (*readDomainTime);
   std::cout << "Reading domain ...\n";
 
-  std::string grid_filename = boost::filesystem::path(input_path).append(input_grid_name + "." + input_grid_format).string();
+  std::string grid_filename = boost::filesystem::path (input_path).append (input_grid_name + "." + input_grid_format).string ();
   std::cout << "Reading grid file: " << grid_filename << std::endl;
   std::ifstream in;
   in.open (grid_filename);
@@ -551,10 +551,10 @@ ComputationalDomain<dim>::refine_and_resize (const unsigned int refinement_level
     bool         go_on = true;
     while (go_on == true)
     {
-      std::string color_filename = (input_cad_path + "Color_" + Utilities::int_to_string (ii) + ".iges");
-      std::string cad_surface_filename = boost::filesystem::path(input_path).append(color_filename).string();
+      std::string color_filename       = (input_cad_path + "Color_" + Utilities::int_to_string (ii) + ".iges");
+      std::string cad_surface_filename = boost::filesystem::path (input_path).append (color_filename).string ();
 
-      std::ifstream f(cad_surface_filename);
+      std::ifstream f (cad_surface_filename);
       if (f.good ())
       {
         pcout << ii << "-th file exists" << std::endl;
@@ -572,8 +572,8 @@ ComputationalDomain<dim>::refine_and_resize (const unsigned int refinement_level
     go_on = true;
     while (go_on == true)
     {
-      std::string edge_filename      = (input_cad_path + "Curve_" + Utilities::int_to_string (ii) + ".iges");
-      std::string cad_curve_filename = boost::filesystem::path(input_path).append(edge_filename).string();
+      std::string   edge_filename      = (input_cad_path + "Curve_" + Utilities::int_to_string (ii) + ".iges");
+      std::string   cad_curve_filename = boost::filesystem::path (input_path).append (edge_filename).string ();
       std::ifstream f (cad_curve_filename);
       if (f.good ())
       {
@@ -603,26 +603,30 @@ ComputationalDomain<dim>::refine_and_resize (const unsigned int refinement_level
     for (unsigned int i = 0; i < cad_surfaces.size (); ++i)
     {
       pcout << "Creating normal to mesh projection manifold " << i << "\n";
-//      normal_to_mesh_projectors.push_back (std::make_shared<OpenCASCADE::NormalToMeshProjectionManifold<2, 3> > (cad_surfaces[i], tolerance));
+      //      normal_to_mesh_projectors.push_back (std::make_shared<OpenCASCADE::NormalToMeshProjectionManifold<2, 3> > (cad_surfaces[i], tolerance));
       normal_to_mesh_projectors.push_back (std::make_shared<MyNormalToMeshProjectionManifold<2, 3> > (cad_surfaces[i], tolerance));
     }
-
+    std::cout << "hello1" << std::endl;
     for (unsigned int i = 0; i < cad_curves.size (); ++i)
     {
       pcout << "Creating arc length projection line manifold " << i << "\n";
       line_projectors.push_back (std::make_shared<OpenCASCADE::ArclengthProjectionLineManifold<2, 3> > (cad_curves[i], tolerance));
     }
+    std::cout << "hello2" << std::endl;
 
     for (unsigned int i = 0; i < cad_surfaces.size (); ++i)
     {
       tria.set_manifold (1 + i, *normal_to_mesh_projectors[i]);
     }
+    std::cout << "hello3" << std::endl;
 
     for (unsigned int i = 0; i < cad_curves.size (); ++i)
     {
       tria.set_manifold (11 + i, *line_projectors[i]);
     }
+    std::cout << "hello4" << std::endl;
   }
+  std::cout << "hello5" << std::endl;
 
   bool         use_aspect_ratio_refinement = true;
   unsigned int refinedCellCounter          = 1;
@@ -683,7 +687,7 @@ ComputationalDomain<dim>::refine_and_resize (const unsigned int refinement_level
                  "make_edges_conformal \n"
               << __FILE__ << __LINE__ << std::endl;
 
-    make_edges_conformal ();
+    make_edges_conformal (false);
     cycles_counter++;
   }
   pcout << "... done refining based on element aspect ratio\n";
@@ -774,8 +778,8 @@ ComputationalDomain<dim>::refine_and_resize (const unsigned int refinement_level
           // ...and used to set up a line intersection to project the
           // cell center on the CAD surface along the direction
           // specified by the previously computed cell normal
-//          Point<3> projection = OpenCASCADE::line_intersection (neededShape, cell->center (), n, tolerance);
-          Point<3> projection =   my_line_intersection<3>(neededShape, cell->center (), n, tolerance);
+          //          Point<3> projection = OpenCASCADE::line_intersection (neededShape, cell->center (), n, tolerance);
+          Point<3> projection = my_line_intersection<3> (neededShape, cell->center (), n, tolerance);
           //                  // in correspondence with the projected
           //                  point, we ask all the
           //                  // surface differential forms
@@ -804,7 +808,6 @@ ComputationalDomain<dim>::refine_and_resize (const unsigned int refinement_level
           // a cells_per_circle fraction of the circumference
           // corresponding to the minimum curvature radius
           cell_size = 2.0 * dealii::numbers::PI / cells_per_circle * curvature_radius;
-
         }
         else
         {
@@ -837,7 +840,7 @@ ComputationalDomain<dim>::refine_and_resize (const unsigned int refinement_level
       // called to check no edge presents non comformities
       pcout << "Curvature Based Local Refinement Cycle: " << cycles_counter << " (" << refinedCellCounter << ")" << std::endl;
       tria.execute_coarsening_and_refinement ();
-      make_edges_conformal ();
+      make_edges_conformal (false);
       cycles_counter++;
 
       // std::string filename = ( "DTMB_II_meshResult_max_curv" +
@@ -882,7 +885,7 @@ ComputationalDomain<dim>::conditional_refine_and_resize (const unsigned int refi
 
   const Point<dim> center (0, 0, 0);
   compute_double_vertex_cache ();
-  make_edges_conformal ();
+  make_edges_conformal (false);
 
   for (unsigned int step = 0; step < refinement_level; ++step)
   {
@@ -903,7 +906,7 @@ ComputationalDomain<dim>::conditional_refine_and_resize (const unsigned int refi
     tria.prepare_coarsening_and_refinement ();
     tria.execute_coarsening_and_refinement ();
     // compute_double_vertex_cache();
-    make_edges_conformal ();
+    make_edges_conformal (false);
   }
   update_triangulation ();
 }
@@ -960,29 +963,29 @@ ComputationalDomain<dim>::make_edges_conformal (const bool with_double_nodes, co
 {
   if (with_double_nodes == false)
   {
-std::cout << "ComputationalDomain<dim>::make_edges_conformal WITHOUT double nodes ...\n";
+    // std::cout << "ComputationalDomain<dim>::make_edges_conformal WITHOUT double nodes ...\n";
 
-    auto cell = tria.begin_active ();
-    auto endc = tria.end ();
+    // auto cell = tria.begin_active ();
+    // auto endc = tria.end ();
 
-    for (cell = tria.begin_active (); cell != endc; ++cell)
-    {
-      for (unsigned int f = 0; f < GeometryInfo<2>::faces_per_cell; ++f)
-        if (cell->face (f)->at_boundary ()) // material_id()!=numbers::invalid_material_id)//dovrei
-        // essere su un buondary
-        {
-          // TriaIterator<CellAccessor<dim-1,dim> > cell_neigh =
-          // cell->neighbor(f);
-          if (cell->neighbor_is_coarser (f))
-          {
-            TriaIterator<CellAccessor<dim - 1, dim> > cell_neigh = cell->neighbor (f);
-            cell_neigh->set_refine_flag (RefinementCase<dim - 1>::isotropic_refinement);
-            // std::cout<<"mammina..."<<std::endl;
-          }
-        }
-    }
-    tria.prepare_coarsening_and_refinement ();
-    tria.execute_coarsening_and_refinement ();
+    // for (cell = tria.begin_active (); cell != endc; ++cell)
+    // {
+    //   for (unsigned int f = 0; f < GeometryInfo<2>::faces_per_cell; ++f)
+    //     if (cell->face (f)->at_boundary ()) // material_id()!=numbers::invalid_material_id)//dovrei
+    //     // essere su un buondary
+    //     {
+    //       // TriaIterator<CellAccessor<dim-1,dim> > cell_neigh =
+    //       // cell->neighbor(f);
+    //       if (cell->neighbor_is_coarser (f))
+    //       {
+    //         TriaIterator<CellAccessor<dim - 1, dim> > cell_neigh = cell->neighbor (f);
+    //         cell_neigh->set_refine_flag (RefinementCase<dim - 1>::isotropic_refinement);
+    //         // std::cout<<"mammina..."<<std::endl;
+    //       }
+    //     }
+    // }
+    // tria.prepare_coarsening_and_refinement ();
+    // tria.execute_coarsening_and_refinement ();
   }
   else
   {
@@ -1086,6 +1089,10 @@ ComputationalDomain<dim>::compute_double_vertex_cache ()
 
   auto all_vertices = tria.get_vertices ();
 
+  //---------------------------------------------------------------------------
+  // Find all double vertices and connections:
+  //---------------------------------------------------------------------------
+  int numDoubleVertices = 0;
   for (types::global_dof_index i = 0; i < n_vertex; ++i)
   {
     for (types::global_dof_index j = 0; j < n_vertex; ++j)
@@ -1093,9 +1100,11 @@ ComputationalDomain<dim>::compute_double_vertex_cache ()
       if (all_vertices[i].distance (all_vertices[j]) <= toll)
       {
         double_vertex_vector[i].push_back (j);
+        ++numDoubleVertices;
       }
     }
   }
+  std::cout << "Found " << numDoubleVertices << " double vertices." << std::endl;
 
   auto cell = tria.begin_active ();
   auto endc = tria.end ();
