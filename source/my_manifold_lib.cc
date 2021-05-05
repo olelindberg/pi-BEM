@@ -114,6 +114,16 @@ internal_project_to_manifold (std::unordered_map<std::size_t, Tensor<1, spacedim
   return {};
 }
 
+Tensor<1, 3> triangleNormalVector(const Point<3>& p1,const Point<3>& p2,const Point<3>& p3)
+{
+      Tensor<1, 3>         e1            = p2 - p1;
+      Tensor<1, 3>         e2            = p3 - p1;
+      const double         n1_coords[3] = { e1[1] * e2[2] - e1[2] * e2[1], e1[2] * e2[0] - e1[0] * e2[2], e1[0] * e2[1] - e1[1] * e2[0] };
+      Tensor<1, 3>         n1 (n1_coords);
+      n1                        = n1 / n1.norm ();
+      return n1;
+}
+
 template <>
 Point<3>
 internal_project_to_manifold (std::unordered_map<std::size_t, Tensor<1, 3> > &projections_cache, const TopoDS_Shape &sh, const double tolerance, const ArrayView<const Point<3> > &surrounding_points,
@@ -144,6 +154,8 @@ internal_project_to_manifold (std::unordered_map<std::size_t, Tensor<1, 3> > &pr
 #endif
   {
     Teuchos::TimeMonitor localTimer12 (*project_to_manifold2);
+
+
     switch (surrounding_points.size ())
     {
     case 2:
@@ -188,11 +200,13 @@ internal_project_to_manifold (std::unordered_map<std::size_t, Tensor<1, 3> > &pr
     case 4:
     {
       Teuchos::TimeMonitor localTimer14 (*project_to_manifold4);
+
       Tensor<1, 3>         u            = surrounding_points[1] - surrounding_points[0];
       Tensor<1, 3>         v            = surrounding_points[2] - surrounding_points[0];
       const double         n1_coords[3] = { u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0] };
       Tensor<1, 3>         n1 (n1_coords);
       n1                        = n1 / n1.norm ();
+      
       u                         = surrounding_points[2] - surrounding_points[3];
       v                         = surrounding_points[1] - surrounding_points[3];
       const double n2_coords[3] = { u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0] };
@@ -209,29 +223,32 @@ internal_project_to_manifold (std::unordered_map<std::size_t, Tensor<1, 3> > &pr
     }
     case 8:
     {
-      Teuchos::TimeMonitor localTimer15 (*project_to_manifold5);
-      Tensor<1, 3>         u            = surrounding_points[1] - surrounding_points[0];
-      Tensor<1, 3>         v            = surrounding_points[2] - surrounding_points[0];
-      const double         n1_coords[3] = { u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0] };
-      Tensor<1, 3>         n1 (n1_coords);
-      n1                        = n1 / n1.norm ();
-      u                         = surrounding_points[2] - surrounding_points[3];
-      v                         = surrounding_points[1] - surrounding_points[3];
-      const double n2_coords[3] = { u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0] };
-      Tensor<1, 3> n2 (n2_coords);
-      n2                        = n2 / n2.norm ();
-      u                         = surrounding_points[4] - surrounding_points[7];
-      v                         = surrounding_points[6] - surrounding_points[7];
-      const double n3_coords[3] = { u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0] };
-      Tensor<1, 3> n3 (n3_coords);
-      n3                        = n3 / n3.norm ();
-      u                         = surrounding_points[6] - surrounding_points[7];
-      v                         = surrounding_points[5] - surrounding_points[7];
-      const double n4_coords[3] = { u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0] };
-      Tensor<1, 3> n4 (n4_coords);
-      n4 = n4 / n4.norm ();
 
-      average_normal = (n1 + n2 + n3 + n4) / 4.0;
+      //-----------------------------------------------------------------------
+      // Arrangement of surrounding points and candidate (c):
+      //
+      //     0 ---- 6 ---- 1
+      //     |      |      |
+      //     4 ---- c ---- 5
+      //     |      |      |
+      //     2 ---- 7 ---- 3
+      //
+      //-----------------------------------------------------------------------
+
+      Teuchos::TimeMonitor localTimer15 (*project_to_manifold5);
+
+
+
+      auto n0 = triangleNormalVector(candidate,surrounding_points[0],surrounding_points[4]);
+      auto n1 = triangleNormalVector(candidate,surrounding_points[4],surrounding_points[2]);
+      auto n2 = triangleNormalVector(candidate,surrounding_points[2],surrounding_points[7]);
+      auto n3 = triangleNormalVector(candidate,surrounding_points[7],surrounding_points[3]);
+      auto n4 = triangleNormalVector(candidate,surrounding_points[3],surrounding_points[5]);
+      auto n5 = triangleNormalVector(candidate,surrounding_points[5],surrounding_points[1]);
+      auto n6 = triangleNormalVector(candidate,surrounding_points[1],surrounding_points[6]);
+      auto n7 = triangleNormalVector(candidate,surrounding_points[6],surrounding_points[0]);
+
+      average_normal = (n0 + n1 + n2 + n3 + n4 + n5 + n6 + n7) / 8.0;
 
       Assert (average_normal.norm () > tolerance,
               ExcMessage ("Failed to refine cell: the normal estimated via the surrounding points turns out to be a null vector, making the projection direction undetermined."));
@@ -246,6 +263,8 @@ internal_project_to_manifold (std::unordered_map<std::size_t, Tensor<1, 3> > &pr
     }
     }
   }
+
+  
   Teuchos::TimeMonitor localTimer2 (*project_to_manifold_line_inters);
   auto point = my_line_intersection (sh, candidate, average_normal, tolerance);
   return point;

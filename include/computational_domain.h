@@ -142,6 +142,12 @@ public:
   /// according to the level requested in
   /// the parameters file
 
+bool
+  read_cad_files(std::string input_path = "");
+
+  void
+  assign_manifold_projectors(double tolerance);
+
   void
   refine_and_resize(const unsigned int refinement_level, std::string input_path = "");
 
@@ -199,7 +205,16 @@ public:
   // const unsigned int fe_degree;
   // const unsigned int mapping_degree;
 
-  Triangulation<dim - 1, dim> tria;
+  const Triangulation<dim - 1, dim>& getTria() const
+  {
+    return tria;
+  }
+  Triangulation<dim - 1, dim>& getTria()
+  {
+    return tria;
+  }
+
+  Triangulation<dim - 1, dim> tria; // \todo Move to private!!!
 
   /// here we are just renaming the cell
   /// iterator

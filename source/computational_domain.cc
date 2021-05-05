@@ -7,9 +7,10 @@
 #include <deal.II/grid/grid_tools.h>
 #include <deal2lkit/utilities.h>
 
-#include <BRepBndLib.hxx>
-#include <BRep_Tool.hxx>
 #include <Bnd_Box.hxx>
+#include <BRep_Tool.hxx>
+#include <BRepBndLib.hxx>
+
 
 #include "Teuchos_TimeMonitor.hpp"
 
@@ -537,55 +538,113 @@ ComputationalDomain<2>::refine_and_resize (const unsigned int refinement_level, 
 }
 
 template <int dim>
+bool
+ComputationalDomain<dim>::read_cad_files (std::string input_path)
+{
+
+  pcout << "Color Files" << std::endl;
+  unsigned int ii    = 1;
+  bool         go_on = true;
+  while (go_on == true)
+  {
+    std::string color_filename       = (input_cad_path + "Color_" + Utilities::int_to_string (ii) + ".iges");
+    std::string cad_surface_filename = boost::filesystem::path (input_path).append (color_filename).string ();
+
+    std::ifstream f (cad_surface_filename);
+    if (f.good ())
+    {
+      pcout << ii << "-th file exists" << std::endl;
+      std::cout << "Reading CAD surface file: " << cad_surface_filename << std::endl;
+      TopoDS_Shape surface = OpenCASCADE::read_IGES (cad_surface_filename, 1e-3);
+      cad_surfaces.push_back (surface);
+
+      Bnd_Box boundingBox;
+      BRepBndLib::Add(surface, boundingBox, Standard_False);
+      double Xmin, Ymin, Zmin, Xmax, Ymax, Zmax;
+      boundingBox.Get(Xmin, Ymin, Zmin, Xmax, Ymax, Zmax);
+      std::cout << "Bounding box: min = (" << Xmin << ", " << Ymin << ", " << Zmin << ")" << std::endl;
+      std::cout << "              max = (" << Xmax << ", " << Ymax << ", " << Zmax << ")" << std::endl;
+      std::cout << "Tolerance:    tol = " << OpenCASCADE::get_shape_tolerance (surface) << std::endl;
+    }
+    else
+      go_on = false;
+    ii++;
+  }
+
+  pcout << "Edge Files" << std::endl;
+  ii    = 1;
+  go_on = true;
+  while (go_on == true)
+  {
+    std::string   edge_filename      = (input_cad_path + "Curve_" + Utilities::int_to_string (ii) + ".iges");
+    std::string   cad_curve_filename = boost::filesystem::path (input_path).append (edge_filename).string ();
+    std::ifstream f (cad_curve_filename);
+    if (f.good ())
+    {
+      pcout << ii << "-th file exists" << std::endl;
+      std::cout << "Reading CAD curve file: " << cad_curve_filename << std::endl;
+      TopoDS_Shape curve = OpenCASCADE::read_IGES (cad_curve_filename, 1e-3);
+      cad_curves.push_back (curve);
+
+      Bnd_Box boundingBox;
+      BRepBndLib::Add(curve, boundingBox, Standard_False);
+      double Xmin, Ymin, Zmin, Xmax, Ymax, Zmax;
+      boundingBox.Get(Xmin, Ymin, Zmin, Xmax, Ymax, Zmax);
+      std::cout << "Bounding box: min = (" << Xmin << ", " << Ymin << ", " << Zmin << ")" << std::endl;
+      std::cout << "              max = (" << Xmax << ", " << Ymax << ", " << Zmax << ")" << std::endl;
+      std::cout << "Tolerance:    tol = " << OpenCASCADE::get_shape_tolerance (curve) << std::endl;
+    }
+    else
+      go_on = false;
+    ii++;
+  }
+  return true;
+} // read_cad_files
+
+template <>
+void
+ComputationalDomain<2>::assign_manifold_projectors (double tolerance)
+{}
+
+
+template <int dim>
+void
+ComputationalDomain<dim>::assign_manifold_projectors (double tolerance)
+{
+    for (unsigned int i = 0; i < cad_surfaces.size (); ++i)
+    {
+      pcout << "Creating normal to mesh projection manifold " << i << "\n";
+      //      normal_to_mesh_projectors.push_back (std::make_shared<OpenCASCADE::NormalToMeshProjectionManifold<2, 3> > (cad_surfaces[i], tolerance));
+      normal_to_mesh_projectors.push_back (std::make_shared<MyNormalToMeshProjectionManifold<2, 3> > (cad_surfaces[i], tolerance));
+    }
+    for (unsigned int i = 0; i < cad_curves.size (); ++i)
+    {
+      pcout << "Creating arc length projection line manifold " << i << "\n";
+      line_projectors.push_back (std::make_shared<OpenCASCADE::ArclengthProjectionLineManifold<2, 3> > (cad_curves[i], tolerance));
+    }
+
+    for (unsigned int i = 0; i < cad_surfaces.size (); ++i)
+    {
+      tria.set_manifold (1 + i, *normal_to_mesh_projectors[i]);
+    }
+
+    for (unsigned int i = 0; i < cad_curves.size (); ++i)
+    {
+      tria.set_manifold (11 + i, *line_projectors[i]);
+    }
+}
+
+template <int dim>
 void
 ComputationalDomain<dim>::refine_and_resize (const unsigned int refinement_level, std::string input_path)
 {
   Teuchos::TimeMonitor localTimer (*refineAndResizeTime);
   pcout << "Refining and resizing ... " << std::endl;
-
   double max_tol = 0;
   if (use_cad_surface_and_curves)
   {
-    pcout << "Color Files" << std::endl;
-    unsigned int ii    = 1;
-    bool         go_on = true;
-    while (go_on == true)
-    {
-      std::string color_filename       = (input_cad_path + "Color_" + Utilities::int_to_string (ii) + ".iges");
-      std::string cad_surface_filename = boost::filesystem::path (input_path).append (color_filename).string ();
-
-      std::ifstream f (cad_surface_filename);
-      if (f.good ())
-      {
-        pcout << ii << "-th file exists" << std::endl;
-        std::cout << "Reading CAD surface file: " << cad_surface_filename << std::endl;
-        TopoDS_Shape surface = OpenCASCADE::read_IGES (cad_surface_filename, 1e-3);
-        cad_surfaces.push_back (surface);
-      }
-      else
-        go_on = false;
-      ii++;
-    }
-
-    pcout << "Edge Files" << std::endl;
-    ii    = 1;
-    go_on = true;
-    while (go_on == true)
-    {
-      std::string   edge_filename      = (input_cad_path + "Curve_" + Utilities::int_to_string (ii) + ".iges");
-      std::string   cad_curve_filename = boost::filesystem::path (input_path).append (edge_filename).string ();
-      std::ifstream f (cad_curve_filename);
-      if (f.good ())
-      {
-        pcout << ii << "-th file exists" << std::endl;
-        std::cout << "Reading CAD curve file: " << cad_curve_filename << std::endl;
-        TopoDS_Shape curve = OpenCASCADE::read_IGES (cad_curve_filename, 1e-3);
-        cad_curves.push_back (curve);
-      }
-      else
-        go_on = false;
-      ii++;
-    }
+    // Read cad files, that is Color_*.iges and Curve_*.iges files:
+    this->read_cad_files (input_path);
 
     for (unsigned int i = 0; i < cad_surfaces.size (); ++i)
     {
@@ -595,38 +654,12 @@ ComputationalDomain<dim>::refine_and_resize (const unsigned int refinement_level
     {
       max_tol = fmax (max_tol, OpenCASCADE::get_shape_tolerance (cad_curves[i]));
     }
-
     const double tolerance = cad_to_projectors_tolerance_ratio * max_tol;
-
     pcout << "Used tolerance is: " << tolerance << std::endl;
 
-    for (unsigned int i = 0; i < cad_surfaces.size (); ++i)
-    {
-      pcout << "Creating normal to mesh projection manifold " << i << "\n";
-      //      normal_to_mesh_projectors.push_back (std::make_shared<OpenCASCADE::NormalToMeshProjectionManifold<2, 3> > (cad_surfaces[i], tolerance));
-      normal_to_mesh_projectors.push_back (std::make_shared<MyNormalToMeshProjectionManifold<2, 3> > (cad_surfaces[i], tolerance));
-    }
-    std::cout << "hello1" << std::endl;
-    for (unsigned int i = 0; i < cad_curves.size (); ++i)
-    {
-      pcout << "Creating arc length projection line manifold " << i << "\n";
-      line_projectors.push_back (std::make_shared<OpenCASCADE::ArclengthProjectionLineManifold<2, 3> > (cad_curves[i], tolerance));
-    }
-    std::cout << "hello2" << std::endl;
+    this->assign_manifold_projectors(tolerance);
 
-    for (unsigned int i = 0; i < cad_surfaces.size (); ++i)
-    {
-      tria.set_manifold (1 + i, *normal_to_mesh_projectors[i]);
-    }
-    std::cout << "hello3" << std::endl;
-
-    for (unsigned int i = 0; i < cad_curves.size (); ++i)
-    {
-      tria.set_manifold (11 + i, *line_projectors[i]);
-    }
-    std::cout << "hello4" << std::endl;
   }
-  std::cout << "hello5" << std::endl;
 
   bool         use_aspect_ratio_refinement = true;
   unsigned int refinedCellCounter          = 1;
@@ -687,7 +720,7 @@ ComputationalDomain<dim>::refine_and_resize (const unsigned int refinement_level
                  "make_edges_conformal \n"
               << __FILE__ << __LINE__ << std::endl;
 
-    make_edges_conformal (false);
+    make_edges_conformal (true);
     cycles_counter++;
   }
   pcout << "... done refining based on element aspect ratio\n";
@@ -840,7 +873,7 @@ ComputationalDomain<dim>::refine_and_resize (const unsigned int refinement_level
       // called to check no edge presents non comformities
       pcout << "Curvature Based Local Refinement Cycle: " << cycles_counter << " (" << refinedCellCounter << ")" << std::endl;
       tria.execute_coarsening_and_refinement ();
-      make_edges_conformal (false);
+      make_edges_conformal (true);
       cycles_counter++;
 
       // std::string filename = ( "DTMB_II_meshResult_max_curv" +
@@ -885,7 +918,7 @@ ComputationalDomain<dim>::conditional_refine_and_resize (const unsigned int refi
 
   const Point<dim> center (0, 0, 0);
   compute_double_vertex_cache ();
-  make_edges_conformal (false);
+  make_edges_conformal (true);
 
   for (unsigned int step = 0; step < refinement_level; ++step)
   {
@@ -906,7 +939,7 @@ ComputationalDomain<dim>::conditional_refine_and_resize (const unsigned int refi
     tria.prepare_coarsening_and_refinement ();
     tria.execute_coarsening_and_refinement ();
     // compute_double_vertex_cache();
-    make_edges_conformal (false);
+    make_edges_conformal (true);
   }
   update_triangulation ();
 }

@@ -245,34 +245,23 @@ std::tuple<Point<3>, Tensor<1, 3>, double, double>
 my_closest_point_and_differential_forms (const TopoDS_Shape &in_shape, const Point<3> &origin, const double tolerance)
 
 {
-  std::cout << "hello01" << std::endl;
   std::tuple<Point<3>, TopoDS_Shape, double, double> shape_and_params = my_project_point_and_pull_back (in_shape, origin, tolerance);
-  std::cout << "hello02" << std::endl;
 
   TopoDS_Shape &out_shape = std::get<1> (shape_and_params);
   double &      u         = std::get<2> (shape_and_params);
   double &      v         = std::get<3> (shape_and_params);
-  std::cout << "hello03" << std::endl;
 
   // just a check here: the number of faces in out_shape must be 1, otherwise
   // something is wrong
   std::tuple<unsigned int, unsigned int, unsigned int> numbers = count_elements (out_shape);
   (void)numbers;
-  std::cout << "hello04" << std::endl;
 
   Assert (std::get<0> (numbers) > 0, ExcMessage ("Could not find normal: the shape containing the closest point has 0 faces."));
   Assert (std::get<0> (numbers) < 2, ExcMessage ("Could not find normal: the shape containing the closest point has more than 1 face."));
-  std::cout << "hello05" << std::endl;
 
   TopExp_Explorer exp;
   exp.Init (out_shape, TopAbs_FACE);
-  std::cout << "hello06" << std::endl;
   TopoDS_Face face = TopoDS::Face (exp.Current ());
-  std::cout << "hello07" << std::endl;
-  std::cout << "origin " << origin << std::endl;
-  std::cout << "u " << u << std::endl;
-  std::cout << "v " << v << std::endl;
-  std::cout << "tolerance " << tolerance << std::endl;
   return push_forward_and_differential_forms (face, u, v, tolerance);
 }
 

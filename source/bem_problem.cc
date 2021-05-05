@@ -1654,7 +1654,7 @@ template <int dim>
 void
 BEMProblem<dim>::compute_gradients (const TrilinosWrappers::MPI::Vector &glob_phi, const TrilinosWrappers::MPI::Vector &glob_dphi_dn)
 {
-std::cout << "BEMProblem<dim>::compute_gradients" << std::endl;
+  std::cout << "BEMProblem<dim>::compute_gradients" << std::endl;
 
   Teuchos::TimeMonitor LocalTimer (*GradientTime);
 
@@ -1770,8 +1770,7 @@ void
 BEMProblem<dim>::compute_surface_gradients (const TrilinosWrappers::MPI::Vector &tmp_rhs)
 {
 
-std::cout << "BEMProblem<dim>::compute_surface_gradients" << std::endl;
-
+  std::cout << "BEMProblem<dim>::compute_surface_gradients" << std::endl;
 
   Teuchos::TimeMonitor          LocalTimer (*SurfaceGradientTime);
   TrilinosWrappers::MPI::Vector phi (ghosted_set);
@@ -1962,13 +1961,13 @@ BEMProblem<dim>::adaptive_refinement (const TrilinosWrappers::MPI::Vector &error
 
 template <int dim>
 void
-BEMProblem<dim>::dynamic_pressure(const Functions::ParsedFunction<dim>& wind, TrilinosWrappers::MPI::Vector& pressure)
+BEMProblem<dim>::dynamic_pressure (const Functions::ParsedFunction<dim> &wind, TrilinosWrappers::MPI::Vector &pressure)
 {
   Teuchos::TimeMonitor LocalTimer (*AssembleTime);
 
   pcout << "Calculating pressure force and moment ..." << std::endl;
   const types::global_dof_index n_dofs = dh.n_dofs ();
-  std::vector<Point<dim> > support_points (n_dofs);
+  std::vector<Point<dim> >      support_points (n_dofs);
   DoFTools::map_dofs_to_support_points<dim - 1, dim> (*mapping, dh, support_points);
 
   pressure.reinit (this_cpu_set);
@@ -1987,24 +1986,27 @@ BEMProblem<dim>::dynamic_pressure(const Functions::ParsedFunction<dim>& wind, Tr
       // Get indices for this cell:
       cell->get_dof_indices (local_dof_indices);
 
-        for (unsigned int j = 0; j < fe->dofs_per_cell; ++j)
-        {
-          double u = vector_gradients_solution[local_dof_indices[j]+0*n_dofs];
-          double v = vector_gradients_solution[local_dof_indices[j]+1*n_dofs];
-          double w = vector_gradients_solution[local_dof_indices[j]+2*n_dofs];
+      for (unsigned int j = 0; j < fe->dofs_per_cell; ++j)
+      {
+        double u = vector_gradients_solution[local_dof_indices[j] + 0 * n_dofs];
+        double v = vector_gradients_solution[local_dof_indices[j] + 1 * n_dofs];
+        double w = vector_gradients_solution[local_dof_indices[j] + 2 * n_dofs];
 
-          Vector<double> vel_infty (dim);
-          wind.vector_value (support_points[local_dof_indices[j]], vel_infty);
+        Vector<double> vel_infty (dim);
+        wind.vector_value (support_points[local_dof_indices[j]], vel_infty);
 
-          double rho = 1000;
-          pressure (local_dof_indices[j]) = -rho*(u*(0.5*u - vel_infty[0]) + v*(0.5*v - vel_infty[1]) + w*(0.5*w - vel_infty[2]));
+        std::cout << vel_infty[0] << std::endl;
+        std::cout << vel_infty[1] << std::endl;
+        std::cout << vel_infty[2] << std::endl << std::endl;
+
+        double rho                      = 1000;
+        pressure (local_dof_indices[j]) = -rho * (u * (0.5 * u - vel_infty[0]) + v * (0.5 * v - vel_infty[1]) + w * (0.5 * w - vel_infty[2]));
 
       } // for j in cell dofs
-    } // if this cpu
-  } // for cell in active cells
+    }   // if this cpu
+  }     // for cell in active cells
   pcout << "... calculation of pressure force and moment done" << std::endl;
 }
-
 
 template class BEMProblem<2>;
 template class BEMProblem<3>;
