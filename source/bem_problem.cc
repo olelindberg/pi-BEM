@@ -575,7 +575,7 @@ BEMProblem<dim>::assemble_system ()
   const unsigned int n_q_points = fe_v.n_quadrature_points;
 
   std::vector<types::global_dof_index> local_dof_indices (fe->dofs_per_cell);
-  pcout << fe->dofs_per_cell << " " << std::endl;
+
   // Unlike in finite element
   // methods, if we use a collocation
   // boundary element method, then in
@@ -1591,7 +1591,7 @@ BEMProblem<dim>::assemble_preconditioner ()
         // pcout<<start_helper<<"
         // "<<std::min((types::global_dof_index)(i+preconditioner_band/2),(types::global_dof_index)dh.n_dofs())<<std::endl;
         types::global_dof_index start_helper = ((i) > preconditioner_band / 2) ? (i - preconditioner_band / 2) : ((types::global_dof_index)0);
-        for (types::global_dof_index j = start_helper; j < std::min ((types::global_dof_index) (i + preconditioner_band / 2), (types::global_dof_index)dh.n_dofs ()); ++j)
+        for (types::global_dof_index j = start_helper; j < std::min ((types::global_dof_index)(i + preconditioner_band / 2), (types::global_dof_index)dh.n_dofs ()); ++j)
           preconditioner_sparsity_pattern.add (i, j);
       }
     preconditioner_sparsity_pattern.compress ();
@@ -1995,10 +1995,6 @@ BEMProblem<dim>::dynamic_pressure (const Functions::ParsedFunction<dim> &wind, T
         Vector<double> vel_infty (dim);
         wind.vector_value (support_points[local_dof_indices[j]], vel_infty);
 
-        std::cout << vel_infty[0] << std::endl;
-        std::cout << vel_infty[1] << std::endl;
-        std::cout << vel_infty[2] << std::endl << std::endl;
-
         double rho                      = 1000;
         pressure (local_dof_indices[j]) = -rho * (u * (0.5 * u - vel_infty[0]) + v * (0.5 * v - vel_infty[1]) + w * (0.5 * w - vel_infty[2]));
 
@@ -2006,6 +2002,57 @@ BEMProblem<dim>::dynamic_pressure (const Functions::ParsedFunction<dim> &wind, T
     }   // if this cpu
   }     // for cell in active cells
   pcout << "... calculation of pressure force and moment done" << std::endl;
+}
+
+template <int dim>
+Tensor<1, dim>
+BEMProblem<dim>::pressure_force (const TrilinosWrappers::MPI::Vector &pressure, const std::vector<int> &material_ids)
+{
+  Teuchos::TimeMonitor LocalTimer (*AssembleTime);
+
+  FEValues<dim - 1, dim> fe_v (*mapping, *fe, *quadrature, update_values | update_normal_vectors | update_quadrature_points | update_JxW_values);
+  const unsigned int     n_q_points = fe_v.n_quadrature_points;
+
+  const types::global_dof_index n_dofs = dh.n_dofs ();
+  std::vector<Point<dim> >      support_points (n_dofs);
+  DoFTools::map_dofs_to_support_points<dim - 1, dim> (*mapping, dh, support_points);
+
+  std::vector<types::global_dof_index> local_dof_indices (fe->dofs_per_cell);
+
+  //---------------------------------------------------------------------------
+  // Loop over all active cells:
+  //---------------------------------------------------------------------------
+  Tensor<1, dim> force;
+  for (cell_it cell = dh.begin_active (); cell != dh.end (); ++cell)
+  {
+    if (cell->subdomain_id () == this_mpi_process)
+    {
+      // Are we on the surface we are looking for:
+      bool found = (std::find (material_ids.begin (), material_ids.end (), (int)cell->material_id ()) != material_ids.end ());
+      if (found)
+      {
+
+        fe_v.reinit (cell);
+        cell->get_dof_indices (local_dof_indices);
+
+        const std::vector<Tensor<1, dim> > &normals = fe_v.get_normal_vectors ();
+
+        for (unsigned int q = 0; q < n_q_points; ++q)
+        {
+
+          // Interpolate to quadrature point:
+          double p = 0.0;
+          for (unsigned int j = 0; j < fe->dofs_per_cell; ++j)
+            p += pressure (local_dof_indices[j]) * fe_v.shape_value (j, q);
+
+          // Quadrature summation:
+          force += ((p * normals[q]) * fe_v.JxW (q));
+        }
+      } //
+    }   // if this cpu
+  }     // for cell in active cells
+
+  return force;
 }
 
 template class BEMProblem<2>;

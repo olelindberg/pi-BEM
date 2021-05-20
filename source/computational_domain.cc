@@ -893,6 +893,56 @@ ComputationalDomain<dim>::refine_and_resize (const unsigned int refinement_level
   }
   pcout << "We have a tria of " << tria.n_active_cells () << " cells." << std::endl;
 
+  //---------------------------------------------------------------------------
+  // 1) Refine locally:
+  //---------------------------------------------------------------------------
+  {
+    for (int refineId = 0;refineId<2;++refineId)
+    {
+      Triangulation<2, 3>::active_cell_iterator cell = tria.begin_active ();
+      Triangulation<2, 3>::active_cell_iterator endc = tria.end ();
+      for (; cell != endc; ++cell)
+      {
+        std::cout << cell->manifold_id() << " " << cell->material_id() << std::endl;
+        if (cell->manifold_id()==5)
+        {
+          std::cout << " rrrrrrrrrrrrrrrrrrrreeeeeeeeeeeeeeeeefffffffffffffffffiiiiiiiiiiiiinnnnnnnnnnnnnnnneeeeeeeeeeee" << cell->manifold_id() << " " << cell->material_id() << std::endl;
+          cell->set_refine_flag ();
+        }
+      }
+      tria.execute_coarsening_and_refinement ();
+    }
+  }
+  pcout << "Post local refinement number cells: " << tria.n_active_cells () << std::endl;
+  {
+    std::string   filename0 = ("meshResultAspect.inp");
+    std::ofstream logfile0 (filename0.c_str ());
+    GridOut       grid_out0;
+    grid_out0.write_ucd (tria, logfile0);
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   pcout << "Refining globally ...\n";
   {
     Teuchos::TimeMonitor localTimer (*refineGlobalTime);

@@ -57,7 +57,7 @@ end
 subsection ComputationalDomain<3>
   set Input grid format = inp
   set Input grid name   = coarse_sphere
-  set Number of cycles  = 1
+  set Number of cycles  = 3
   set Cells per circle = 12
   set Use iges surfaces and curves = true
   set Surface curvature adaptive refinement = true

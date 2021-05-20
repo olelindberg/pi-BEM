@@ -188,6 +188,7 @@ public:
 
 
 void dynamic_pressure(const Functions::ParsedFunction<dim>& wind, TrilinosWrappers::MPI::Vector& pressure);
+Tensor<1, dim> pressure_force(const TrilinosWrappers::MPI::Vector& pressure, const std::vector<int>& material_ids);
 
 
   /// The next three methods are
