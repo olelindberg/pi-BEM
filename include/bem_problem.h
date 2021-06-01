@@ -189,6 +189,8 @@ public:
 
 void dynamic_pressure(const Functions::ParsedFunction<dim>& wind, TrilinosWrappers::MPI::Vector& pressure);
 Tensor<1, dim> pressure_force(const TrilinosWrappers::MPI::Vector& pressure, const std::vector<int>& material_ids);
+double area_integral();
+Tensor<1, dim> volume_integral();
 
 
   /// The next three methods are
@@ -432,6 +434,15 @@ Tensor<1, dim> pressure_force(const TrilinosWrappers::MPI::Vector& pressure, con
   bool have_dirichlet_bc;
 
   BEMFMA<dim> fma;
+
+private:
+
+  enum class BEM_PROBLEM
+  { ONE_BODY, DOUBLE_BODY};
+  BEM_PROBLEM _bem_problem_type = BEM_PROBLEM::DOUBLE_BODY;
+  
+  void _assemble_system_double_body ();
+
 };
 
 #endif

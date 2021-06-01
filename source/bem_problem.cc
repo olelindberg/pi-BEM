@@ -145,7 +145,9 @@ BEMProblem<dim>::reinit ()
 
   const types::global_dof_index n_dofs = dh.n_dofs ();
 
-  pcout << dh.n_dofs () << " " << gradient_dh.n_dofs () << std::endl;
+  pcout << "Scalar DOFs: " << dh.n_dofs () << std::endl;
+  pcout << "Vector DOFs: " << gradient_dh.n_dofs () << std::endl;
+
   std::vector<types::subdomain_id> dofs_domain_association (n_dofs);
 
   DoFTools::get_subdomain_association (dh, dofs_domain_association);
@@ -255,16 +257,26 @@ BEMProblem<dim>::reinit ()
     dirichlet_matrix.reinit (full_sparsity_pattern);
   }
   pcout << "re-initialized sparsity patterns and matrices" << std::endl;
+
+  pcout << "init01 ...\n";  
   preconditioner_band = 100;
+  pcout << "init02 ...\n";  
   preconditioner_sparsity_pattern.reinit (this_cpu_set, mpi_communicator, (types::global_dof_index)preconditioner_band);
+  pcout << "init03 ...\n";  
   is_preconditioner_initialized = false;
+  pcout << "init04 ...\n";  
 
   dirichlet_nodes.reinit (this_cpu_set, mpi_communicator);
+  pcout << "init05 ...\n";  
   neumann_nodes.reinit (this_cpu_set, mpi_communicator);
+  pcout << "init06 ...\n";  
   compute_dirichlet_and_neumann_dofs_vectors ();
+  pcout << "init07 ...\n";  
   compute_double_nodes_set ();
 
+  pcout << "Initialising FMA ...\n";
   fma.init_fma (dh, double_nodes_set, dirichlet_nodes, *mapping, quadrature_order, singular_quadrature_order);
+  pcout << "Initialization of FMA done ...\n";
 
   // We need a TrilinosWrappers::MPI::Vector to reinit the SparsityPattern for
   // the parallel mass matrices.
@@ -490,15 +502,23 @@ template <int dim>
 void
 BEMProblem<dim>::compute_double_nodes_set ()
 {
+  pcout << "cdns01\n";
   double tol = 1e-10;
+  pcout << "cdns02\n";
   double_nodes_set.clear ();
+  pcout << "cdns03\n";
   double_nodes_set.resize (dh.n_dofs ());
+  pcout << "cdns04\n";
   std::vector<Point<dim> > support_points (dh.n_dofs ());
+  pcout << "cdns05\n";
 
   DoFTools::map_dofs_to_support_points<dim - 1, dim> (*mapping, dh, support_points);
+  pcout << "cdns06\n";
 
   typename DoFHandler<dim - 1, dim>::active_cell_iterator cell = dh.begin_active (), endc = dh.end ();
+  pcout << "cdns07\n";
   std::vector<types::global_dof_index>                    face_dofs (fe->dofs_per_face);
+  pcout << "cdns08\n";
 
   edge_set.clear ();
   edge_set.set_size (dh.n_dofs ());
@@ -513,10 +533,15 @@ BEMProblem<dim>::compute_double_nodes_set ()
           edge_set.add_index (face_dofs[k]);
       }
   }
+  pcout << "cdns09\n";
   edge_set.compress ();
+  pcout << "cdns10\n";
 
+  pcout << "cdns11\n";
   for (types::global_dof_index i = 0; i < dh.n_dofs (); ++i)
     double_nodes_set[i].insert (i);
+
+  pcout << "cdns12\n";
   for (auto i : edge_set) //(types::global_dof_index i=0; i<dh.n_dofs(); ++i)
   {
     for (auto j : edge_set)
@@ -527,6 +552,7 @@ BEMProblem<dim>::compute_double_nodes_set ()
       }
     }
   }
+  pcout << "cdns13\n";
 }
 
 template <int dim>
@@ -550,6 +576,7 @@ BEMProblem<dim>::compute_reordering_vectors ()
     vec_sub_wise_to_original[vec_original_to_sub_wise[i]] = i;
   }
 }
+
 template <int dim>
 void
 BEMProblem<dim>::assemble_system ()
@@ -676,10 +703,10 @@ BEMProblem<dim>::assemble_system ()
         {
           for (unsigned int q = 0; q < n_q_points; ++q)
           {
-            //                      const Tensor<1, dim> R =
-            //                      q_points[q] - support_points[i];
-            //                      LaplaceKernel::kernels(R, D, s);
-            LaplaceKernel::double_body_kernel (support_points[i], q_points[q], D, s);
+                                  const Tensor<1, dim> R =
+                                  q_points[q] - support_points[i];
+                                  LaplaceKernel::kernels(R, D, s);
+            // LaplaceKernel::double_body_kernel (support_points[i], q_points[q], D, s);
             // if(support_points[i][0]==0.25&&support_points[i][1]==0.25)
             //   pcout<<"D "<<D<<" s "<<s<<" , ";
             for (unsigned int j = 0; j < fe->dofs_per_cell; ++j)
@@ -917,12 +944,10 @@ BEMProblem<dim>::assemble_system ()
 
           for (unsigned int q = 0; q < singular_quadrature->size (); ++q)
           {
-            //                      const Tensor<1, dim> R =
-            //                        singular_q_points[q] -
-            //                        support_points[i];
-            //                      LaplaceKernel::kernels(R, D, s);
+            const Tensor<1, dim> R = singular_q_points[q] - support_points[i];
+            LaplaceKernel::kernels(R, D, s);
 
-            LaplaceKernel::double_body_kernel (support_points[i], singular_q_points[q], D, s);
+            //LaplaceKernel::double_body_kernel (support_points[i], singular_q_points[q], D, s);
 
             for (unsigned int j = 0; j < fe->dofs_per_cell; ++j)
             {
@@ -971,7 +996,7 @@ BEMProblem<dim>::assemble_system ()
   // yield the final form of the
   // matrix:
 
-  /*
+  
     pcout<<"Neumann"<<std::endl;
     for (unsigned int i = 0; i < dh.n_dofs(); i++)
         {
@@ -1001,7 +1026,6 @@ BEMProblem<dim>::assemble_system ()
            pcout<<std::endl;
            }
         }
-        //*/
   pcout << "done assembling system matrices" << std::endl;
   // std::cout<<"printing Neumann Matrix"<<std::endl;
   // for(unsigned int i=0; i<dh.n_dofs(); ++i)
@@ -1017,7 +1041,170 @@ BEMProblem<dim>::assemble_system ()
   //     std::cout<<dirichlet_matrix(i,j)<<" ";
   //   std::cout<<std::endl;
   // }
-}
+} // assemble_system()
+
+
+template <int dim>
+void
+BEMProblem<dim>::_assemble_system_double_body ()
+{
+  Teuchos::TimeMonitor LocalTimer (*AssembleTime);
+  pcout << "(Directly) Assembling system double body matrices" << std::endl;
+
+  neumann_matrix   = 0;
+  dirichlet_matrix = 0;
+
+  FEValues<dim - 1, dim> fe_v (*mapping, *fe, *quadrature, update_values | update_normal_vectors | update_quadrature_points | update_JxW_values);
+
+  const unsigned int n_q_points = fe_v.n_quadrature_points;
+
+  std::vector<types::global_dof_index> local_dof_indices (fe->dofs_per_cell);
+
+  Vector<double> local_neumann_matrix_row_i (fe->dofs_per_cell);
+  Vector<double> local_dirichlet_matrix_row_i (fe->dofs_per_cell);
+
+  std::vector<Point<dim> > support_points (dh.n_dofs ());
+  DoFTools::map_dofs_to_support_points<dim - 1, dim> (*mapping, dh, support_points);
+
+  cell_it cell = dh.begin_active (), endc = dh.end ();
+
+  Point<dim> D;
+  double     s;
+
+  for (cell = dh.begin_active (); cell != endc; ++cell)
+  {
+    fe_v.reinit (cell);
+    cell->get_dof_indices (local_dof_indices);
+
+    const std::vector<Point<dim> > &    q_points = fe_v.get_quadrature_points ();
+    const std::vector<Tensor<1, dim> > &normals  = fe_v.get_normal_vectors ();
+
+    for (types::global_dof_index i = 0; i < dh.n_dofs (); ++i) // these must now be the locally owned dofs. the rest should
+                                                               // stay the same
+    {
+      if (this_cpu_set.is_element (i))
+      {
+        //---------------------------------------------------------------------
+        // Initialize rows:
+        //---------------------------------------------------------------------
+        local_neumann_matrix_row_i   = 0;
+        local_dirichlet_matrix_row_i = 0;
+
+        //---------------------------------------------------------------------
+        // Check if singular cell/dof:
+        //---------------------------------------------------------------------
+        bool         is_singular    = false;
+        unsigned int singular_index = numbers::invalid_unsigned_int;
+        for (unsigned int j = 0; j < fe->dofs_per_cell; ++j)
+        {
+          if (double_nodes_set[i].count (local_dof_indices[j]) > 0)
+          {
+            singular_index = j;
+            is_singular    = true;
+            break;
+          }
+        }
+
+        //---------------------------------------------------------------------
+        // Integrate:
+        //---------------------------------------------------------------------
+        if (is_singular == false) // Not singular:
+        {
+          //-------------------------------------------------------------------
+          // 1) Actual cell:
+          //-------------------------------------------------------------------
+          for (unsigned int q = 0; q < n_q_points; ++q)
+          {
+            const Tensor<1, dim> R = q_points[q] - support_points[i];
+            LaplaceKernel::kernels(R, D, s);
+            for (unsigned int j = 0; j < fe->dofs_per_cell; ++j)
+            {
+              local_neumann_matrix_row_i (j) += ((D * normals[q]) * fe_v.shape_value (j, q) * fe_v.JxW (q));
+              local_dirichlet_matrix_row_i (j) += (s * fe_v.shape_value (j, q) * fe_v.JxW (q));
+            }
+          } // for q
+
+          //-------------------------------------------------------------------
+          // 2) Reflected cell:
+          //-------------------------------------------------------------------
+          for (unsigned int q = 0; q < n_q_points; ++q)
+          {
+            auto q_point = q_points[q];
+            q_point[2]   = -q_point[2];
+            const Tensor<1, dim> R = q_point - support_points[i];
+
+            auto q_normal = normals[q];
+            q_normal[2]   = -q_normal[2];
+
+            LaplaceKernel::kernels(R, D, s);
+            for (unsigned int j = 0; j < fe->dofs_per_cell; ++j)
+            {
+              local_neumann_matrix_row_i (j) += ((D * q_normal) * fe_v.shape_value (j, q) * fe_v.JxW (q));
+              local_dirichlet_matrix_row_i (j) += (s * fe_v.shape_value (j, q) * fe_v.JxW (q));
+            } // for j
+          } // for q
+        }
+        else // Singular:
+        {
+          Assert (singular_index != numbers::invalid_unsigned_int, ExcInternalError ());
+
+          const Quadrature<dim - 1> *singular_quadrature = &(get_singular_quadrature (singular_index));
+          Assert (singular_quadrature, ExcInternalError ());
+
+          FEValues<dim - 1, dim> fe_v_singular (*mapping, *fe, *singular_quadrature, update_jacobians | update_values | update_normal_vectors | update_quadrature_points);
+
+          fe_v_singular.reinit (cell);
+
+          const std::vector<Tensor<1, dim> > &singular_normals  = fe_v_singular.get_normal_vectors ();
+          const std::vector<Point<dim> > &    singular_q_points = fe_v_singular.get_quadrature_points ();
+
+          // Actual cell singular quadrature:
+          for (unsigned int q = 0; q < singular_quadrature->size (); ++q)
+          {
+            const Tensor<1, dim> R = singular_q_points[q] - support_points[i];
+            LaplaceKernel::kernels(R, D, s);
+            for (unsigned int j = 0; j < fe->dofs_per_cell; ++j)
+            {
+              local_neumann_matrix_row_i (j) += ((D * singular_normals[q]) * fe_v_singular.shape_value (j, q) * fe_v_singular.JxW (q));
+              local_dirichlet_matrix_row_i (j) += (s * fe_v_singular.shape_value (j, q) * fe_v_singular.JxW (q));
+            }
+          }
+
+          //-------------------------------------------------------------------
+          // 2) Reflected cell:
+          //-------------------------------------------------------------------
+          for (unsigned int q = 0; q < n_q_points; ++q)
+          {
+            auto q_point = q_points[q];
+            q_point[2]   = -q_point[2];
+            const Tensor<1, dim> R = q_point - support_points[i];
+            LaplaceKernel::kernels(R, D, s);
+
+            auto q_normal = normals[q];
+            q_normal[2]   = -q_normal[2];
+
+            for (unsigned int j = 0; j < fe->dofs_per_cell; ++j)
+            {
+              local_neumann_matrix_row_i (j) += ((D *q_normal) * fe_v.shape_value (j, q) * fe_v.JxW (q));
+              local_dirichlet_matrix_row_i (j) += (s * fe_v.shape_value (j, q) * fe_v.JxW (q));
+            } // for j
+          } // for q
+
+        }
+
+
+        // Add row to the global matrix.
+        for (unsigned int j = 0; j < fe->dofs_per_cell; ++j)
+        {
+          neumann_matrix.add (i, local_dof_indices[j], local_neumann_matrix_row_i (j));
+          dirichlet_matrix.add (i, local_dof_indices[j], local_dirichlet_matrix_row_i (j));
+        }
+      }
+    }
+  }
+  pcout << "done assembling system double body matrices" << std::endl;
+} // _assemble_system_double_body()
+
 
 template <int dim>
 void
@@ -1283,7 +1470,10 @@ BEMProblem<dim>::solve (TrilinosWrappers::MPI::Vector &phi, TrilinosWrappers::MP
 {
   if (solution_method == "Direct")
   {
-    assemble_system ();
+    if (_bem_problem_type==BEM_PROBLEM::ONE_BODY)
+      assemble_system ();
+    else if (_bem_problem_type==BEM_PROBLEM::DOUBLE_BODY)
+      _assemble_system_double_body ();
     // neumann_matrix.print(std::cout);
     // dirichlet_matrix.print(std::cout);
   }
@@ -2054,6 +2244,95 @@ BEMProblem<dim>::pressure_force (const TrilinosWrappers::MPI::Vector &pressure, 
 
   return force;
 }
+
+template <int dim>
+double
+BEMProblem<dim>::area_integral ()
+{
+  Teuchos::TimeMonitor LocalTimer (*AssembleTime);
+
+  FEValues<dim - 1, dim> fe_v (*mapping, *fe, *quadrature, update_values | update_normal_vectors | update_quadrature_points | update_JxW_values);
+  const unsigned int     n_q_points = fe_v.n_quadrature_points;
+
+  const types::global_dof_index n_dofs = dh.n_dofs ();
+  std::vector<Point<dim> >      support_points (n_dofs);
+  DoFTools::map_dofs_to_support_points<dim - 1, dim> (*mapping, dh, support_points);
+
+  std::vector<types::global_dof_index> local_dof_indices (fe->dofs_per_cell);
+
+  //---------------------------------------------------------------------------
+  // Loop over all active cells:
+  //---------------------------------------------------------------------------
+  double area = 0.0;
+  for (cell_it cell = dh.begin_active (); cell != dh.end (); ++cell)
+  {
+    if (cell->subdomain_id () == this_mpi_process)
+    {
+        fe_v.reinit (cell);
+        cell->get_dof_indices (local_dof_indices);
+
+        const std::vector<Tensor<1, dim> >& normals = fe_v.get_normal_vectors ();
+
+        for (unsigned int q = 0; q < n_q_points; ++q)
+        {
+
+          // Interpolate to quadrature point:
+          for (unsigned int j = 0; j < fe->dofs_per_cell; ++j)
+            area += fe_v.shape_value (j, q) * fe_v.JxW (q);
+        }
+    }   // if this cpu
+  }     // for cell in active cells
+
+  return area;
+}
+
+template <int dim>
+Tensor<1, dim>
+BEMProblem<dim>::volume_integral ()
+{
+  Teuchos::TimeMonitor LocalTimer (*AssembleTime);
+
+  FEValues<dim - 1, dim> fe_v (*mapping, *fe, *quadrature, update_values | update_normal_vectors | update_quadrature_points | update_JxW_values);
+  const unsigned int     n_q_points = fe_v.n_quadrature_points;
+
+  const types::global_dof_index n_dofs = dh.n_dofs ();
+  std::vector<Point<dim> >      support_points (n_dofs);
+  DoFTools::map_dofs_to_support_points<dim - 1, dim> (*mapping, dh, support_points);
+
+  std::vector<types::global_dof_index> local_dof_indices (fe->dofs_per_cell);
+
+  //---------------------------------------------------------------------------
+  // Loop over all active cells:
+  //---------------------------------------------------------------------------
+  Tensor<1, dim> volume;
+  for (cell_it cell = dh.begin_active (); cell != dh.end (); ++cell)
+  {
+    if (cell->subdomain_id () == this_mpi_process)
+    {
+        fe_v.reinit (cell);
+        cell->get_dof_indices (local_dof_indices);
+
+        const std::vector<Point<dim> >&    q_points = fe_v.get_quadrature_points ();
+        const std::vector<Tensor<1, dim> > &normals = fe_v.get_normal_vectors ();
+
+        for (unsigned int q = 0; q < n_q_points; ++q)
+        {
+
+          // Interpolate to quadrature point:
+          for (unsigned int j = 0; j < fe->dofs_per_cell; ++j)
+          {
+            volume[0] += q_points[q][0]* normals[q][0] * fe_v.JxW (q) * fe_v.shape_value (j, q);
+            volume[1] += q_points[q][1]* normals[q][1] * fe_v.JxW (q) * fe_v.shape_value (j, q);
+            volume[2] += q_points[q][2]* normals[q][2] * fe_v.JxW (q) * fe_v.shape_value (j, q);
+          }
+        }
+    }   // if this cpu
+  }     // for cell in active cells
+
+  return volume;
+}
+
+
 
 template class BEMProblem<2>;
 template class BEMProblem<3>;

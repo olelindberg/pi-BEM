@@ -88,9 +88,12 @@ Driver<dim>::run (std::string input_path, std::string output_path)
     bem_problem.dynamic_pressure (boundary_conditions.get_wind (), boundary_conditions.get_pressure ());
 
 
-    auto force = bem_problem.pressure_force (boundary_conditions.get_pressure (), force_material_ids);
+    auto area   = bem_problem.area_integral();
+    auto volume = bem_problem.volume_integral();
+    auto force  = bem_problem.pressure_force (boundary_conditions.get_pressure (), force_material_ids);
 
-    
+      std::cout << "area  : " << area << "\n";
+      std::cout << "volume: " << volume[0] << ", " << volume[1] << ", " << volume[2] << "\n";
 //    std::to_string(force_material_id);
     std::fstream file;
     std::string force_filename = boost::filesystem::path (output_path).append ("force.csv").string ();

@@ -3,6 +3,7 @@
 # D2K_GIT_SHORTREV=     9762009
 # DEAL_II_GIT_BRANCH=   master
 # DEAL_II_GIT_SHORTREV= d984c95
+
 subsection BEMFMA<3>
   subsection FMA Params
     set FMA Truncation Order = 6
@@ -12,6 +13,7 @@ subsection BEMFMA<3>
     set Number of Octree Levels                                  = 10
   end
 end
+
 subsection BEMProblem<3>
   set Continuos gradient across edges = true
   set Mapping Q Degree                = 3
@@ -31,6 +33,7 @@ subsection BEMProblem<3>
     set Tolerance     = 1.e-7
   end
 end
+
 subsection BoundaryConditions<3>
   set Output file name = result
   subsection Potential 2d
@@ -54,25 +57,32 @@ subsection BoundaryConditions<3>
     set Variable names      = x,y,z,t
   end
 end
+
 subsection ComputationalDomain<3>
   set Input grid format = inp
-  set Input grid name   = ./coarse_sphere
-  set Number of cycles  = 3
+  set Input grid name   = mesh
+  set Number of cycles  = 1
+  set Cells per circle = 12
   set Use iges surfaces and curves = true
   set Surface curvature adaptive refinement = false
   set Maximum number of curvature adaptive refinement cycles = 2
+  set Cad tolerance to projectors tolerance ratio = 1
+  set Max aspect ratio = 2
   subsection Boundary Conditions ID Numbers
     set Dirichlet boundary ids = 
-    set Neumann boundary ids   = 1
+    set Neumann boundary ids   = 1,2,3,4,5
   end
 end
+
 subsection Driver<3>
   set Set Global Refinement = true
 end
+
 subsection Scalar FE
   set Blocking of the finite element = u
   set Finite element space           = FE_Q(3)
 end
+
 subsection Scalar data out
   set Files to save in run directory = 
   set Incremental run prefix         = 
@@ -82,10 +92,12 @@ subsection Scalar data out
   set Solution names                 = u
   set Subdivisions                   = 1
 end
+
 subsection Vector FE
   set Blocking of the finite element = u,u,u
   set Finite element space           = FESystem[FE_Q(3)^3]
 end
+
 subsection Vector data out
   set Files to save in run directory = 
   set Incremental run prefix         = 
@@ -95,6 +107,7 @@ subsection Vector data out
   set Solution names                 = u
   set Subdivisions                   = 1
 end
+
 subsection deal2lkit::ParsedGridRefinement
   set Bottom fraction                        = 0.100000
   set Maximum number of cells (if available) = 0
