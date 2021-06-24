@@ -243,8 +243,10 @@ my_project_point_and_pull_back (const TopoDS_Shape &in_shape, const Point<dim> &
 
 std::tuple<Point<3>, Tensor<1, 3>, double, double>
 my_closest_point_and_differential_forms (const TopoDS_Shape &in_shape, const Point<3> &origin, const double tolerance)
-
 {
+
+  std::cout << "hello" << std::endl;
+  std::cout << origin << std::endl;
   std::tuple<Point<3>, TopoDS_Shape, double, double> shape_and_params = my_project_point_and_pull_back (in_shape, origin, tolerance);
 
   TopoDS_Shape &out_shape = std::get<1> (shape_and_params);
@@ -262,6 +264,10 @@ my_closest_point_and_differential_forms (const TopoDS_Shape &in_shape, const Poi
   TopExp_Explorer exp;
   exp.Init (out_shape, TopAbs_FACE);
   TopoDS_Face face = TopoDS::Face (exp.Current ());
+    std::cout << "hello2" << std::endl;
+    std::cout << u << std::endl;
+    std::cout << v << std::endl;
+    std::cout << tolerance << std::endl;
   return push_forward_and_differential_forms (face, u, v, tolerance);
 }
 

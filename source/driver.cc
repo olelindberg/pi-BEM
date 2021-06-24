@@ -46,7 +46,7 @@ void
 Driver<dim>::run (std::string input_path, std::string output_path)
 {
 
-    std::vector<int> force_material_ids = {1,2,3,4};
+    std::vector<int> force_material_ids = {1,2};
 
   {
     Teuchos::TimeMonitor LocalTimer (*TotalTime);
@@ -91,6 +91,8 @@ Driver<dim>::run (std::string input_path, std::string output_path)
     auto area   = bem_problem.area_integral();
     auto volume = bem_problem.volume_integral();
     auto force  = bem_problem.pressure_force (boundary_conditions.get_pressure (), force_material_ids);
+    std::vector<Point<dim> > elevation;
+    bem_problem.free_surface_elevation (boundary_conditions.get_pressure (), elevation);
 
       std::cout << "area  : " << area << "\n";
       std::cout << "volume: " << volume[0] << ", " << volume[1] << ", " << volume[2] << "\n";
@@ -104,6 +106,18 @@ Driver<dim>::run (std::string input_path, std::string output_path)
       file << force[0] << ", " << force[1] << ", " << force[2];
       file.close ();
     }
+{
+    std::fstream file;
+    std::string filename = boost::filesystem::path (output_path).append ("elevation.csv").string ();
+    file.open (filename, std::fstream::out);
+    if (file.is_open ())
+    {
+      file << "# x [m], y [m], z [m]\n";
+      for (auto & elev : elevation)
+        file << elev[0] << ", " << elev[1] << ", " << elev[2] << "\n";
+      file.close ();
+    }
+}
 
     boundary_conditions.compute_errors (output_path);
 

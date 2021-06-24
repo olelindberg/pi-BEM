@@ -16,9 +16,13 @@
 #include "./../tests.h"
 #include <deal.II/grid/grid_tools.h>
 
+enum class REFINE {GLOBAL,ASPECT_RATIO};
+
 int
 main(int argc, char **argv)
 {
+  auto refine = REFINE::ASPECT_RATIO;
+
   Utilities::MPI::MPI_InitFinalize mpi_initialization(argc, argv, 1);
   // initlog();
   MPI_Comm               mpi_communicator(MPI_COMM_WORLD);
@@ -27,7 +31,13 @@ main(int argc, char **argv)
   computational_domain.read_domain();
   computational_domain.read_cad_files();
   computational_domain.assign_manifold_projectors(1.0e-6);
-  computational_domain.getTria().refine_global(5);
+
+
+  if (refine==REFINE::GLOBAL)
+    computational_domain.getTria().refine_global(3);
+  else if (refine==REFINE::ASPECT_RATIO)
+    computational_domain.aspect_ratio_refinement(4);
+
 
   std::string   filename0 = ("meshResult.inp");
   std::ofstream logfile0 (filename0.c_str ());

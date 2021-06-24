@@ -6,6 +6,7 @@
 
 #include <iomanip>
 #include <iostream>
+#include <limits>
 
 #include "../include/laplace_kernel.h"
 #include "Teuchos_TimeMonitor.hpp"
@@ -2331,6 +2332,55 @@ BEMProblem<dim>::volume_integral ()
 
   return volume;
 }
+
+template <int dim>
+void
+BEMProblem<dim>::free_surface_elevation(const TrilinosWrappers::MPI::Vector &pressure,std::vector<Point<dim> >& elevation)
+{
+  Teuchos::TimeMonitor LocalTimer (*AssembleTime);
+
+  pcout << "Calculating pressure force and moment ..." << std::endl;
+  const types::global_dof_index n_dofs = dh.n_dofs ();
+  std::vector<Point<dim> >      support_points (n_dofs);
+  DoFTools::map_dofs_to_support_points<dim - 1, dim> (*mapping, dh, support_points);
+
+  std::vector<types::global_dof_index> local_dof_indices (fe->dofs_per_cell);
+
+  //---------------------------------------------------------------------------
+  // Loop over all active cells:
+  //---------------------------------------------------------------------------
+  for (cell_it cell = dh.begin_active (); cell != dh.end (); ++cell)
+  {
+
+    if (cell->subdomain_id () == this_mpi_process)
+    {
+      // Get indices for this cell:
+      cell->get_dof_indices (local_dof_indices);
+
+      for (unsigned int j = 0; j < fe->dofs_per_cell; ++j)
+      {
+        auto pos = support_points[local_dof_indices[j]];
+        
+        if (std::fabs(pos[2])<std::numeric_limits<double>::epsilon())
+        {
+          auto p = pressure (local_dof_indices[j]);
+
+          double rho = 1000.0; // FIXME
+          double g   = 9.80665; // FIXME
+          double h = -p/(rho*g);
+          Point<dim> elev;
+          elev[0] = pos[0];
+          elev[1] = pos[1];
+          elev[2] = h;
+          elevation.push_back(elev);
+        }
+      } // for j in cell dofs
+    }   // if this cpu
+  }     // for cell in active cells
+
+
+  }
+
 
 
 

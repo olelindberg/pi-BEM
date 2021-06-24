@@ -152,6 +152,9 @@ bool
   refine_and_resize(const unsigned int refinement_level, std::string input_path = "");
 
   void
+  aspect_ratio_refinement(const unsigned int refinement_level);
+
+  void
   conditional_refine_and_resize(const unsigned int refinement_level);
 
   void

@@ -661,68 +661,8 @@ ComputationalDomain<dim>::refine_and_resize (const unsigned int refinement_level
 
   }
 
-  bool         use_aspect_ratio_refinement = true;
-  unsigned int refinedCellCounter          = 1;
-  unsigned int cycles_counter              = 0;
-  // we repeat the aspect ratio refinement cycle until no cell has been
-  // flagged for refinement, or until we reach a maximum of 10 cycles
-  pcout << "Refining based on element aspect ratio ...\n";
-  while (use_aspect_ratio_refinement && refinedCellCounter && (cycles_counter < 10))
-  {
-    // the refined cells counter is zeroed at the start of each cycle
-    refinedCellCounter = 0;
-    // we loop on the all the triangulation active cells
-    Triangulation<2, 3>::active_cell_iterator cell = tria.begin_active ();
-    Triangulation<2, 3>::active_cell_iterator endc = tria.end ();
-    for (; cell != endc; ++cell)
-    {
-      // the following lines determine if the cell is more elongated
-      // in its 0 or 1 direction
-      unsigned int max_extent_dim = 0;
-      unsigned int min_extent_dim = 1;
-      if (cell->extent_in_direction (0) < cell->extent_in_direction (1))
-      {
-        max_extent_dim = 1;
-        min_extent_dim = 0;
-      }
-      // we compute the extent of the cell in its maximum and minimum
-      // elongation direction respectively
-      double min_extent = cell->extent_in_direction (min_extent_dim);
-      double max_extent = cell->extent_in_direction (max_extent_dim);
-      // if the aspect ratio exceeds the prescribed maximum value, the cell
-      // is refined
-      if (max_extent > max_element_aspect_ratio * min_extent || max_extent > max_element_length)
-      {
-        cell->set_refine_flag (RefinementCase<2>::cut_axis (max_extent_dim));
-        refinedCellCounter++;
-      }
-    }
-    // the number of cells refined in this cycle is reported before
-    // proceeding with the next one
-    pcout << "Aspect Ratio Reduction Cycle: " << cycles_counter << " (" << refinedCellCounter << ")" << std::endl;
-    tria.execute_coarsening_and_refinement ();
+  this->aspect_ratio_refinement(refinement_level);
 
-    // the following commented lines are here for debug puroposes: if
-    // something fails during the aspect ratio reduction cycles, they
-    // should be uncommented, so that a mesh file per cycle can be
-    // produced to document the evolution of the mesh through the
-    // refinements. If the make_edges_conformal() function
-    // is suspect in creating some error, the lines can also be
-    // moved after the make_edges_conformal() function is called
-
-    // std::string filename = ( "meshIntermediateResult_" +
-    //         Utilities::int_to_string(int(round(cycles_counter))) +
-    //         ".inp" );
-    // std::ofstream logfile(filename.c_str());
-    // GridOut grid_out;
-    // grid_out.write_ucd(tria, logfile);
-    std::cout << "ComputationalDomain::refine_and_resize, calling "
-                 "make_edges_conformal \n"
-              << __FILE__ << __LINE__ << std::endl;
-
-    make_edges_conformal (true);
-    cycles_counter++;
-  }
   pcout << "... done refining based on element aspect ratio\n";
   pcout << "We have a tria of " << tria.n_active_cells () << " cells." << std::endl;
   {
@@ -743,8 +683,8 @@ ComputationalDomain<dim>::refine_and_resize (const unsigned int refinement_level
   {
     pcout << "Refining based on surface curvature ...\n";
     const double tolerance = cad_to_projectors_tolerance_ratio * max_tol;
-    refinedCellCounter     = 1;
-    cycles_counter         = 0;
+    unsigned int refinedCellCounter     = 1;
+    unsigned int cycles_counter         = 0;
     // the refinement procedure is recursively repeated until no more cells
     // are flagged for refinement, or until the user specified maximum number
     // of curvature refinement cycles is reached
@@ -904,7 +844,7 @@ ComputationalDomain<dim>::refine_and_resize (const unsigned int refinement_level
       for (; cell != endc; ++cell)
       {
         std::cout << cell->manifold_id() << " " << cell->material_id() << std::endl;
-        if (cell->manifold_id()==5)
+        if (cell->manifold_id()==3)
         {
           std::cout << " rrrrrrrrrrrrrrrrrrrreeeeeeeeeeeeeeeeefffffffffffffffffiiiiiiiiiiiiinnnnnnnnnnnnnnnneeeeeeeeeeee" << cell->manifold_id() << " " << cell->material_id() << std::endl;
           cell->set_refine_flag ();
@@ -958,6 +898,75 @@ ComputationalDomain<dim>::refine_and_resize (const unsigned int refinement_level
   grid_out0.write_ucd (tria, logfile0);
 
   pcout << "... done refining and resizing\n";
+}
+
+template <int dim>
+void
+ComputationalDomain<dim>::aspect_ratio_refinement(const unsigned int itermax)
+{
+  bool         use_aspect_ratio_refinement = true;
+  unsigned int refinedCellCounter          = 1;
+  unsigned int cycles_counter              = 0;
+  // we repeat the aspect ratio refinement cycle until no cell has been
+  // flagged for refinement, or until we reach a maximum of 10 cycles
+  pcout << "Refining based on element aspect ratio ...\n";
+  while (use_aspect_ratio_refinement && refinedCellCounter && (cycles_counter < itermax))
+  {
+    // the refined cells counter is zeroed at the start of each cycle
+    refinedCellCounter = 0;
+    // we loop on the all the triangulation active cells
+    Triangulation<2, 3>::active_cell_iterator cell = tria.begin_active ();
+    Triangulation<2, 3>::active_cell_iterator endc = tria.end ();
+    for (; cell != endc; ++cell)
+    {
+      // the following lines determine if the cell is more elongated
+      // in its 0 or 1 direction
+      unsigned int max_extent_dim = 0;
+      unsigned int min_extent_dim = 1;
+      if (cell->extent_in_direction (0) < cell->extent_in_direction (1))
+      {
+        max_extent_dim = 1;
+        min_extent_dim = 0;
+      }
+      // we compute the extent of the cell in its maximum and minimum
+      // elongation direction respectively
+      double min_extent = cell->extent_in_direction (min_extent_dim);
+      double max_extent = cell->extent_in_direction (max_extent_dim);
+      // if the aspect ratio exceeds the prescribed maximum value, the cell
+      // is refined
+      if (max_extent > max_element_aspect_ratio * min_extent || max_extent > max_element_length)
+      {
+        cell->set_refine_flag (RefinementCase<2>::cut_axis (max_extent_dim));
+        refinedCellCounter++;
+      }
+    }
+    // the number of cells refined in this cycle is reported before
+    // proceeding with the next one
+    pcout << "Aspect Ratio Reduction Cycle: " << cycles_counter << " (" << refinedCellCounter << ")" << std::endl;
+    tria.execute_coarsening_and_refinement ();
+
+    // the following commented lines are here for debug puroposes: if
+    // something fails during the aspect ratio reduction cycles, they
+    // should be uncommented, so that a mesh file per cycle can be
+    // produced to document the evolution of the mesh through the
+    // refinements. If the make_edges_conformal() function
+    // is suspect in creating some error, the lines can also be
+    // moved after the make_edges_conformal() function is called
+
+    // std::string filename = ( "meshIntermediateResult_" +
+    //         Utilities::int_to_string(int(round(cycles_counter))) +
+    //         ".inp" );
+    // std::ofstream logfile(filename.c_str());
+    // GridOut grid_out;
+    // grid_out.write_ucd(tria, logfile);
+    std::cout << "ComputationalDomain::refine_and_resize, calling "
+                 "make_edges_conformal \n"
+              << __FILE__ << __LINE__ << std::endl;
+
+    // make_edges_conformal (true);
+    cycles_counter++;
+  }
+
 }
 
 template <int dim>

@@ -122,6 +122,7 @@ class BEMProblem : public deal2lkit::ParameterAcceptor
 {
 public:
   typedef typename DoFHandler<dim - 1, dim>::active_cell_iterator cell_it;
+  typedef typename DoFHandler<dim - 1, dim>::active_line_iterator line_it;
 
   BEMProblem(ComputationalDomain<dim> &comp_dom,
              const MPI_Comm            comm = MPI_COMM_WORLD);
@@ -191,7 +192,7 @@ void dynamic_pressure(const Functions::ParsedFunction<dim>& wind, TrilinosWrappe
 Tensor<1, dim> pressure_force(const TrilinosWrappers::MPI::Vector& pressure, const std::vector<int>& material_ids);
 double area_integral();
 Tensor<1, dim> volume_integral();
-
+void free_surface_elevation(const TrilinosWrappers::MPI::Vector &pressure,std::vector<Point<dim> >& elevation);
 
   /// The next three methods are
   /// needed by the GMRES solver:

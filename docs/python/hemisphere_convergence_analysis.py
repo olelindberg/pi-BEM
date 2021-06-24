@@ -42,12 +42,14 @@ print(fit_max)
 print(fit_rms)
 plt.plot(np.log10(hgrid),np.log10(err_rms),'r-o',label='RMS')
 plt.plot(np.log10(hgrid),np.log10(err_max),'b-o',label='INF')
+plt.plot(np.log10(hgrid),np.log10(hgrid)-0.5,'k--',label='slope = 1')
+plt.plot(np.log10(hgrid),2*np.log10(hgrid)-0.75,'k-.',label='slope = 2')
 plt.grid(True)
 plt.legend()
 plt.xlabel(r'$log_{10}(h)$')
 plt.ylabel(r'$log_{10}(err)$')
+plt.savefig('hemisphere_convergence_analysis.pdf')
 plt.show()
-
   # Plot stuff:
 #  plotter = pv.Plotter()    # instantiate the plotter
 #  plotter.add_mesh(mesh,scalars=err,show_edges=True,colormap="jet")    # add a mesh to the scene
