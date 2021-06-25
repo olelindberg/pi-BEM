@@ -47,8 +47,7 @@ main (int argc, char *argv[])
       std::cout << "Input argument " << std::to_string (i) << ": " << argv[i] << "\n";
 
     Options options (argc, argv);
-
-    std::cout << "input path " << options.get_input_path () << "\n";
+    std::cout << "Input path: " << options.get_input_path () << "\n";
 
     unsigned int threads;
     if (argc == 1)

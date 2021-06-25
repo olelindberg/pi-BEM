@@ -245,8 +245,6 @@ std::tuple<Point<3>, Tensor<1, 3>, double, double>
 my_closest_point_and_differential_forms (const TopoDS_Shape &in_shape, const Point<3> &origin, const double tolerance)
 {
 
-  std::cout << "hello" << std::endl;
-  std::cout << origin << std::endl;
   std::tuple<Point<3>, TopoDS_Shape, double, double> shape_and_params = my_project_point_and_pull_back (in_shape, origin, tolerance);
 
   TopoDS_Shape &out_shape = std::get<1> (shape_and_params);
@@ -264,10 +262,6 @@ my_closest_point_and_differential_forms (const TopoDS_Shape &in_shape, const Poi
   TopExp_Explorer exp;
   exp.Init (out_shape, TopAbs_FACE);
   TopoDS_Face face = TopoDS::Face (exp.Current ());
-    std::cout << "hello2" << std::endl;
-    std::cout << u << std::endl;
-    std::cout << v << std::endl;
-    std::cout << tolerance << std::endl;
   return push_forward_and_differential_forms (face, u, v, tolerance);
 }
 
@@ -367,9 +361,9 @@ my_line_intersection (const TopoDS_Shape &in_shape, const Point<dim> &origin, co
 
 template std::tuple<Point<2>, TopoDS_Shape, double, double> my_project_point_and_pull_back<2> (const TopoDS_Shape &in_shape, const Point<2> &origin, const double tolerance);
 template std::tuple<Point<3>, TopoDS_Shape, double, double> my_project_point_and_pull_back<3> (const TopoDS_Shape &in_shape, const Point<3> &origin, const double tolerance);
-template Point<2>                                           my_line_intersection<2> (const TopoDS_Shape &in_shape, const Point<2> &origin, const Tensor<1, 2> &direction, const double tolerance);
-;
+
+template Point<2> my_line_intersection<2> (const TopoDS_Shape &in_shape, const Point<2> &origin, const Tensor<1, 2> &direction, const double tolerance);
 template Point<3> my_line_intersection<3> (const TopoDS_Shape &in_shape, const Point<3> &origin, const Tensor<1, 3> &direction, const double tolerance);
-;
+
 
 DEAL_II_NAMESPACE_CLOSE

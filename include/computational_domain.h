@@ -152,7 +152,7 @@ bool
   refine_and_resize(const unsigned int refinement_level, std::string input_path = "");
 
   void
-  aspect_ratio_refinement(const unsigned int refinement_level);
+  aspect_ratio_refinement(const unsigned int itermax = 100);
 
   void
   conditional_refine_and_resize(const unsigned int refinement_level);
@@ -320,6 +320,11 @@ bool
   std::vector<
     std::shared_ptr<OpenCASCADE::ArclengthProjectionLineManifold<2, 3>>>
     line_projectors;
+
+private:
+
+  bool _withDoubleNodes = false;
+
 };
 
 #endif

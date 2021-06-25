@@ -661,7 +661,7 @@ ComputationalDomain<dim>::refine_and_resize (const unsigned int refinement_level
 
   }
 
-  this->aspect_ratio_refinement(refinement_level);
+  this->aspect_ratio_refinement();
 
   pcout << "... done refining based on element aspect ratio\n";
   pcout << "We have a tria of " << tria.n_active_cells () << " cells." << std::endl;
@@ -813,7 +813,7 @@ ComputationalDomain<dim>::refine_and_resize (const unsigned int refinement_level
       // called to check no edge presents non comformities
       pcout << "Curvature Based Local Refinement Cycle: " << cycles_counter << " (" << refinedCellCounter << ")" << std::endl;
       tria.execute_coarsening_and_refinement ();
-      make_edges_conformal (true);
+      make_edges_conformal (_withDoubleNodes);
       cycles_counter++;
 
       // std::string filename = ( "DTMB_II_meshResult_max_curv" +
@@ -837,7 +837,7 @@ ComputationalDomain<dim>::refine_and_resize (const unsigned int refinement_level
   // 1) Refine locally:
   //---------------------------------------------------------------------------
   {
-    for (int refineId = 0;refineId<2;++refineId)
+    for (int refineId = 0;refineId<4;++refineId)
     {
       Triangulation<2, 3>::active_cell_iterator cell = tria.begin_active ();
       Triangulation<2, 3>::active_cell_iterator endc = tria.end ();
@@ -904,13 +904,12 @@ template <int dim>
 void
 ComputationalDomain<dim>::aspect_ratio_refinement(const unsigned int itermax)
 {
-  bool         use_aspect_ratio_refinement = true;
   unsigned int refinedCellCounter          = 1;
   unsigned int cycles_counter              = 0;
   // we repeat the aspect ratio refinement cycle until no cell has been
   // flagged for refinement, or until we reach a maximum of 10 cycles
   pcout << "Refining based on element aspect ratio ...\n";
-  while (use_aspect_ratio_refinement && refinedCellCounter && (cycles_counter < itermax))
+  while (refinedCellCounter>0 && (cycles_counter < itermax))
   {
     // the refined cells counter is zeroed at the start of each cycle
     refinedCellCounter = 0;
@@ -959,11 +958,8 @@ ComputationalDomain<dim>::aspect_ratio_refinement(const unsigned int itermax)
     // std::ofstream logfile(filename.c_str());
     // GridOut grid_out;
     // grid_out.write_ucd(tria, logfile);
-    std::cout << "ComputationalDomain::refine_and_resize, calling "
-                 "make_edges_conformal \n"
-              << __FILE__ << __LINE__ << std::endl;
 
-    // make_edges_conformal (true);
+    make_edges_conformal (_withDoubleNodes);
     cycles_counter++;
   }
 
@@ -977,7 +973,7 @@ ComputationalDomain<dim>::conditional_refine_and_resize (const unsigned int refi
 
   const Point<dim> center (0, 0, 0);
   compute_double_vertex_cache ();
-  make_edges_conformal (true);
+  make_edges_conformal (_withDoubleNodes);
 
   for (unsigned int step = 0; step < refinement_level; ++step)
   {
@@ -998,7 +994,7 @@ ComputationalDomain<dim>::conditional_refine_and_resize (const unsigned int refi
     tria.prepare_coarsening_and_refinement ();
     tria.execute_coarsening_and_refinement ();
     // compute_double_vertex_cache();
-    make_edges_conformal (true);
+    make_edges_conformal (_withDoubleNodes);
   }
   update_triangulation ();
 }
@@ -1055,36 +1051,32 @@ ComputationalDomain<dim>::make_edges_conformal (const bool with_double_nodes, co
 {
   if (with_double_nodes == false)
   {
-    // std::cout << "ComputationalDomain<dim>::make_edges_conformal WITHOUT double nodes ...\n";
+     std::cout << "ComputationalDomain<dim>::make_edges_conformal WITHOUT double nodes ...\n";
 
-    // auto cell = tria.begin_active ();
-    // auto endc = tria.end ();
-
-    // for (cell = tria.begin_active (); cell != endc; ++cell)
-    // {
-    //   for (unsigned int f = 0; f < GeometryInfo<2>::faces_per_cell; ++f)
-    //     if (cell->face (f)->at_boundary ()) // material_id()!=numbers::invalid_material_id)//dovrei
-    //     // essere su un buondary
-    //     {
-    //       // TriaIterator<CellAccessor<dim-1,dim> > cell_neigh =
-    //       // cell->neighbor(f);
-    //       if (cell->neighbor_is_coarser (f))
-    //       {
-    //         TriaIterator<CellAccessor<dim - 1, dim> > cell_neigh = cell->neighbor (f);
-    //         cell_neigh->set_refine_flag (RefinementCase<dim - 1>::isotropic_refinement);
-    //         // std::cout<<"mammina..."<<std::endl;
-    //       }
-    //     }
-    // }
-    // tria.prepare_coarsening_and_refinement ();
-    // tria.execute_coarsening_and_refinement ();
+     auto cell = tria.begin_active ();
+     auto endc = tria.end ();
+    for (cell = tria.begin_active (); cell != endc; ++cell)
+    {
+       for (unsigned int f = 0; f < GeometryInfo<2>::faces_per_cell; ++f)
+       {
+         if (cell->face (f)->at_boundary ())
+         {
+           if (cell->neighbor_index(f)>-1 && cell->neighbor_is_coarser (f))
+           {
+             TriaIterator<CellAccessor<dim - 1, dim> > cell_neigh = cell->neighbor (f);
+             cell_neigh->set_refine_flag (RefinementCase<dim - 1>::isotropic_refinement);
+           }
+         }
+       }
+     }
+     tria.prepare_coarsening_and_refinement ();
+     tria.execute_coarsening_and_refinement ();
   }
   else
   {
     std::cout << "ComputationalDomain<dim>::make_edges_conformal WITH double nodes ...\n";
     pcout << "Restoring mesh conformity on edges..." << std::endl;
     pcout << "cells before : " << tria.n_active_cells () << std::endl;
-    // pcout<<"dofs before: "<<dhh.n_dofs()<<std::endl;
     bool to_restore = true;
 
     while (to_restore)
@@ -1094,9 +1086,8 @@ ComputationalDomain<dim>::make_edges_conformal (const bool with_double_nodes, co
       auto                    all_vertices = tria.get_vertices ();
 
       double tol = 1e-7;
-
       to_restore = false;
-      pcout << to_restore << std::endl;
+
       for (types::global_dof_index i = 0; i < n_vertex; ++i)
       {
         if (vertex_on_boundary[i] == true && double_vertex_vector[i].size () == 1)
@@ -1104,53 +1095,50 @@ ComputationalDomain<dim>::make_edges_conformal (const bool with_double_nodes, co
           std::vector<Point<dim> > nodes (GeometryInfo<dim - 1>::vertices_per_face);
           for (types::global_dof_index kk = 0; kk < vert_to_elems[i].size (); ++kk) // ogni faccia ha due estremi
           {
-            auto cell = vert_to_elems[i][kk]; // mi riconduco alla cella
-                                              // con il nodo non conforme
+            auto cell = vert_to_elems[i][kk];
             for (unsigned int f = 0; f < GeometryInfo<dim - 1>::faces_per_cell; ++f)
             {
-              if (cell->face (f)->at_boundary ()) // ritrovo la faccia con
-                                                  // l'edge
-              // non doppio
+              if (cell->neighbor_index(f)>-1 && cell->face (f)->at_boundary ())
               {
-                // std::cout<<cell->face(f)->vertex(1)<<"
-                // "<<cell->face(f)->vertex(0)<<std::endl;
                 if (all_vertices[i].distance (cell->face (f)->vertex (0)) < tol)
                   nodes[kk] = cell->face (f)->vertex (1);
                 else if (all_vertices[i].distance (cell->face (f)->vertex (1)) < tol)
                   nodes[kk] = cell->face (f)->vertex (0);
               }
             }
-            // std::cout<<std::endl;
           }
-          // std::cout<<nodes[0]<<"    "<<ref_points[i]<<"
-          // "<<nodes[1]<<std::endl;
+
           // we can now compute the center of the parent cell face
           Point<3> parent_face_center = 0.5 * (nodes[0] + nodes[1]);
-          for (auto jt = edge_cells.begin (); jt != edge_cells.end (); ++jt)
+          for (auto edgecell = edge_cells.begin (); edgecell != edge_cells.end (); ++edgecell)
+          {
             for (unsigned int d = 0; d < GeometryInfo<2>::faces_per_cell; ++d)
-              if ((*jt)->face (d)->at_boundary ())
+            {
+              if ((*edgecell)->face (d)->at_boundary ())
               {
-                // cout<<parent_face_center.distance((*jt)->face(d)->center())<<"
-                // "<<tol<<endl;
-                if (parent_face_center.distance (((*jt)->face (d)->vertex (0) + (*jt)->face (d)->vertex (1)) / 2) < tol)
+                if (parent_face_center.distance (((*edgecell)->face (d)->vertex (0) + (*edgecell)->face (d)->vertex (1)) / 2) < tol)
                 {
                   if (isotropic_ref_on_opposite_side)
                   {
-                    (*jt)->set_refine_flag ();
+                    (*edgecell)->set_refine_flag ();
                     to_restore = true;
                   }
-                  // otherwise, use anisotropic refinement to make
-                  // edge mesh conformal
                   else
                   {
+                    // otherwise, use anisotropic refinement to make
+                    // edge mesh conformal
+
                     if ((d == 0) || (d == 1))
-                      (*jt)->set_refine_flag (RefinementCase<2>::cut_axis (1));
+                      (*edgecell)->set_refine_flag (RefinementCase<2>::cut_axis (1));
                     else
-                      (*jt)->set_refine_flag (RefinementCase<2>::cut_axis (0));
+                      (*edgecell)->set_refine_flag (RefinementCase<2>::cut_axis (0));
                     to_restore = true;
                   }
                 }
               }
+            }
+          }
+
         }
       }
 
@@ -1158,12 +1146,10 @@ ComputationalDomain<dim>::make_edges_conformal (const bool with_double_nodes, co
       {
         tria.prepare_coarsening_and_refinement ();
         tria.execute_coarsening_and_refinement ();
-        pcout << "found non conformity, new cell number : " << tria.n_active_cells () << std::endl;
       }
-      // pcout<<"pippo"<<std::endl;
     }
     pcout << "cells after : " << tria.n_active_cells () << std::endl;
-    pcout << "...Done restoring mesh conformity" << std::endl;
+    pcout << "... done restoring mesh conformity" << std::endl;
   }
 } // make_edges_conformal
 
