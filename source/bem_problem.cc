@@ -259,20 +259,13 @@ BEMProblem<dim>::reinit ()
   }
   pcout << "re-initialized sparsity patterns and matrices" << std::endl;
 
-  pcout << "init01 ...\n";  
   preconditioner_band = 100;
-  pcout << "init02 ...\n";  
   preconditioner_sparsity_pattern.reinit (this_cpu_set, mpi_communicator, (types::global_dof_index)preconditioner_band);
-  pcout << "init03 ...\n";  
   is_preconditioner_initialized = false;
-  pcout << "init04 ...\n";  
 
   dirichlet_nodes.reinit (this_cpu_set, mpi_communicator);
-  pcout << "init05 ...\n";  
   neumann_nodes.reinit (this_cpu_set, mpi_communicator);
-  pcout << "init06 ...\n";  
   compute_dirichlet_and_neumann_dofs_vectors ();
-  pcout << "init07 ...\n";  
   compute_double_nodes_set ();
 
   pcout << "Initialising FMA ...\n";
@@ -1047,10 +1040,10 @@ BEMProblem<dim>::assemble_system ()
 
 template <int dim>
 void
-BEMProblem<dim>::_assemble_system_double_body ()
+BEMProblem<dim>::_assemble_system_double_body (double z0)
 {
   Teuchos::TimeMonitor LocalTimer (*AssembleTime);
-  pcout << "(Directly) Assembling system double body matrices" << std::endl;
+  pcout << "(Directly) Assembling system double body matrices " << z0  << std::endl;
 
   neumann_matrix   = 0;
   dirichlet_matrix = 0;
@@ -1131,7 +1124,7 @@ BEMProblem<dim>::_assemble_system_double_body ()
           for (unsigned int q = 0; q < n_q_points; ++q)
           {
             auto q_point = q_points[q];
-            q_point[2]   = -q_point[2];
+            q_point[2]   = z0-q_point[2];
             const Tensor<1, dim> R = q_point - support_points[i];
 
             auto q_normal = normals[q];
@@ -1174,20 +1167,22 @@ BEMProblem<dim>::_assemble_system_double_body ()
           //-------------------------------------------------------------------
           // 2) Reflected cell:
           //-------------------------------------------------------------------
-          for (unsigned int q = 0; q < n_q_points; ++q)
+          for (unsigned int q = 0; q < singular_quadrature->size (); ++q)
           {
-            auto q_point = q_points[q];
-            q_point[2]   = -q_point[2];
+            auto q_point = singular_q_points[q];
+            q_point[2]   = z0 - q_point[2];
             const Tensor<1, dim> R = q_point - support_points[i];
             LaplaceKernel::kernels(R, D, s);
 
-            auto q_normal = normals[q];
+            auto q_normal = singular_normals[q];
             q_normal[2]   = -q_normal[2];
 
             for (unsigned int j = 0; j < fe->dofs_per_cell; ++j)
             {
-              local_neumann_matrix_row_i (j) += ((D *q_normal) * fe_v.shape_value (j, q) * fe_v.JxW (q));
-              local_dirichlet_matrix_row_i (j) += (s * fe_v.shape_value (j, q) * fe_v.JxW (q));
+//              local_neumann_matrix_row_i (j) += ((D *q_normal) * fe_v.shape_value (j, q) * fe_v.JxW (q));
+//              local_dirichlet_matrix_row_i (j) += (s * fe_v.shape_value (j, q) * fe_v.JxW (q));
+              local_neumann_matrix_row_i (j) += ((D * q_normal) * fe_v_singular.shape_value (j, q) * fe_v_singular.JxW (q));
+              local_dirichlet_matrix_row_i (j) += (s * fe_v_singular.shape_value (j, q) * fe_v_singular.JxW (q));
             } // for j
           } // for q
 
@@ -1222,8 +1217,12 @@ BEMProblem<dim>::compute_alpha ()
 
   if (solution_method == "Direct")
   {
-    alpha = 1.0;
-    neumann_matrix.vmult_add (alpha, ones);
+    // For external flows:
+    //alpha = 1.0;
+    //neumann_matrix.vmult_add (alpha, ones);
+
+    // For internal flows:
+    neumann_matrix.vmult(alpha, ones);
   }
   else
   {

@@ -442,7 +442,7 @@ private:
   { ONE_BODY, DOUBLE_BODY};
   BEM_PROBLEM _bem_problem_type = BEM_PROBLEM::DOUBLE_BODY;
   
-  void _assemble_system_double_body ();
+  void _assemble_system_double_body (double z0 = 0.0);
 
 };
 

@@ -46,7 +46,7 @@ void
 Driver<dim>::run (std::string input_path, std::string output_path)
 {
 
-    std::vector<int> force_material_ids = {1,2};
+    std::vector<int> force_material_ids = {1};
 
   {
     Teuchos::TimeMonitor LocalTimer (*TotalTime);
