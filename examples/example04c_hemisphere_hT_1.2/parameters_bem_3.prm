@@ -57,7 +57,7 @@ end
 subsection ComputationalDomain<3>
   set Input grid format = inp
   set Input grid name   = mesh
-  set Number of cycles  = 3
+  set Number of cycles  = 1
   set Cells per circle = 12
   set Use iges surfaces and curves = true
   set Surface curvature adaptive refinement = false
@@ -69,7 +69,7 @@ subsection ComputationalDomain<3>
   end
 end
 subsection Driver<3>
-  set Set Global Refinement = true
+  set Set Global Refinement = false
 end
 subsection Scalar FE
   set Blocking of the finite element = u

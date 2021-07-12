@@ -836,6 +836,7 @@ ComputationalDomain<dim>::refine_and_resize (const unsigned int refinement_level
   //---------------------------------------------------------------------------
   // 1) Refine locally:
   //---------------------------------------------------------------------------
+  /*
   {
     for (int refineId = 0;refineId<4;++refineId)
     {
@@ -853,6 +854,7 @@ ComputationalDomain<dim>::refine_and_resize (const unsigned int refinement_level
       tria.execute_coarsening_and_refinement ();
     }
   }
+*/
   pcout << "Post local refinement number cells: " << tria.n_active_cells () << std::endl;
   {
     std::string   filename0 = ("meshResultAspect.inp");

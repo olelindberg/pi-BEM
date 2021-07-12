@@ -2145,8 +2145,11 @@ BEMProblem<dim>::adaptive_refinement (const TrilinosWrappers::MPI::Vector &error
   //                                                  estimated_error_per_cell,
   //                                                  refinement_threshold,
   //                                                  coarsening_threshold);
-  comp_dom.tria.prepare_coarsening_and_refinement ();
-  comp_dom.tria.execute_coarsening_and_refinement ();
+
+//  GridRefinement::refine_and_coarsen_fixed_fraction(comp_dom.tria,estimated_error_per_cell,0.,0.0);
+
+//  comp_dom.tria.prepare_coarsening_and_refinement ();
+//  comp_dom.tria.execute_coarsening_and_refinement ();
 }
 
 template <int dim>

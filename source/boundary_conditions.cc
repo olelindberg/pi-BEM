@@ -259,7 +259,7 @@ BoundaryConditions<dim>::prepare_bem_vectors ()
               // Assert(support_points[local_dof_indices[j]]==vec_support_points[vec_index],
               // ExcMessage("the support points of dh and gradient_dh
               // are different"));
-              if (cell->material_id () == 1)
+              if (cell->material_id () == 1 || cell->material_id () == 2) // FIXME
                 tmp_dphi_dn += imposed_pot_grad[d] * bem.vector_normals_solution[vec_index];
               normy += bem.vector_normals_solution[vec_index] * bem.vector_normals_solution[vec_index];
             }

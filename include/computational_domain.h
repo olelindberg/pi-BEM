@@ -323,7 +323,7 @@ bool
 
 private:
 
-  bool _withDoubleNodes = true;
+  bool _withDoubleNodes = false;
 
 };
 
