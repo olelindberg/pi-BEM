@@ -443,6 +443,7 @@ private:
   BEM_PROBLEM _bem_problem_type = BEM_PROBLEM::DOUBLE_BODY;
   
   void _assemble_system_double_body (double z0 = 0.0);
+  double  _symmetry_plane_z_level  = 0.0;
 
 };
 

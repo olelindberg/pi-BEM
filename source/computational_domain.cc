@@ -119,6 +119,7 @@ ComputationalDomain<dim>::declare_parameters (ParameterHandler &prm)
   prm.declare_entry ("Axis y dimension", "3.", Patterns::Double ());
 
   prm.declare_entry ("Axis z dimension", "4.", Patterns::Double ());
+
 }
 
 template <int dim>
@@ -258,261 +259,6 @@ ComputationalDomain<dim>::read_domain (std::string input_path)
     used_spherical_manifold = true;
   }
   std::cout << "Reading domain done\n";
-}
-
-template <>
-void
-ComputationalDomain<2>::create_initial_mesh ()
-{
-  AssertThrow (true, ExcMessage ("Create initial mesh only works in 3D"));
-}
-
-template <int dim>
-void
-ComputationalDomain<dim>::create_initial_mesh ()
-{
-  std::vector<Point<dim> >        vertices;
-  std::vector<CellData<dim - 1> > cells;
-  SubCellData                     subcelldata;
-
-  vertices.resize (34);
-
-  vertices[0](0)  = 0;
-  vertices[0](1)  = 0;
-  vertices[0](2)  = 1;
-  vertices[1](0)  = 0.57735;
-  vertices[1](1)  = 0.57735;
-  vertices[1](2)  = 0.57735;
-  vertices[2](0)  = -0.57735;
-  vertices[2](1)  = 0.57735;
-  vertices[2](2)  = 0.57735;
-  vertices[3](0)  = -0.57735;
-  vertices[3](1)  = -0.57735;
-  vertices[3](2)  = 0.57735;
-  vertices[4](0)  = 0.57735;
-  vertices[4](1)  = -0.57735;
-  vertices[4](2)  = 0.57735;
-  vertices[5](0)  = 0.70711;
-  vertices[5](1)  = 0;
-  vertices[5](2)  = 0.70711;
-  vertices[6](0)  = 0;
-  vertices[6](1)  = 0.70711;
-  vertices[6](2)  = 0.70711;
-  vertices[7](0)  = -0.70711;
-  vertices[7](1)  = 0;
-  vertices[7](2)  = 0.70711;
-  vertices[8](0)  = 0;
-  vertices[8](1)  = -0.70711;
-  vertices[8](2)  = 0.70711;
-  vertices[9](0)  = 1;
-  vertices[9](1)  = 0;
-  vertices[9](2)  = 0;
-  vertices[10](0) = 0;
-  vertices[10](1) = 1;
-  vertices[10](2) = 0;
-  vertices[11](0) = -1;
-  vertices[11](1) = 0;
-  vertices[11](2) = 0;
-  vertices[12](0) = 0;
-  vertices[12](1) = -1;
-  vertices[12](2) = 0;
-  vertices[13](0) = 0.70711;
-  vertices[13](1) = 0.70711;
-  vertices[13](2) = 0;
-  vertices[14](0) = -0.70711;
-  vertices[14](1) = 0.70711;
-  vertices[14](2) = 0;
-  vertices[15](0) = -0.70711;
-  vertices[15](1) = -0.70711;
-  vertices[15](2) = 0;
-  vertices[16](0) = 0.70711;
-  vertices[16](1) = -0.70711;
-  vertices[16](2) = 0;
-  vertices[17](0) = 0;
-  vertices[17](1) = 0;
-  vertices[17](2) = -1;
-  vertices[18](0) = 0.57735;
-  vertices[18](1) = 0.57735;
-  vertices[18](2) = -0.57735;
-  vertices[19](0) = -0.57735;
-  vertices[19](1) = 0.57735;
-  vertices[19](2) = -0.57735;
-  vertices[20](0) = -0.57735;
-  vertices[20](1) = -0.57735;
-  vertices[20](2) = -0.57735;
-  vertices[21](0) = 0.57735;
-  vertices[21](1) = -0.57735;
-  vertices[21](2) = -0.57735;
-  vertices[22](0) = 0.70711;
-  vertices[22](1) = 0;
-  vertices[22](2) = -0.70711;
-  vertices[23](0) = 0;
-  vertices[23](1) = 0.70711;
-  vertices[23](2) = -0.70711;
-  vertices[24](0) = -0.70711;
-  vertices[24](1) = 0;
-  vertices[24](2) = -0.70711;
-  vertices[25](0) = 0;
-  vertices[25](1) = -0.70711;
-  vertices[25](2) = -0.70711;
-  vertices[26](0) = 1;
-  vertices[26](1) = 0;
-  vertices[26](2) = 0;
-  vertices[27](0) = 0;
-  vertices[27](1) = 1;
-  vertices[27](2) = 0;
-  vertices[28](0) = -1;
-  vertices[28](1) = 0;
-  vertices[28](2) = 0;
-  vertices[29](0) = 0;
-  vertices[29](1) = -1;
-  vertices[29](2) = 0;
-  vertices[30](0) = 0.70711;
-  vertices[30](1) = 0.70711;
-  vertices[30](2) = 0;
-  vertices[31](0) = -0.70711;
-  vertices[31](1) = 0.70711;
-  vertices[31](2) = 0;
-  vertices[32](0) = -0.70711;
-  vertices[32](1) = -0.70711;
-  vertices[32](2) = 0;
-  vertices[33](0) = 0.70711;
-  vertices[33](1) = -0.70711;
-  vertices[33](2) = 0;
-
-  cells.resize (24);
-
-  cells[0].vertices[0]  = 0;
-  cells[0].vertices[1]  = 5;
-  cells[0].vertices[2]  = 1;
-  cells[0].vertices[3]  = 6;
-  cells[1].vertices[0]  = 7;
-  cells[1].vertices[1]  = 0;
-  cells[1].vertices[2]  = 6;
-  cells[1].vertices[3]  = 2;
-  cells[2].vertices[0]  = 7;
-  cells[2].vertices[1]  = 3;
-  cells[2].vertices[2]  = 8;
-  cells[2].vertices[3]  = 0;
-  cells[3].vertices[0]  = 4;
-  cells[3].vertices[1]  = 5;
-  cells[3].vertices[2]  = 0;
-  cells[3].vertices[3]  = 8;
-  cells[4].vertices[0]  = 9;
-  cells[4].vertices[1]  = 13;
-  cells[4].vertices[2]  = 1;
-  cells[4].vertices[3]  = 5;
-  cells[5].vertices[0]  = 13;
-  cells[5].vertices[1]  = 10;
-  cells[5].vertices[2]  = 6;
-  cells[5].vertices[3]  = 1;
-  cells[6].vertices[0]  = 10;
-  cells[6].vertices[1]  = 14;
-  cells[6].vertices[2]  = 2;
-  cells[6].vertices[3]  = 6;
-  cells[7].vertices[0]  = 14;
-  cells[7].vertices[1]  = 11;
-  cells[7].vertices[2]  = 7;
-  cells[7].vertices[3]  = 2;
-  cells[8].vertices[0]  = 11;
-  cells[8].vertices[1]  = 15;
-  cells[8].vertices[2]  = 3;
-  cells[8].vertices[3]  = 7;
-  cells[9].vertices[0]  = 15;
-  cells[9].vertices[1]  = 12;
-  cells[9].vertices[2]  = 8;
-  cells[9].vertices[3]  = 3;
-  cells[10].vertices[0] = 12;
-  cells[10].vertices[1] = 16;
-  cells[10].vertices[2] = 4;
-  cells[10].vertices[3] = 8;
-  cells[11].vertices[0] = 16;
-  cells[11].vertices[1] = 9;
-  cells[11].vertices[2] = 5;
-  cells[11].vertices[3] = 4;
-
-  cells[12].vertices[0] = 29;
-  cells[12].vertices[1] = 32;
-  cells[12].vertices[2] = 20;
-  cells[12].vertices[3] = 25;
-  cells[13].vertices[0] = 33;
-  cells[13].vertices[1] = 29;
-  cells[13].vertices[2] = 25;
-  cells[13].vertices[3] = 21;
-  cells[14].vertices[0] = 32;
-  cells[14].vertices[1] = 28;
-  cells[14].vertices[2] = 24;
-  cells[14].vertices[3] = 20;
-  cells[15].vertices[0] = 28;
-  cells[15].vertices[1] = 31;
-  cells[15].vertices[2] = 19;
-  cells[15].vertices[3] = 24;
-  cells[16].vertices[0] = 31;
-  cells[16].vertices[1] = 27;
-  cells[16].vertices[2] = 23;
-  cells[16].vertices[3] = 19;
-  cells[17].vertices[0] = 27;
-  cells[17].vertices[1] = 30;
-  cells[17].vertices[2] = 18;
-  cells[17].vertices[3] = 23;
-  cells[18].vertices[0] = 30;
-  cells[18].vertices[1] = 26;
-  cells[18].vertices[2] = 22;
-  cells[18].vertices[3] = 18;
-  cells[19].vertices[0] = 26;
-  cells[19].vertices[1] = 33;
-  cells[19].vertices[2] = 21;
-  cells[19].vertices[3] = 22;
-  cells[20].vertices[0] = 25;
-  cells[20].vertices[1] = 20;
-  cells[20].vertices[2] = 24;
-  cells[20].vertices[3] = 17;
-  cells[21].vertices[0] = 22;
-  cells[21].vertices[1] = 21;
-  cells[21].vertices[2] = 25;
-  cells[21].vertices[3] = 17;
-  cells[22].vertices[0] = 24;
-  cells[22].vertices[1] = 19;
-  cells[22].vertices[2] = 23;
-  cells[22].vertices[3] = 17;
-  cells[23].vertices[0] = 23;
-  cells[23].vertices[1] = 18;
-  cells[23].vertices[2] = 22;
-  cells[23].vertices[3] = 17;
-
-  cells[0].material_id  = 1;
-  cells[1].material_id  = 1;
-  cells[2].material_id  = 1;
-  cells[3].material_id  = 1;
-  cells[4].material_id  = 1;
-  cells[5].material_id  = 1;
-  cells[6].material_id  = 1;
-  cells[7].material_id  = 1;
-  cells[8].material_id  = 1;
-  cells[9].material_id  = 1;
-  cells[10].material_id = 1;
-  cells[11].material_id = 1;
-  cells[12].material_id = 0;
-  cells[13].material_id = 0;
-  cells[14].material_id = 0;
-  cells[15].material_id = 0;
-  cells[16].material_id = 0;
-  cells[17].material_id = 0;
-  cells[18].material_id = 0;
-  cells[19].material_id = 0;
-  cells[20].material_id = 0;
-  cells[21].material_id = 0;
-  cells[22].material_id = 0;
-  cells[23].material_id = 0;
-
-  GridTools::delete_unused_vertices (vertices, cells, subcelldata);
-  GridReordering<dim - 1, dim>::reorder_cells (cells);
-  tria.create_triangulation_compatibility (vertices, cells, subcelldata);
-
-  static const Point<dim>                      center = Point<dim> ();
-  static const SphericalManifold<dim - 1, dim> manifold (center);
-  tria.set_manifold (1, manifold);
-  tria.set_manifold (0, manifold);
 }
 
 // @sect4{ComputationalDomain::refine_and_resize}
@@ -838,16 +584,14 @@ ComputationalDomain<dim>::refine_and_resize (const unsigned int refinement_level
   //---------------------------------------------------------------------------
   
   {
-    for (int refineId = 0;refineId<2;++refineId)
+    for (int refineId = 0;refineId<-1;++refineId)
     {
       Triangulation<2, 3>::active_cell_iterator cell = tria.begin_active ();
       Triangulation<2, 3>::active_cell_iterator endc = tria.end ();
       for (; cell != endc; ++cell)
       {
-        std::cout << cell->manifold_id() << " " << cell->material_id() << std::endl;
         if (cell->manifold_id()==3)
         {
-          std::cout << " rrrrrrrrrrrrrrrrrrrreeeeeeeeeeeeeeeeefffffffffffffffffiiiiiiiiiiiiinnnnnnnnnnnnnnnneeeeeeeeeeee" << cell->manifold_id() << " " << cell->material_id() << std::endl;
           cell->set_refine_flag ();
         }
       }

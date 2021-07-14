@@ -365,6 +365,9 @@ BEMProblem<dim>::declare_parameters (ParameterHandler &prm)
   prm.declare_entry ("Mapping Q Degree", "1", Patterns::Integer ());
 
   prm.declare_entry ("Continuos gradient across edges", "true", Patterns::Bool ());
+
+  prm.declare_entry ("Symmetry plane z level", "0.0", Patterns::Double ());
+
 }
 
 template <int dim>
@@ -387,9 +390,12 @@ BEMProblem<dim>::parse_parameters (ParameterHandler &prm)
   }
   prm.leave_subsection ();
 
-  mapping_type       = prm.get ("Mapping Type");
-  mapping_degree     = prm.get_integer ("Mapping Q Degree");
-  continuos_gradient = prm.get_bool ("Continuos gradient across edges");
+  mapping_type         = prm.get ("Mapping Type");
+  mapping_degree       = prm.get_integer ("Mapping Q Degree");
+  continuos_gradient   = prm.get_bool ("Continuos gradient across edges");
+  _symmetry_plane_z_level = prm.get_double ("Symmetry plane z level");
+
+
 }
 
 template <int dim>
@@ -496,23 +502,15 @@ template <int dim>
 void
 BEMProblem<dim>::compute_double_nodes_set ()
 {
-  pcout << "cdns01\n";
   double tol = 1e-10;
-  pcout << "cdns02\n";
   double_nodes_set.clear ();
-  pcout << "cdns03\n";
   double_nodes_set.resize (dh.n_dofs ());
-  pcout << "cdns04\n";
   std::vector<Point<dim> > support_points (dh.n_dofs ());
-  pcout << "cdns05\n";
 
   DoFTools::map_dofs_to_support_points<dim - 1, dim> (*mapping, dh, support_points);
-  pcout << "cdns06\n";
 
   typename DoFHandler<dim - 1, dim>::active_cell_iterator cell = dh.begin_active (), endc = dh.end ();
-  pcout << "cdns07\n";
   std::vector<types::global_dof_index>                    face_dofs (fe->dofs_per_face);
-  pcout << "cdns08\n";
 
   edge_set.clear ();
   edge_set.set_size (dh.n_dofs ());
@@ -527,15 +525,11 @@ BEMProblem<dim>::compute_double_nodes_set ()
           edge_set.add_index (face_dofs[k]);
       }
   }
-  pcout << "cdns09\n";
   edge_set.compress ();
-  pcout << "cdns10\n";
 
-  pcout << "cdns11\n";
   for (types::global_dof_index i = 0; i < dh.n_dofs (); ++i)
     double_nodes_set[i].insert (i);
 
-  pcout << "cdns12\n";
   for (auto i : edge_set) //(types::global_dof_index i=0; i<dh.n_dofs(); ++i)
   {
     for (auto j : edge_set)
@@ -546,7 +540,6 @@ BEMProblem<dim>::compute_double_nodes_set ()
       }
     }
   }
-  pcout << "cdns13\n";
 }
 
 template <int dim>
@@ -1037,6 +1030,11 @@ BEMProblem<dim>::assemble_system ()
   // }
 } // assemble_system()
 
+template <>
+void
+BEMProblem<2>::_assemble_system_double_body (double z0)
+{
+}
 
 template <int dim>
 void
@@ -1078,6 +1076,11 @@ BEMProblem<dim>::_assemble_system_double_body (double z0)
     {
       if (this_cpu_set.is_element (i))
       {
+
+        const Tensor<1, dim> sp  = support_points[i]; // Actual point
+        Tensor<1, dim> spm(sp);                       // Mirrored point
+        spm[2] = 2.0*z0 - spm[2];
+
         //---------------------------------------------------------------------
         // Initialize rows:
         //---------------------------------------------------------------------
@@ -1109,7 +1112,7 @@ BEMProblem<dim>::_assemble_system_double_body (double z0)
           //-------------------------------------------------------------------
           for (unsigned int q = 0; q < n_q_points; ++q)
           {
-            const Tensor<1, dim> R = q_points[q] - support_points[i];
+            const Tensor<1, dim> R = q_points[q] - sp;
             LaplaceKernel::kernels(R, D, s);
             for (unsigned int j = 0; j < fe->dofs_per_cell; ++j)
             {
@@ -1123,9 +1126,10 @@ BEMProblem<dim>::_assemble_system_double_body (double z0)
           //-------------------------------------------------------------------
           for (unsigned int q = 0; q < n_q_points; ++q)
           {
-            auto q_point = q_points[q];
-            q_point[2]   = z0-q_point[2];
-            const Tensor<1, dim> R = q_point - support_points[i];
+            Tensor<1, dim> qp = q_points[q];
+            qp[2]             = 2.0*z0-qp[2];
+
+            const Tensor<1, dim> R = qp - sp;
 
             auto q_normal = normals[q];
             q_normal[2]   = -q_normal[2];
@@ -1155,7 +1159,7 @@ BEMProblem<dim>::_assemble_system_double_body (double z0)
           // Actual cell singular quadrature:
           for (unsigned int q = 0; q < singular_quadrature->size (); ++q)
           {
-            const Tensor<1, dim> R = singular_q_points[q] - support_points[i];
+            const Tensor<1, dim> R = singular_q_points[q] - sp;
             LaplaceKernel::kernels(R, D, s);
             for (unsigned int j = 0; j < fe->dofs_per_cell; ++j)
             {
@@ -1167,27 +1171,26 @@ BEMProblem<dim>::_assemble_system_double_body (double z0)
           //-------------------------------------------------------------------
           // 2) Reflected cell:
           //-------------------------------------------------------------------
-          for (unsigned int q = 0; q < singular_quadrature->size (); ++q)
+          for (unsigned int q = 0; q < n_q_points; ++q)
           {
-            auto q_point = singular_q_points[q];
-            q_point[2]   = z0 - q_point[2];
-            const Tensor<1, dim> R = q_point - support_points[i];
+            auto qp = q_points[q];
+            qp[2]   = 2.0*z0 - qp[2];
+            const Tensor<1, dim> R = qp - sp;
             LaplaceKernel::kernels(R, D, s);
 
-            auto q_normal = singular_normals[q];
+            auto q_normal = normals[q];
             q_normal[2]   = -q_normal[2];
 
             for (unsigned int j = 0; j < fe->dofs_per_cell; ++j)
             {
-//              local_neumann_matrix_row_i (j) += ((D *q_normal) * fe_v.shape_value (j, q) * fe_v.JxW (q));
-//              local_dirichlet_matrix_row_i (j) += (s * fe_v.shape_value (j, q) * fe_v.JxW (q));
-              local_neumann_matrix_row_i (j) += ((D * q_normal) * fe_v_singular.shape_value (j, q) * fe_v_singular.JxW (q));
-              local_dirichlet_matrix_row_i (j) += (s * fe_v_singular.shape_value (j, q) * fe_v_singular.JxW (q));
+              local_neumann_matrix_row_i (j) += ((D *q_normal) * fe_v.shape_value (j, q) * fe_v.JxW (q));
+              local_dirichlet_matrix_row_i (j) += (s * fe_v.shape_value (j, q) * fe_v.JxW (q));
+              // local_neumann_matrix_row_i (j) += ((D * q_normal) * fe_v_singular.shape_value (j, q) * fe_v_singular.JxW (q));
+              // local_dirichlet_matrix_row_i (j) += (s * fe_v_singular.shape_value (j, q) * fe_v_singular.JxW (q));
             } // for j
           } // for q
 
         }
-
 
         // Add row to the global matrix.
         for (unsigned int j = 0; j < fe->dofs_per_cell; ++j)
@@ -1232,11 +1235,6 @@ BEMProblem<dim>::compute_alpha ()
     fma.multipole_matr_vect_products (ones, zeros, alpha, dummy);
   }
 
-  // alpha.print(pcout);
-  // for (unsigned int i=0; i<alpha.size(); ++i)
-  //    {
-  //    cout<<std::setprecision(20)<<alpha(i)<<endl;
-  //    }
 }
 
 template <int dim>
@@ -1268,8 +1266,8 @@ BEMProblem<dim>::vmult (TrilinosWrappers::MPI::Vector &dst, const TrilinosWrappe
     // t = [phi_n,phi]^T
     // See equation 11, 12 and 13 in [Giuliani, 2018].
 
-    //      dirichlet_matrix.vmult(dst, serv_dphi_dn);
-    //      dst *= -1;
+    dirichlet_matrix.vmult(dst, serv_dphi_dn);
+    dst *= -1;
     neumann_matrix.vmult_add (dst, serv_phi);
     serv_phi.scale (alpha);
     dst += serv_phi;
@@ -1287,8 +1285,6 @@ BEMProblem<dim>::vmult (TrilinosWrappers::MPI::Vector &dst, const TrilinosWrappe
     dst += serv_phi;
   }
 
-  // std::cout<<"*** "<<serv_phi(0)<<" or "<<serv_dphi_dn(0)<<"   src:
-  // "<<src(0)<<"  dst: "<<dst(0)<<std::endl;
   // in fully neumann bc case, we have to rescale the vector to have a zero mean
   // one
   if (!have_dirichlet_bc)
@@ -1319,11 +1315,10 @@ BEMProblem<dim>::compute_rhs (TrilinosWrappers::MPI::Vector &dst, const Trilinos
   // See equation 11, 12 and 13 in [Giuliani, 2018].
   if (solution_method == "Direct")
   {
-    //      neumann_matrix.vmult(dst, serv_phi);
-    //      serv_phi.scale(alpha);
-    //      dst += serv_phi;
-    //      dst *= -1;
-
+    neumann_matrix.vmult(dst, serv_phi);
+    serv_phi.scale(alpha);
+    dst += serv_phi;
+    dst *= -1;
     dirichlet_matrix.vmult_add (dst, serv_dphi_dn);
   }
   else
@@ -1356,25 +1351,11 @@ BEMProblem<dim>::solve_system (TrilinosWrappers::MPI::Vector &phi, TrilinosWrapp
   alpha      = 0;
 
   compute_alpha ();
-
-  // for (unsigned int i = 0; i < alpha.size(); i++)
-  //    if (this_cpu_set.is_element(i))
-  //       pcout<<std::setprecision(20)<<alpha(i)<<std::endl;
-
   compute_rhs (system_rhs, tmp_rhs);
-
   compute_constraints (constr_cpu_set, constraints, tmp_rhs);
   ConstrainedOperator<TrilinosWrappers::MPI::Vector, BEMProblem<dim> > cc (*this, constraints, constr_cpu_set, mpi_communicator);
-
   cc.distribute_rhs (system_rhs);
   system_rhs.compress (VectorOperation::insert);
-  // vmult(sol,system_rhs);
-  // Assert(sol.vector_partitioner().SameAs(system_rhs.vector_partitioner()),ExcMessage("Schizofrenia???"));
-  // cc.vmult(sol,system_rhs);
-  // Assert(sol.locally_owned_elements()==system_rhs.locally_owned_elements(),ExcMessage("IndexSet
-  // a muzzo..."));
-  // Assert(sol.vector_partitioner().SameAs(system_rhs.vector_partitioner()),ExcMessage("Ma
-  // boh..."));
 
   if (solution_method == "Direct")
   {
@@ -1393,33 +1374,6 @@ BEMProblem<dim>::solve_system (TrilinosWrappers::MPI::Vector &phi, TrilinosWrapp
     solver.solve (cc, sol, system_rhs, fma_preconditioner);
     // solver.solve (cc, sol, system_rhs, PreconditionIdentity());
   }
-
-  // cc.apply_constraint(sol);
-  // pcout<<"sol = [";
-  // for (unsigned int i = 0; i < dh.n_dofs(); i++)
-  //    pcout<<sol(i)<<"; ";
-  // pcout<<"];"<<std::endl;
-
-  // for (unsigned int i = 0; i < sol.size(); i++)
-  //   if (this_cpu_set.is_element(i))
-  //      pcout<<std::setprecision(20)<<sol(i)<<std::endl;
-
-  ///////////////////////////////////
-  /*
-    std::vector<Point<dim> > support_points(dh.n_dofs());
-    DoFTools::map_dofs_to_support_points<dim-1, dim>( mapping, dh,
-    support_points); pcout<<"**solution "<<std::endl; for (unsigned int i = 0; i
-    < alpha.size(); i++) if (this_cpu_set.is_element(i)) pcout<<i<<"
-    ("<<this_mpi_process<<")
-    "<<support_points[i](0)+support_points[i](1)+support_points[i](2)<<"
-    "<<sol(i)<<std::endl;
-
-     pcout<<"SOLUTION "<<std::endl;
-     for (unsigned int i = 0; i < alpha.size(); i++)
-         if (this_cpu_set.is_element(i))
-            pcout<<i<<" ("<<this_mpi_process<<")  "<<sol(i)<<std::endl;
-  */
-  //////////////////////////////////
 
   std::cout << "Number of Diriclet nodes is " << dirichlet_nodes.size () << "\n";
 
@@ -1473,9 +1427,7 @@ BEMProblem<dim>::solve (TrilinosWrappers::MPI::Vector &phi, TrilinosWrappers::MP
     if (_bem_problem_type==BEM_PROBLEM::ONE_BODY)
       assemble_system ();
     else if (_bem_problem_type==BEM_PROBLEM::DOUBLE_BODY)
-      _assemble_system_double_body ();
-    // neumann_matrix.print(std::cout);
-    // dirichlet_matrix.print(std::cout);
+      _assemble_system_double_body (_symmetry_plane_z_level);
   }
   else
   {

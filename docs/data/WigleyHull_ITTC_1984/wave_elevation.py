@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 
 savefigures = True
 
-elev = np.genfromtxt("example14_wigleyhull_ITTC_1984/output/elevation.csv",delimiter=",")
+elev = np.genfromtxt("output/elevation.csv",delimiter=",")
 
 g     = 9.80665
 Fn    = 0.25
@@ -20,9 +20,9 @@ plt.ylabel(r'$\eta/(u^2/g)$')
 plt.grid(True)
 
 if savefigures:
-    filename = 'example14_wigleyhull_ITTC_1984/wigleyhull_wave_elevation_ITTC_1984.pdf'
+    filename = 'wigleyhull_wave_elevation_ITTC_1984.pdf'
     plt.savefig(filename,bbox_inches='tight')
-    filename = 'example14_wigleyhull_ITTC_1984/wigleyhull_wave_elevation_ITTC_1984.png'
+    filename = 'wigleyhull_wave_elevation_ITTC_1984.png'
     plt.savefig(filename,bbox_inches='tight')
 
 plt.show()

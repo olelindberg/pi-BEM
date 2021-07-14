@@ -128,13 +128,8 @@ public:
   virtual void
   parse_parameters(ParameterHandler &prm);
 
-  /// method to create initial mesh
-
-  void
-  create_initial_mesh();
   /// alternative method to read initial mesh
   /// from file
-
   void
   read_domain(std::string input_path = "");
 
@@ -323,7 +318,7 @@ bool
 
 private:
 
-  bool _withDoubleNodes = false;
+  bool    _withDoubleNodes      = false;
 
 };
 

@@ -190,14 +190,9 @@ BoundaryConditions<dim>::prepare_bem_vectors ()
   {
     fe_v.reinit (cell);
     cell->get_dof_indices (local_dof_indices);
-    // const std::vector<Point<dim> > &node_normals =
-    // fe_v.get_cell_normal_vectors();////provv
     for (unsigned int j = 0; j < bem.fe->dofs_per_cell; ++j)
       if (this_cpu_set.is_element (local_dof_indices[j]))
       {
-        // bem.pcout<<cell<<" "<<cell->material_id()<<"
-        // ("<<node_normals[0]<<")
-        // "<<-normals_sys_solution(local_dof_indices[j])<<std::endl;
         bool dirichlet = false;
         bool neumann   = false;
 
@@ -212,12 +207,8 @@ BoundaryConditions<dim>::prepare_bem_vectors ()
 
         if (dirichlet)
         {
-          // tmp_rhs(local_dof_indices[j]) = node_coors[j](0);
           phi (local_dof_indices[j])     = potential.value (support_points[local_dof_indices[j]]);
           tmp_rhs (local_dof_indices[j]) = potential.value (support_points[local_dof_indices[j]]);
-          // bem.pcout<<"internalElse "<<local_dof_indices[j]<<" norm
-          // ("<<node_normals[j]<<")  "<<" pos ("<<node_coors[j]<<")
-          // "<<node_coors[j](0)<<std::endl;
         }
         else
         {
@@ -230,42 +221,25 @@ BoundaryConditions<dim>::prepare_bem_vectors ()
 
           if (neumann)
           {
-            // tmp_rhs(local_dof_indices[j]) =
-            // normals_sys_solution(local_dof_indices[j]);
-            // dphi_dn(local_dof_indices[j]) =
-            // normals_sys_solution(local_dof_indices[j]);
 
             Vector<double> imposed_pot_grad (dim);
             wind.vector_value (support_points[local_dof_indices[j]], imposed_pot_grad);
 
-            // Point<dim> imposed_potential_gradient;
             double tmp_dphi_dn = 0;
             double normy       = 0;
-            // double tol = 1e-1;
             for (unsigned int d = 0; d < dim; ++d)
             {
               types::global_dof_index dummy = bem.sub_wise_to_original[local_dof_indices[j]];
-              types::global_dof_index vec_index
-                  = bem.vec_original_to_sub_wise
-                        [bem.gradient_dh.n_dofs () / dim * d
-                         + dummy]; // bem.vector_start_per_process[this_mpi_process]
-                                   // + d*bem.this_cpu_set.n_elements() +
-                                   // local_dof_indices[j]-bem.start_per_process[this_mpi_process];//bem.gradient_dh.n_dofs()/dim*d+local_dof_indices[j];//bem.vector_start_per_process[this_mpi_process]+((local_dof_indices[j]-bem.start_per_process[this_mpi_process])*dim+d);
-                                   // //local_dof_indices[j]*dim+d;
-              // std::cout<<this_mpi_process<<"
-              // "<<support_points[local_dof_indices[j]]<<"
-              // "<<vec_support_points[vec_index]<<std::endl;
+              types::global_dof_index vec_index = bem.vec_original_to_sub_wise[bem.gradient_dh.n_dofs () / dim * d + dummy]; 
+
               Assert (bem.vector_this_cpu_set.is_element (vec_index), ExcMessage ("vector cpu set and cpu set are inconsistent"));
-              // Assert(support_points[local_dof_indices[j]]==vec_support_points[vec_index],
-              // ExcMessage("the support points of dh and gradient_dh
-              // are different"));
+
               if (cell->material_id () == 1 || cell->material_id () == 2) // FIXME
                 tmp_dphi_dn += imposed_pot_grad[d] * bem.vector_normals_solution[vec_index];
+
               normy += bem.vector_normals_solution[vec_index] * bem.vector_normals_solution[vec_index];
             }
 
-            // Assert(std::fabs(normy-1.)<tol, ExcMessage("you are using
-            // wrongly the normal vector"));
             tmp_rhs (local_dof_indices[j]) = tmp_dphi_dn;
             dphi_dn (local_dof_indices[j]) = tmp_dphi_dn;
           }
