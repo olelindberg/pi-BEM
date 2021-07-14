@@ -48,6 +48,8 @@ plt.ylim(0,7.0)
 if savefigures:
     filename = 'Beguin_MASHCON2013_WigleyHull_Sinkage.pdf'
     plt.savefig(filename,bbox_inches='tight', transparent="True")
+    filename = 'Beguin_MASHCON2013_WigleyHull_Sinkage.png'
+    plt.savefig(filename,bbox_inches='tight', transparent="True")
 
 plt.show()
 
