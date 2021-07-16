@@ -21,7 +21,7 @@ enum class REFINE {GLOBAL,ASPECT_RATIO};
 int
 main(int argc, char **argv)
 {
-  auto refine = REFINE::ASPECT_RATIO;
+  auto refine = REFINE::GLOBAL;
 
   Utilities::MPI::MPI_InitFinalize mpi_initialization(argc, argv, 1);
   // initlog();

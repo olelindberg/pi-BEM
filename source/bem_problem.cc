@@ -368,6 +368,8 @@ BEMProblem<dim>::declare_parameters (ParameterHandler &prm)
 
   prm.declare_entry ("Symmetry plane z level", "0.0", Patterns::Double ());
 
+  prm.declare_entry ("Is external flow", "false", Patterns::Bool ());
+
 }
 
 template <int dim>
@@ -394,6 +396,7 @@ BEMProblem<dim>::parse_parameters (ParameterHandler &prm)
   mapping_degree       = prm.get_integer ("Mapping Q Degree");
   continuos_gradient   = prm.get_bool ("Continuos gradient across edges");
   _symmetry_plane_z_level = prm.get_double ("Symmetry plane z level");
+  _is_external_flow = prm.get_double ("Symmetry plane z level");
 
 
 }
@@ -1220,12 +1223,17 @@ BEMProblem<dim>::compute_alpha ()
 
   if (solution_method == "Direct")
   {
-    // For external flows:
-    //alpha = 1.0;
-    //neumann_matrix.vmult_add (alpha, ones);
-
-    // For internal flows:
-    neumann_matrix.vmult(alpha, ones);
+    if (_is_external_flow)
+    {
+      // For external flows:
+      alpha = 1.0;
+      neumann_matrix.vmult_add (alpha, ones);
+    }
+    else
+    {
+      // For internal flows:
+      neumann_matrix.vmult(alpha, ones);
+    }
   }
   else
   {
@@ -2150,8 +2158,8 @@ BEMProblem<dim>::dynamic_pressure (const Functions::ParsedFunction<dim> &wind, T
 }
 
 template <int dim>
-Tensor<1, dim>
-BEMProblem<dim>::pressure_force (const TrilinosWrappers::MPI::Vector &pressure, const std::vector<int> &material_ids)
+std::vector<Tensor<1, dim>>
+BEMProblem<dim>::pressure_force (const TrilinosWrappers::MPI::Vector &pressure)
 {
   Teuchos::TimeMonitor LocalTimer (*AssembleTime);
 
@@ -2167,37 +2175,37 @@ BEMProblem<dim>::pressure_force (const TrilinosWrappers::MPI::Vector &pressure, 
   //---------------------------------------------------------------------------
   // Loop over all active cells:
   //---------------------------------------------------------------------------
-  Tensor<1, dim> force;
+  std::vector<Tensor<1, dim>> forces;
   for (cell_it cell = dh.begin_active (); cell != dh.end (); ++cell)
   {
+    
     if (cell->subdomain_id () == this_mpi_process)
     {
-      // Are we on the surface we are looking for:
-      bool found = (std::find (material_ids.begin (), material_ids.end (), (int)cell->material_id ()) != material_ids.end ());
-      if (found)
+
+      if (forces.size()<cell->material_id()+1)
+        forces.resize(cell->material_id()+1);
+
+      fe_v.reinit (cell);
+      cell->get_dof_indices (local_dof_indices);
+
+      const std::vector<Tensor<1, dim> > &normals = fe_v.get_normal_vectors ();
+
+      Tensor<1, dim> force;
+      for (unsigned int q = 0; q < n_q_points; ++q)
       {
+        // Interpolate to quadrature point:
+        double p = 0.0;
+        for (unsigned int j = 0; j < fe->dofs_per_cell; ++j)
+          p += pressure (local_dof_indices[j]) * fe_v.shape_value (j, q);
+        // Quadrature summation:
+        force += ((p * normals[q]) * fe_v.JxW (q));
+      }
 
-        fe_v.reinit (cell);
-        cell->get_dof_indices (local_dof_indices);
-
-        const std::vector<Tensor<1, dim> > &normals = fe_v.get_normal_vectors ();
-
-        for (unsigned int q = 0; q < n_q_points; ++q)
-        {
-
-          // Interpolate to quadrature point:
-          double p = 0.0;
-          for (unsigned int j = 0; j < fe->dofs_per_cell; ++j)
-            p += pressure (local_dof_indices[j]) * fe_v.shape_value (j, q);
-
-          // Quadrature summation:
-          force += ((p * normals[q]) * fe_v.JxW (q));
-        }
-      } //
+      forces[cell->material_id()] += force;
     }   // if this cpu
   }     // for cell in active cells
 
-  return force;
+  return forces;
 }
 
 template <int dim>

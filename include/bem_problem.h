@@ -189,7 +189,7 @@ public:
 
 
 void dynamic_pressure(const Functions::ParsedFunction<dim>& wind, TrilinosWrappers::MPI::Vector& pressure);
-Tensor<1, dim> pressure_force(const TrilinosWrappers::MPI::Vector& pressure, const std::vector<int>& material_ids);
+std::vector<Tensor<1, dim>> pressure_force(const TrilinosWrappers::MPI::Vector& pressure);
 double area_integral();
 Tensor<1, dim> volume_integral();
 void free_surface_elevation(const TrilinosWrappers::MPI::Vector &pressure,std::vector<Point<dim> >& elevation);
@@ -444,6 +444,7 @@ private:
   
   void _assemble_system_double_body (double z0 = 0.0);
   double  _symmetry_plane_z_level  = 0.0;
+  bool _is_external_flow = false;
 
 };
 
