@@ -234,7 +234,8 @@ BoundaryConditions<dim>::prepare_bem_vectors ()
 
               Assert (bem.vector_this_cpu_set.is_element (vec_index), ExcMessage ("vector cpu set and cpu set are inconsistent"));
 
-              if (cell->material_id () == 1 || cell->material_id () == 2) // FIXME
+//              if (cell->material_id () == 1 || cell->material_id () == 2) // FIXME
+              if (cell->material_id () == 1) // FIXME
                 tmp_dphi_dn += imposed_pot_grad[d] * bem.vector_normals_solution[vec_index];
 
               normy += bem.vector_normals_solution[vec_index] * bem.vector_normals_solution[vec_index];

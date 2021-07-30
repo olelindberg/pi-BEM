@@ -19,7 +19,7 @@ subsection BEMProblem<3>
   set Preconditioner                  = ILU
   set Solution method                 = Direct
   subsection Quadrature rules
-    set Quadrature order          = 4
+    set Quadrature order          = 5
     set Quadrature type           = gauss
     set Singular quadrature order = 5
   end
@@ -57,7 +57,7 @@ end
 subsection ComputationalDomain<3>
   set Input grid format = inp
   set Input grid name   = mesh
-  set Number of cycles  = 2
+  set Number of cycles  = 3
   set Cells per circle = 12
   set Use iges surfaces and curves = true
   set Surface curvature adaptive refinement = false

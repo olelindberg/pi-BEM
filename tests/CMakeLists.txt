@@ -4,6 +4,7 @@ add_subdirectory(test03_IntersectRayAABB)
 add_subdirectory(test04_my_line_intersection)
 add_subdirectory(test05_cad_import_and_global_refinement)
 add_subdirectory(test06_area_and_volume)
+add_subdirectory(test07_point_source_and_derivatives)
 INCLUDE_DIRECTORIES(${D2K_INCLUDE_DIRS})
 DEAL_II_PICKUP_TESTS()
 

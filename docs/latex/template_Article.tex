@@ -1,0 +1,164 @@
+\documentclass[]{book}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{graphicx}
+%opening
+\title{BoundaryElementLib}
+\author{Ole Lindberg}
+
+\newcommand{\V}[1]{\boldsymbol{#1}}
+\newcommand{\nn}{\nonumber}
+\newcommand{\D}[2]{\frac{\partial #1}{\partial #2}}
+\begin{document}
+
+\maketitle
+
+\chapter{Double body flow model}
+The hydrodynamic interaction force between a ship and other ships, the seabed, banks or fixed structures is strongly related to pressure changes due to increased or decreased flow velocity around the ship. The physical problem resembles that of a Venturi pipe. A mathematical model for calculation of a ships hydrodynamic interaction forces should capture the the Venturi pipe effect between the ships. Fortunately thats excately what the \emph{double body flow model} does. In the double body flow model is to assume that the free surface is flat and the body is mirrored the body and solution around
+the still water level.
+The double body flow model is based on potential flow theory, hence the water is assumed to be in-
+compressible, inviscid and irrotational, and where the fluid velocity is the gradient of the velocity potential $u = \nabla \phi$. 
+Mass conservation is satisfied through the Laplace equation for the velocity potential
+\begin{equation}
+	\nabla \phi = 0, \quad z \in [-h,0],
+\end{equation}
+
+where $h$ is the sea depth and $z = 0$ is still water level. At the seabed the no-flux boundary condition applies
+\begin{equation}
+\V{n} \cdot \nabla \phi = 0, \quad z = -h, 
+\end{equation}
+where $\V{n} = (n_x, n_y, n_z)^T$ is the normal vector to the seabed, and the bodies within the fluid are likewise
+subject a no-flux boundary condition
+\begin{equation}
+\V{n} \cdot \nabla \phi = n \cdot \V{u}_B, (x, y, z) \in S_B, 
+\end{equation}
+where $u_B$ is the velocity of the body and $S_B$ is the surface of the body of the body. A ship navigating in an
+open sea has the far-field boundary condition [9]
+\begin{equation}
+\phi = \mathcal{O} (\sqrt{x^2 + y^2}) \quad \mathrm{for} \quad x^2 + y^2 \rightarrow \infty. 
+\end{equation}
+
+\section{Forces and moments on bodies}
+The hydrodynamic force on the body with surface $S_B$ is
+\begin{equation}
+	\V{F} = \int_{S_B} p(x, y, z) ~\V{n} dS, 
+\end{equation}
+and the hydrodynamic moment is
+\begin{equation}
+\V{M} = \int_{S_B} p(x, y, z) ~ \V{r} \times \V{n} dS,
+\end{equation}
+where $\V{r}$ is the direction vector from COG to the surface point. In the force and moment equations the hydrodynamic pressure is calculated from the Bernoulli equation in a moving frame of reference
+\begin{equation}
+	p(x, y, z) = -\rho \left( -U \D{\phi}{x} + \frac{1}{2} \V{u} \cdot \V{u} + g(\eta - z) \right).
+\end{equation}
+
+\chapter{Boundary element method}
+The velocity potential $\phi(\V{x})$ at the point $\V{x} = \left[x,y,z\right]^T$ is, according to Greens first identity, 
+\begin{equation}
+	\phi(\V{x}) = 
+	- \frac{1}{4 \pi} \int_{S_B} \sigma (\V{x}_0) \left(\frac{1}{r} \right) dS
+	+ \frac{1}{4 \pi} \int_{S_B + S_W} \mu(\V{x}_0)  \frac{\partial }{\partial n} \left( \frac{1}{r}\right) dS	
++ \phi_{\infty}(\V{x})
+\label{eqGreen}
+\end{equation}
+where $\sigma(\V{x}_0),~ \V{x}_0 \in S,$ is the source strength, $\mu(\V{x}_0),~ \V{x}_0 \in S,$ is the doublet strength and $r$ is the distance from $p_0 = \left[x_0,y_0,z_0\right] \in S$ to $p$
+\begin{equation}
+r = \sqrt{(x-x_0)^2 + (y-y_0)^2 + (z-z_0)^2}.
+\end{equation}
+Flow velocity due to the source and doublet distributions is
+\begin{equation}
+\nabla \phi(\V{x}) = 
+- \frac{1}{4 \pi} \int_{S_B} \sigma (\V{x}_0) \nabla\left(\frac{1}{r} \right) dS
++ \frac{1}{4 \pi} \int_{S_B + S_W} \mu(\V{x}_0) \nabla \frac{\partial }{\partial n} \left( \frac{1}{r}\right) dS	
++ \nabla \phi_{\infty}(\V{x})
+\label{eqGreen}
+\end{equation}
+
+No flux boundary condition
+\begin{equation}
+\frac{\partial \phi}{\partial n} = 0, \quad p \in S_B.
+\end{equation}
+insertion of \ref{eqGreen} in the no flux boundary condition gives
+\begin{equation}
+ 	- \frac{1}{4 \pi}  \int_{S_B} \sigma (\V{x}_0) \frac{\partial }{\partial n}\left(\frac{1}{r} \right) dS
++ \frac{1}{4 \pi} \int_{S_B + S_W} \mu(\V{x}_0) \frac{\partial }{\partial n} \left(  \frac{\partial }{\partial n} \left( \frac{1}{r}\right) \right) dS	
++ \frac{\partial \phi_{\infty} }{\partial n} = 0, \quad \V{x} \in S_B.
+\end{equation}
+Distribute surface elements over the body $S_B$
+\begin{equation}
+S_B = \bigcup_{i=1}^{N_{B}} S_{B,i},
+\end{equation}
+and the wake $S_W$
+\begin{equation}
+S_W = \bigcup_{i=1}^{N_{W}} S_{W,i}
+\end{equation}
+Sum over all the surface integrals
+\begin{align}
+&- \frac{1}{4 \pi} \sum_{i=1}^{N_B}  \int_{S_B,i} \sigma (\V{x}_0) \frac{\partial }{\partial n}\left(\frac{1}{r} \right) dS \nn \\
+&+ \frac{1}{4 \pi} \sum_{i=1}^{N_B}\int_{S_B,i} \mu(\V{x}_0) \frac{\partial }{\partial n} \left(  \frac{\partial }{\partial n} \left( \frac{1}{r}\right) \right) dS \nn \\
+&+ \frac{1}{4 \pi} \sum_{i=1}^{N_W}\int_{S_W,i} \mu(\V{x}_0) \frac{\partial }{\partial n} \left(  \frac{\partial }{\partial n} \left( \frac{1}{r}\right) \right) dS \nn	\\
+&+ \frac{\partial \phi_{\infty} }{\partial n} = 0, \quad \V{x} \in S_B.
+\end{align}
+Source distributions only
+\begin{align}
+- \frac{1}{4 \pi} \sum_{i=1}^{N_B}  \int_{S_B,i} \sigma (\V{x}_0) \frac{\partial }{\partial n}\left(\frac{1}{r} \right) dS \nn + \frac{\partial \phi_{\infty} }{\partial n} = 0, \quad \V{x} \in S_B.
+\end{align}
+Satisfy in $N_P$ collocation points
+\begin{align}
+- \frac{1}{4 \pi} \sum_{j=1}^{N_B}  \int_{S_B,j} \sigma (\V{x}_0) \frac{\partial }{\partial n}\left(\frac{1}{r} \right) dS \nn + \frac{\partial \phi_{\infty} }{\partial n} = 0, \quad \V{x}= \V{x}_i,  ~i=1,\ldots,Np
+\end{align}
+
+Reflection/symmetry boundary condition
+\begin{equation}
+\D{\phi}{n} = 0,
+\end{equation}
+First order FD approximation
+\begin{equation}
+\frac{\phi(\Delta n /2) - \phi(-\Delta n /2)}{\Delta n} = 0
+\end{equation}
+
+\begin{equation}
+\phi(-\Delta n /2) = \phi(\Delta n /2) 
+\end{equation}
+
+
+	
+
+
+\chapter{Verification}
+\section{Half ellipsoid in deep water}
+The potential flow solution for a hemisphere is \cite{newman2018}
+\section{Half ellipsoid in shallow water}
+\chapter{Validation}
+\section{Wigley hull in shallow water, Beguin et al MASHCON 2013}
+\begin{figure}
+	\centering
+	\includegraphics[width=0.9\linewidth]{figures/Example03_Beguin_MASHCON2013_WigleyHull}
+	\caption{}
+	\label{fig:example03beguinmashcon2013wigleyhull}
+\end{figure}
+\section{DTC in shallow water, MASHCON 2019 Case C1, C2 and C3}
+\begin{figure}
+	\centering
+	\includegraphics[width=0.9\linewidth]{figures/Example04_MASHCON2019_DTC_C1_Sinkage}
+	\caption{}
+	\label{fig:example04mashcon2019dtcc1sinkage}
+\end{figure}
+\begin{figure}
+	\centering
+	\includegraphics[width=0.9\linewidth]{figures/Example04_MASHCON2019_DTC_C2_Sinkage}
+	\caption{}
+	\label{fig:example04mashcon2019dtcc1sinkage}
+\end{figure}
+\begin{figure}
+	\centering
+	\includegraphics[width=0.9\linewidth]{figures/Example04_MASHCON2019_DTC_C3_Sinkage}
+	\caption{$Fr_L = $, $Fr_h = $}
+	\label{fig:example04mashcon2019dtcc1sinkage}
+\end{figure}
+
+
+\section{KCS in deep water, SIMMAN 2020 Case 3.1}
+\section{KCS in shallow water, SIMMAN 2020 Case 4.1}
+
+\end{document}

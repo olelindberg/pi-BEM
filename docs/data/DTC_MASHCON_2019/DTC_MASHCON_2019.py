@@ -1,7 +1,7 @@
 import numpy as np 
 import matplotlib.pyplot as plt
 
-savefigures = True
+savefigures = False
 
 g               = 9.80665
 density         = 1000
@@ -21,7 +21,7 @@ F2 = np.genfromtxt("C2/output/force.csv",delimiter=",")
 F3 = np.genfromtxt("C3/output/force.csv",delimiter=",")
 heaveforce = np.array([F1[-1],F2[-1],F3[-1]])
 print(heaveforce)
-sinkage         = heaveforce/(g*density*waterplanearea)
+sinkage         = (heaveforce-g*density*waterplanearea*0.05)/(g*density*waterplanearea)
 print(sinkage)
 
 C1 = np.genfromtxt("C1.dat",delimiter="")

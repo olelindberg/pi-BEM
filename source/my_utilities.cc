@@ -263,9 +263,6 @@ my_closest_point_and_differential_forms (const TopoDS_Shape &in_shape, const Poi
   exp.Init (out_shape, TopAbs_FACE);
   TopoDS_Face face = TopoDS::Face (exp.Current ());
 
-  std::cout << origin[0] << " " << origin[1] << " " << origin[2] << std::endl;
-  std::cout << u << " " << v << std::endl;
-  std::cout << tolerance << std::endl;
   return push_forward_and_differential_forms (face, u, v, tolerance);
 }
 

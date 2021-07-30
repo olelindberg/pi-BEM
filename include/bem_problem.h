@@ -124,8 +124,7 @@ public:
   typedef typename DoFHandler<dim - 1, dim>::active_cell_iterator cell_it;
   typedef typename DoFHandler<dim - 1, dim>::active_line_iterator line_it;
 
-  BEMProblem(ComputationalDomain<dim> &comp_dom,
-             const MPI_Comm            comm = MPI_COMM_WORLD);
+  BEMProblem(ComputationalDomain<dim> &comp_dom, const MPI_Comm comm = MPI_COMM_WORLD);
 
   void
   solve(TrilinosWrappers::MPI::Vector &      phi,
@@ -188,11 +187,25 @@ public:
 
 
 
-void dynamic_pressure(const Functions::ParsedFunction<dim>& wind, TrilinosWrappers::MPI::Vector& pressure);
-std::vector<Tensor<1, dim>> pressure_force(const TrilinosWrappers::MPI::Vector& pressure);
-double area_integral();
-Tensor<1, dim> volume_integral();
-void free_surface_elevation(const TrilinosWrappers::MPI::Vector &pressure,std::vector<Point<dim> >& elevation);
+  void
+  dynamic_pressure(const Functions::ParsedFunction<dim> &wind,
+                   TrilinosWrappers::MPI::Vector &       pressure);
+  std::vector<Tensor<1, dim>>
+  pressure_force(const TrilinosWrappers::MPI::Vector &pressure);
+  double
+  area_integral();
+  Tensor<1, dim>
+  volume_integral();
+  void
+  free_surface_elevation(const TrilinosWrappers::MPI::Vector &pressure,
+                         std::vector<Point<dim>> &            elevation);
+  void
+  velocity(double                               z0,
+           const TrilinosWrappers::MPI::Vector &phi,
+           const TrilinosWrappers::MPI::Vector &dphi_dn,
+           const std::vector<Point<dim>> &      pnts,
+           std::vector<double> &                pots,
+           std::vector<Point<dim>> &            vels);
 
   /// The next three methods are
   /// needed by the GMRES solver:
@@ -203,16 +216,14 @@ void free_surface_elevation(const TrilinosWrappers::MPI::Vector &pressure,std::v
   /// vector src. The result is stored
   /// in the vector dst.
   void
-  vmult(TrilinosWrappers::MPI::Vector &      dst,
-        const TrilinosWrappers::MPI::Vector &src) const;
+  vmult(TrilinosWrappers::MPI::Vector &dst, const TrilinosWrappers::MPI::Vector &src) const;
 
   /// The second method computes the
   /// right hand side vector of the
   /// system.
 
   void
-  compute_rhs(TrilinosWrappers::MPI::Vector &      dst,
-              const TrilinosWrappers::MPI::Vector &src) const;
+  compute_rhs(TrilinosWrappers::MPI::Vector &dst, const TrilinosWrappers::MPI::Vector &src) const;
 
   /// The third method computes the
   /// product between the solution vector
@@ -436,16 +447,20 @@ void free_surface_elevation(const TrilinosWrappers::MPI::Vector &pressure,std::v
 
   BEMFMA<dim> fma;
 
+
+
 private:
-
   enum class BEM_PROBLEM
-  { ONE_BODY, DOUBLE_BODY};
+  {
+    ONE_BODY,
+    DOUBLE_BODY
+  };
   BEM_PROBLEM _bem_problem_type = BEM_PROBLEM::DOUBLE_BODY;
-  
-  void _assemble_system_double_body (double z0 = 0.0);
-  double  _symmetry_plane_z_level  = 0.0;
-  bool _is_external_flow = false;
 
+  void
+         _assemble_system_double_body(double z0 = 0.0);
+  double _symmetry_plane_z_level = 0.0;
+  bool   _is_external_flow       = false;
 };
 
 #endif
