@@ -12,11 +12,13 @@
 // Read a file in iges format, and write it out again in the same
 // format.
 
-#include "computational_domain.h"
-#include "./../tests.h"
-#include <deal.II/grid/grid_tools.h>
 #include <deal.II/fe/fe_values.h>
+
+#include <deal.II/grid/grid_tools.h>
+
+#include "./../tests.h"
 #include "bem_problem.h"
+#include "computational_domain.h"
 
 int
 main(int argc, char **argv)
@@ -25,22 +27,25 @@ main(int argc, char **argv)
   // initlog();
   MPI_Comm               mpi_communicator(MPI_COMM_WORLD);
   ComputationalDomain<3> computational_domain(mpi_communicator);
-  deal2lkit::ParameterAcceptor::initialize("test06_area_and_volume.prm","used.prm");
+  BEMProblem<3>          bem_problem(computational_domain, mpi_communicator);
+
+  deal2lkit::ParameterAcceptor::initialize("test06_area_and_volume.prm", "used.prm");
+
   computational_domain.read_domain();
   computational_domain.read_cad_files();
   computational_domain.assign_manifold_projectors(1.0e-6);
   computational_domain.getTria().refine_global(2);
 
-
-  BEMProblem<3> bem_problem(computational_domain, mpi_communicator);
   bem_problem.reinit();
   std::cout << "Reinit done ..." << std::endl;
   auto area   = bem_problem.area_integral();
-//  auto volume =  bem_problem.volume_integral();
+  auto volume = bem_problem.volume_integral();
+
+  std::cout << "area   = " << area << std::endl;
+  std::cout << "volume = " << volume << std::endl;
 
   std::string   filename0 = ("meshResult.inp");
-  std::ofstream logfile0 (filename0.c_str ());
+  std::ofstream logfile0(filename0.c_str());
   GridOut       grid_out0;
-  grid_out0.write_ucd (computational_domain.getTria(), logfile0);
-
+  grid_out0.write_ucd(computational_domain.getTria(), logfile0);
 }

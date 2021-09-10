@@ -64,6 +64,7 @@
 #include <set>
 #include <string>
 
+#include "../include/Body.h"
 #include "../include/bem_problem.h"
 #include "../include/computational_domain.h"
 
@@ -106,10 +107,10 @@ public:
   parse_parameters(ParameterHandler &prm);
 
   void
-  prepare_bem_vectors();
+  prepare_bem_vectors(const Body &body);
 
   void
-  solve_problem();
+  solve_problem(const Body &body);
 
   void
   output_results(const std::string filename);
@@ -126,16 +127,19 @@ public:
 
   std::string output_file_name;
 
-const  Functions::ParsedFunction<dim>& get_wind() const
-{
-  return wind;
-}
+  const Functions::ParsedFunction<dim> &
+  get_wind() const
+  {
+    return wind;
+  }
 
-  TrilinosWrappers::MPI::Vector& get_pressure()
+  TrilinosWrappers::MPI::Vector &
+  get_pressure()
   {
     return pressure;
   }
-  const TrilinosWrappers::MPI::Vector& get_pressure() const
+  const TrilinosWrappers::MPI::Vector &
+  get_pressure() const
   {
     return pressure;
   }

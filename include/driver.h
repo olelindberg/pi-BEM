@@ -110,18 +110,18 @@ public:
 
 
   void
-  run(std::string input_path = "",std::string output_path = "");
+  run(std::string input_path = "", std::string output_path = "");
 
 protected:
   ConditionalOStream pcout;
 
   MPI_Comm mpi_communicator;
 
-  ComputationalDomain<dim> computational_domain;
+  ComputationalDomain<3> computational_domain;
 
-  BEMProblem<dim> bem_problem;
+  BEMProblem<3> bem_problem;
 
-  BoundaryConditions<dim> boundary_conditions;
+  BoundaryConditions<3> boundary_conditions;
 
   ParameterHandler prm;
 

@@ -1,0 +1,153 @@
+#include <deal.II/base/parsed_function.h>
+#include <deal.II/base/quadrature_lib.h>
+
+#include <deal.II/dofs/dof_accessor.h>
+#include <deal.II/dofs/dof_handler.h>
+#include <deal.II/dofs/dof_tools.h>
+
+#include <deal.II/fe/fe_q.h>
+#include <deal.II/fe/fe_system.h>
+#include <deal.II/fe/fe_values.h>
+#include <deal.II/fe/mapping_c1.h>
+#include <deal.II/fe/mapping_cartesian.h>
+#include <deal.II/fe/mapping_q.h>
+
+#include <deal.II/grid/grid_generator.h>
+#include <deal.II/grid/grid_out.h>
+#include <deal.II/grid/tria.h>
+
+#include <deal.II/lac/vector.h>
+
+#include <deal.II/numerics/data_out.h>
+
+#include <boost/archive/text_oarchive.hpp>
+
+#include <fstream>
+#include <iostream>
+
+
+int
+main(int argc, char **argv)
+{
+  int degree = 3;
+  if (argc > 1)
+    degree = std::stoi(argv[1]);
+
+  const int                dim = 3;
+  dealii::ParameterHandler prm;
+  prm.enter_subsection("Wind function 3d");
+  {
+    dealii::Functions::ParsedFunction<dim>::declare_parameters(prm, dim);
+    prm.set("Function expression", "x; y; z");
+  }
+  prm.leave_subsection();
+
+  dealii::Functions::ParsedFunction<dim> wind(dim);
+  prm.enter_subsection("Wind function 3d");
+  {
+    wind.parse_parameters(prm);
+  }
+  prm.leave_subsection();
+
+  dealii::Triangulation<2, dim> tria;
+  dealii::GridGenerator::subdivided_hyper_cube(tria, 2);
+
+  std::ofstream   out("/home/ole/dev/temp/grid.inp");
+  dealii::GridOut grid_out;
+  grid_out.write_ucd(tria, out);
+
+  dealii::FE_Q<2, dim>     fe_scalar(degree);
+  dealii::FESystem<2, dim> fe_vector(fe_scalar, 3);
+
+  dealii::DoFHandler dh_scalar(tria);
+  dh_scalar.distribute_dofs(fe_scalar);
+
+  dealii::DoFHandler dh_vector(tria);
+  dh_vector.distribute_dofs(fe_vector);
+
+  std::vector<dealii::types::global_dof_index> local_dofs_scalar(fe_scalar.dofs_per_cell);
+  std::vector<dealii::types::global_dof_index> local_dofs_vector(fe_vector.dofs_per_cell);
+
+  dealii::Vector<double> scalar_solution;
+  dealii::Vector<double> vector_solution;
+  scalar_solution.reinit(dh_scalar.n_dofs());
+  vector_solution.reinit(dh_vector.n_dofs());
+
+  int  mapping_degree = 1;
+  auto mapping        = std::make_shared<dealii::MappingQ<dim - 1, dim>>(mapping_degree);
+  std::vector<dealii::Point<dim>> support_points(dh_scalar.n_dofs());
+  dealii::DoFTools::map_dofs_to_support_points(*mapping, dh_scalar, support_points);
+
+  auto cell_vector = dh_vector.begin_active();
+  for (const auto &cell_scalar : dh_scalar.active_cell_iterators())
+  {
+    cell_scalar->get_dof_indices(local_dofs_scalar);
+    cell_vector->get_dof_indices(local_dofs_vector);
+
+    for (std::size_t i = 0; i < local_dofs_scalar.size(); ++i)
+    {
+      auto                   pnt = support_points[local_dofs_scalar[i]];
+      dealii::Vector<double> result(dim);
+      wind.vector_value(pnt, result);
+
+      for (std::size_t j = 0; j < 3; ++j)
+        vector_solution[local_dofs_vector[i * 3 + j]] = result[j];
+
+      scalar_solution[local_dofs_scalar[i]] = result[0];
+
+      std::cout << result << std::endl;
+    }
+
+    std::cout << "scalar dofs ";
+    for (auto id : local_dofs_scalar)
+      std::cout << id << ", ";
+    std::cout << "\n";
+
+    std::cout << "vector dofs ";
+    for (auto id : local_dofs_vector)
+      std::cout << id << ", ";
+    std::cout << "\n";
+
+    ++cell_vector;
+  }
+
+  std::vector<dealii::DataComponentInterpretation::DataComponentInterpretation>
+    data_component_interpretation(dim,
+                                  dealii::DataComponentInterpretation::component_is_part_of_vector);
+
+
+  dealii::DataOut<dim - 1, dealii::DoFHandler<dim - 1, dim>> dataout_scalar;
+  dataout_scalar.attach_dof_handler(dh_scalar);
+
+  dataout_scalar.add_data_vector(
+    scalar_solution,
+    "scalar",
+    dealii::DataOut<dim - 1, dealii::DoFHandler<dim - 1, dim>>::type_dof_data);
+
+  dataout_scalar.build_patches(
+    *mapping,
+    mapping_degree,
+    dealii::DataOut<dim - 1, dealii::DoFHandler<dim - 1, dim>>::curved_inner_cells);
+
+  std::string   filename_scalar = "/home/ole/dev/temp/scalar.vtu";
+  std::ofstream file_scalar(filename_scalar);
+  dataout_scalar.write_vtu(file_scalar);
+
+  dealii::DataOut<dim - 1, dealii::DoFHandler<dim - 1, dim>> dataout_vector;
+  dataout_vector.attach_dof_handler(dh_vector);
+
+  dataout_vector.add_data_vector(
+    vector_solution,
+    std::vector<std::string>(dim, "vector"),
+    dealii::DataOut<dim - 1, dealii::DoFHandler<dim - 1, dim>>::type_dof_data,
+    data_component_interpretation);
+
+  dataout_vector.build_patches(
+    *mapping,
+    mapping_degree,
+    dealii::DataOut<dim - 1, dealii::DoFHandler<dim - 1, dim>>::curved_inner_cells);
+
+  std::string   filename_vector = "/home/ole/dev/temp/vector.vtu";
+  std::ofstream file_vector(filename_vector);
+  dataout_vector.write_vtu(file_vector);
+}

@@ -9,7 +9,7 @@ Lpp_full        = 355
 Lpp_model       = 3.984
 Tm_model        = 0.163
 Tm_full         = 14.5
-waterplanearea  = 22032
+waterplanearea  = 15315 # 22032
 depth_model     = np.array([2.0*Tm_model,2.0*Tm_model,1.2*Tm_model])
 velocity_model  = [0.327,0.872,0.327]
 FnL              = velocity_model/np.sqrt(g*Lpp_model)
@@ -19,9 +19,12 @@ velocity_full   = FnL*np.sqrt(g*Lpp_full)
 F1 = np.genfromtxt("C1/output/force.csv",delimiter=",")
 F2 = np.genfromtxt("C2/output/force.csv",delimiter=",")
 F3 = np.genfromtxt("C3/output/force.csv",delimiter=",")
-heaveforce = np.array([F1[-1],F2[-1],F3[-1]])
+print(F1)
+print(F2)
+print(F3)
+heaveforce = np.array([F1[-1],F2[-1],F3[0][2]])
 print(heaveforce)
-sinkage         = (heaveforce-g*density*waterplanearea*0.05)/(g*density*waterplanearea)
+sinkage         = heaveforce/(g*density*waterplanearea)
 print(sinkage)
 
 C1 = np.genfromtxt("C1.dat",delimiter="")

@@ -95,6 +95,7 @@
 #include <set>
 #include <string>
 
+#include "../include/Body.h"
 #include "../include/ass_leg_function.h"
 #include "../include/bem_fma.h"
 #include "../include/computational_domain.h"
@@ -102,7 +103,6 @@
 #include "../include/local_expansion.h"
 #include "../include/multipole_expansion.h"
 #include "../include/octree_block.h"
-
 using namespace dealii;
 using namespace deal2lkit;
 
@@ -190,14 +190,32 @@ public:
   void
   dynamic_pressure(const Functions::ParsedFunction<dim> &wind,
                    TrilinosWrappers::MPI::Vector &       pressure);
-  std::vector<Tensor<1, dim>>
-  pressure_force(const TrilinosWrappers::MPI::Vector &pressure);
-  double
-  area_integral();
-  Tensor<1, dim>
-  volume_integral();
+
   void
-  free_surface_elevation(const TrilinosWrappers::MPI::Vector &pressure,
+  pressure_force_and_moment(const Body &                         body,
+                            const Tensor<1, dim> &               pressure_center,
+                            const TrilinosWrappers::MPI::Vector &pressure,
+                            Tensor<1, dim> &                     force,
+                            Tensor<1, dim> &                     moment);
+
+
+  void
+  center_of_pressure(const Body &                         body,
+                     const TrilinosWrappers::MPI::Vector &pressure,
+                     Tensor<1, dim> &                     pressure_center);
+
+  std::vector<double>
+  area_integral();
+
+  std::vector<Tensor<1, dim>>
+  volume_integral();
+
+  double
+  ssurffint(const Body &body, const TrilinosWrappers::MPI::Vector &pressure);
+
+  void
+  free_surface_elevation(const Body &                         body,
+                         const TrilinosWrappers::MPI::Vector &pressure,
                          std::vector<Point<dim>> &            elevation);
   void
   velocity(double                               z0,
@@ -309,6 +327,7 @@ public:
   ParsedFiniteElement<dim - 1, dim>            parsed_fe;
   ParsedFiniteElement<dim - 1, dim>            parsed_gradient_fe;
   std::unique_ptr<FiniteElement<dim - 1, dim>> fe;
+  std::unique_ptr<FiniteElement<dim - 2, dim>> fe1d;
   std::unique_ptr<FiniteElement<dim - 1, dim>> gradient_fe;
   DoFHandler<dim - 1, dim>                     dh;
   DoFHandler<dim - 1, dim>                     gradient_dh;
@@ -343,6 +362,7 @@ public:
 
 
   std::shared_ptr<Quadrature<dim - 1>> quadrature;
+  std::shared_ptr<Quadrature<dim - 2>> _quadrature1d;
   unsigned int                         quadrature_order;
 
   /// the number of standard quadrature points
@@ -460,7 +480,6 @@ private:
   void
          _assemble_system_double_body(double z0 = 0.0);
   double _symmetry_plane_z_level = 0.0;
-  bool   _is_external_flow       = false;
 };
 
 #endif

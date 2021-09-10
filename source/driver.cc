@@ -6,6 +6,7 @@
 
 #include <fstream>
 
+#include "JSON_BodyReader.h"
 #include "Teuchos_TimeMonitor.hpp"
 
 using Teuchos::RCP;
@@ -18,6 +19,8 @@ RCP<Time> OutputTime = Teuchos::TimeMonitor::getNewTimer("Output Time");
 RCP<Time> SolveTime  = Teuchos::TimeMonitor::getNewTimer("Solve Time");
 
 using namespace std;
+
+
 
 template <int dim>
 Driver<dim>::Driver()
@@ -55,6 +58,16 @@ template <int dim>
 void
 Driver<dim>::run(std::string input_path, std::string output_path)
 {
+  std::string bodyfilename = boost::filesystem::path(input_path).append("body.json").string();
+  Body        body;
+  if (!JSON_BodyReader::read(bodyfilename, body))
+  {
+    std::cout << "Reading json body file failed ..." << std::endl;
+    return;
+  }
+
+
+
   {
     Teuchos::TimeMonitor LocalTimer(*TotalTime);
     unsigned int         local_refinement_cycles = 0;
@@ -83,7 +96,7 @@ Driver<dim>::run(std::string input_path, std::string output_path)
       {
         Teuchos::TimeMonitor LocalTimer(*SolveTime);
         bem_problem.reinit();
-        boundary_conditions.solve_problem();
+        boundary_conditions.solve_problem(body);
       }
       if (!global_refinement && i < local_refinement_cycles)
       {
@@ -93,8 +106,24 @@ Driver<dim>::run(std::string input_path, std::string output_path)
       }
     }
 
+    auto areas   = bem_problem.area_integral();
+    auto volumes = bem_problem.volume_integral();
+
     bem_problem.dynamic_pressure(boundary_conditions.get_wind(),
                                  boundary_conditions.get_pressure());
+
+
+
+    Tensor<1, dim, double> pressure_center;
+    bem_problem.center_of_pressure(body, boundary_conditions.get_pressure(), pressure_center);
+    std::cout << "Center of pressure,  cp = " << pressure_center << "\n";
+
+    Tensor<1, dim, double> hydrodynamicForce;
+    Tensor<1, dim, double> moment;
+    bem_problem.pressure_force_and_moment(
+      body, pressure_center, boundary_conditions.get_pressure(), hydrodynamicForce, moment);
+
+
 
     std::vector<Point<dim>> points;
     std::vector<Point<dim>> velocities;
@@ -135,49 +164,45 @@ Driver<dim>::run(std::string input_path, std::string output_path)
                          potentials,
                          velocities);
 
-    auto                    area   = bem_problem.area_integral();
-    auto                    volume = bem_problem.volume_integral();
-    auto                    forces = bem_problem.pressure_force(boundary_conditions.get_pressure());
     std::vector<Point<dim>> elevation;
-    bem_problem.free_surface_elevation(boundary_conditions.get_pressure(), elevation);
+    bem_problem.free_surface_elevation(body, boundary_conditions.get_pressure(), elevation);
 
-    std::cout << "area  : " << area << "\n";
-    std::cout << "volume: " << volume[0] << ", " << volume[1] << ", " << volume[2] << "\n";
+    Tensor<1, dim, double> hydrostaticForce;
+    hydrostaticForce[2] = bem_problem.ssurffint(body, boundary_conditions.get_pressure());
+    std::cout << "hydrostaticForce  : " << hydrostaticForce[2] << "\n";
 
     //-------------------------------------------------------------------------
     // Save forces:
     //-------------------------------------------------------------------------
-    {
-      std::fstream file;
-      std::string  filename = boost::filesystem::path(output_path).append("velocity.csv").string();
-      file.open(filename, std::fstream::out);
-      if (file.is_open())
-      {
-        file << "# x [m], y [m], z [m], phi [m^2/s], u [m/s], v [m/s], w [m/s] \n";
-        for (int i = 0; i < points.size(); ++i)
-        {
-          file << points[i][0] << ", " << points[i][1] << ", " << points[i][2] << ", "
-               << potentials[i] << ", " << velocities[i][0] << ", " << velocities[i][1] << ", "
-               << velocities[i][2] << "\n";
-        }
-        file.close();
-      }
-    }
+    // {
+    //   std::fstream file;
+    //   std::string  filename =
+    //   boost::filesystem::path(output_path).append("velocity.csv").string(); file.open(filename,
+    //   std::fstream::out); if (file.is_open())
+    //   {
+    //     file << "# x [m], y [m], z [m], phi [m^2/s], u [m/s], v [m/s], w [m/s] \n";
+    //     for (int i = 0; i < (int)points.size(); ++i)
+    //     {
+    //       file << points[i][0] << ", " << points[i][1] << ", " << points[i][2] << ", "
+    //            << potentials[i] << ", " << velocities[i][0] << ", " << velocities[i][1] << ", "
+    //            << velocities[i][2] << "\n";
+    //     }
+    //     file.close();
+    //   }
+    // }
     //-------------------------------------------------------------------------
     // Save forces:
     //-------------------------------------------------------------------------
     std::fstream file;
-    std::string force_filename = boost::filesystem::path(output_path).append("forces.csv").string();
+    std::string  force_filename = boost::filesystem::path(output_path).append("force.csv").string();
     file.open(force_filename, std::fstream::out);
     if (file.is_open())
     {
-      file << "# material id, Fx [N], Fy [N], Fz [N]\n";
-      int cnt = 0;
-      for (auto &force : forces)
-      {
-        file << cnt << ", " << force[0] << ", " << force[1] << ", " << force[2] << "\n";
-        ++cnt;
-      }
+      file << "# Fx [N], Fy [N], Fz [N], Mx [Nm], My [Nm], Mz [Nm]\n";
+      file << hydrodynamicForce[0] << ", " << hydrodynamicForce[1] << ", " << hydrodynamicForce[2]
+           << ", " << moment[0] << ", " << moment[1] << ", " << moment[2] << "\n";
+      file << hydrostaticForce[0] << ", " << hydrostaticForce[1] << ", " << hydrostaticForce[2]
+           << ", " << moment[0] << ", " << moment[1] << ", " << moment[2] << "\n";
       file.close();
     }
 
@@ -208,5 +233,5 @@ Driver<dim>::run(std::string input_path, std::string output_path)
   //  Teuchos::TimeMonitor::summarize();
 }
 
-template class Driver<2>;
+// template class Driver<2>;
 template class Driver<3>;

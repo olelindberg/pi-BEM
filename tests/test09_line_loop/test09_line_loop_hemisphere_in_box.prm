@@ -56,7 +56,8 @@ subsection BoundaryConditions<3>
 end
 subsection ComputationalDomain<3>
   set Input grid format = inp
-  set Input grid name   = mesh
+  set Input grid name = ../../../examples/example04d_hemisphere_in_box_hT_1.2/mesh
+  set Input path to CAD files = ../../../examples/example04d_hemisphere_in_box_hT_1.2/
   set Number of cycles  = 2
   set Cells per circle = 12
   set Use iges surfaces and curves = true
@@ -67,9 +68,6 @@ subsection ComputationalDomain<3>
     set Dirichlet boundary ids = 
     set Neumann boundary ids   = 1,2
   end
-end
-subsection Driver<3>
-  set Set Global Refinement = true
 end
 subsection Scalar FE
   set Blocking of the finite element = u
