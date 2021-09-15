@@ -2247,8 +2247,49 @@ BEMProblem<dim>::adaptive_refinement(const TrilinosWrappers::MPI::Vector &error_
 
 template <int dim>
 void
-BEMProblem<dim>::dynamic_pressure(const Functions::ParsedFunction<dim> &wind,
-                                  TrilinosWrappers::MPI::Vector &       pressure)
+BEMProblem<dim>::hydrostatic_pressure(double                         gravity,
+                                      double                         density,
+                                      double                         z0,
+                                      TrilinosWrappers::MPI::Vector &pressure)
+{
+  Teuchos::TimeMonitor LocalTimer(*AssembleTime);
+
+  pcout << "Calculating hydrostatic pressure ..." << std::endl;
+  const types::global_dof_index n_dofs = dh.n_dofs();
+  std::vector<Point<dim>>       support_points(n_dofs);
+  DoFTools::map_dofs_to_support_points<dim - 1, dim>(*mapping, dh, support_points);
+
+  pressure.reinit(this_cpu_set, mpi_communicator);
+  pressure = 0.0;
+
+  std::vector<types::global_dof_index> local_dof_indices(fe->dofs_per_cell);
+
+  //---------------------------------------------------------------------------
+  // Loop over all active cells:
+  //---------------------------------------------------------------------------
+  for (cell_it cell = dh.begin_active(); cell != dh.end(); ++cell)
+  {
+    if (cell->subdomain_id() == this_mpi_process)
+    {
+      cell->get_dof_indices(local_dof_indices);
+
+      for (unsigned int j = 0; j < fe->dofs_per_cell; ++j)
+      {
+        const auto pos                 = support_points[local_dof_indices[j]];
+        double     z                   = pos[2];
+        pressure(local_dof_indices[j]) = -density * gravity * (z - z0);
+      } // for j in cell dofs
+    }   // if this cpu
+  }     // for cell in active cells
+  pcout << "Calculation of hydrostatic pressure done." << std::endl;
+}
+
+
+template <int dim>
+void
+BEMProblem<dim>::hydrodynamic_pressure(double                                density,
+                                       const Functions::ParsedFunction<dim> &wind,
+                                       TrilinosWrappers::MPI::Vector &       pressure)
 {
   Teuchos::TimeMonitor LocalTimer(*AssembleTime);
 
@@ -2257,20 +2298,11 @@ BEMProblem<dim>::dynamic_pressure(const Functions::ParsedFunction<dim> &wind,
   std::vector<Point<dim>>       support_points(n_dofs);
   DoFTools::map_dofs_to_support_points<dim - 1, dim>(*mapping, dh, support_points);
 
-  pressure.reinit(this_cpu_set);
+  pressure.reinit(this_cpu_set, mpi_communicator);
   pressure = 0.0;
 
   std::vector<types::global_dof_index> local_dof_indices(fe->dofs_per_cell);
   std::vector<types::global_dof_index> local_dof_indices_v(gradient_fe->dofs_per_cell);
-
-  std::fstream file;
-  std::string  filename =
-    std::string("/home/ole/dev/temp/vel").append(std::to_string(this_mpi_process)).append(".csv");
-  std::cout << filename << std::endl;
-  file.open(filename, std::fstream::out);
-  for (unsigned int j = 0; j < vector_gradients_solution.size(); ++j)
-    file << vector_gradients_solution[j] << "\n";
-  file.close();
 
   //---------------------------------------------------------------------------
   // Loop over all active cells:
@@ -2286,28 +2318,19 @@ BEMProblem<dim>::dynamic_pressure(const Functions::ParsedFunction<dim> &wind,
 
       for (unsigned int j = 0; j < fe->dofs_per_cell; ++j)
       {
-        //        double u = vector_gradients_solution[local_dof_indices_v[j * 3 + 0]];
-        //        double v = vector_gradients_solution[local_dof_indices_v[j * 3 + 1]];
-        //        double w = vector_gradients_solution[local_dof_indices_v[j * 3 + 2]];
-        double u = vector_gradients_solution[local_dof_indices[j] + 0 * n_dofs];
-        double v = vector_gradients_solution[local_dof_indices[j] + 1 * n_dofs];
-        double w = vector_gradients_solution[local_dof_indices[j] + 2 * n_dofs];
-
-        if (this_mpi_process == 0)
-          std::cout << local_dof_indices[j] << ", " << local_dof_indices_v[j * 3 + 0] << std::endl;
+        double u = vector_gradients_solution[local_dof_indices_v[j * 3 + 0]];
+        double v = vector_gradients_solution[local_dof_indices_v[j * 3 + 1]];
+        double w = vector_gradients_solution[local_dof_indices_v[j * 3 + 2]];
 
         Vector<double> vel_infty(dim);
         wind.vector_value(support_points[local_dof_indices[j]], vel_infty);
 
-        double rho = 1000;
         pressure(local_dof_indices[j]) =
-          -rho * (u * (0.5 * u - vel_infty[0]) + v * (0.5 * v - vel_infty[1]) +
-                  w * (0.5 * w - vel_infty[2]));
+          -density * (u * (0.5 * u - vel_infty[0]) + v * (0.5 * v - vel_infty[1]) +
+                      w * (0.5 * w - vel_infty[2]));
 
       } // for j in cell dofs
-      if (this_mpi_process == 0)
-        std::cout << std::endl;
-    } // if this cpu
+    }   // if this cpu
     ++cell_v;
   } // for cell in active cells
   pcout << "... calculation of pressure force and moment done" << std::endl;
@@ -2336,7 +2359,8 @@ BEMProblem<dim>::center_of_pressure(const Body &                         body,
   // Loop over all active cells:
   //---------------------------------------------------------------------------
   Tensor<1, dim> integral1_local;
-  double         integral2_local;
+  integral1_local        = 0.0;
+  double integral2_local = 0.0;
   for (cell_it cell = dh.begin_active(); cell != dh.end(); ++cell)
   {
     if (cell->subdomain_id() == this_mpi_process && body.hasMaterial(cell->material_id()))
@@ -2344,17 +2368,14 @@ BEMProblem<dim>::center_of_pressure(const Body &                         body,
       fe_v.reinit(cell);
       cell->get_dof_indices(local_dof_indices);
       const std::vector<Point<dim>> &q_points = fe_v.get_quadrature_points();
+      std::vector<double>            q_pressure(q_points.size());
+      fe_v.get_function_values(pressure, q_pressure);
 
       for (unsigned int q = 0; q < n_q_points; ++q)
       {
-        // Interpolate to quadrature point:
-        double p = 0.0;
-        for (unsigned int j = 0; j < fe->dofs_per_cell; ++j)
-          p += pressure(local_dof_indices[j]) * fe_v.shape_value(j, q);
-
         // Quadrature summation:
-        integral1_local += q_points[q] * fe_v.JxW(q) * p;
-        integral2_local += fe_v.JxW(q) * p;
+        integral1_local += q_points[q] * fe_v.JxW(q) * q_pressure[q];
+        integral2_local += fe_v.JxW(q) * q_pressure[q];
       }
     } // if this cpu
   }   // for cell in active cells
@@ -2372,7 +2393,6 @@ BEMProblem<dim>::center_of_pressure(const Body &                         body,
 template <int dim>
 void
 BEMProblem<dim>::pressure_force_and_moment(const Body &                         body,
-                                           const Tensor<1, dim> &               pressure_center,
                                            const TrilinosWrappers::MPI::Vector &pressure,
                                            Tensor<1, dim> &                     force,
                                            Tensor<1, dim> &                     moment)
@@ -2392,7 +2412,8 @@ BEMProblem<dim>::pressure_force_and_moment(const Body &                         
 
   std::vector<types::global_dof_index> local_dof_indices(fe->dofs_per_cell);
 
-  force = 0.0;
+  force  = 0.0;
+  moment = 0.0;
 
   for (cell_it cell = dh.begin_active(); cell != dh.end(); ++cell)
   {
@@ -2401,131 +2422,33 @@ BEMProblem<dim>::pressure_force_and_moment(const Body &                         
       fe_v.reinit(cell);
       cell->get_dof_indices(local_dof_indices);
 
-      const std::vector<Tensor<1, dim>> &normals = fe_v.get_normal_vectors();
+      const std::vector<Point<dim>> &    q_points  = fe_v.get_quadrature_points();
+      const std::vector<Tensor<1, dim>> &q_normals = fe_v.get_normal_vectors();
+
+      std::vector<double> q_pressure(q_points.size());
+      fe_v.get_function_values(pressure, q_pressure);
 
       for (unsigned int q = 0; q < n_q_points; ++q)
       {
-        // Interpolate to quadrature point:
-        double p = 0.0;
-        for (unsigned int j = 0; j < fe->dofs_per_cell; ++j)
-          p += pressure(local_dof_indices[j]) * fe_v.shape_value(j, q);
-        // Quadrature summation:
-        force += ((p * normals[q]) * fe_v.JxW(q));
+        const auto n   = q_normals[q];
+        const auto r   = body.getCenterOfGravity() - q_points[q];
+        const auto rxn = cross_product_3d(r, n);
+
+        force += ((q_pressure[q] * n) * fe_v.JxW(q));
+        moment += ((q_pressure[q] * rxn) * fe_v.JxW(q));
       }
     } // if this cpu
   }   // for cell in active cells
+
+  force  = Utilities::MPI::sum(force, mpi_communicator);
+  moment = Utilities::MPI::sum(moment, mpi_communicator);
 }
 
 template <int dim>
-std::vector<double>
-BEMProblem<dim>::area_integral()
+double
+BEMProblem<dim>::area_integral(const Body &body)
 {
-  Teuchos::TimeMonitor LocalTimer(*AssembleTime);
-
-  FEValues<dim - 1, dim> fe_v(*mapping,
-                              *fe,
-                              *quadrature,
-                              update_values | update_normal_vectors | update_quadrature_points |
-                                update_JxW_values);
-  const unsigned int     n_q_points = fe_v.n_quadrature_points;
-
-  const types::global_dof_index n_dofs = dh.n_dofs();
-  std::vector<Point<dim>>       support_points(n_dofs);
-  DoFTools::map_dofs_to_support_points<dim - 1, dim>(*mapping, dh, support_points);
-
-  std::vector<types::global_dof_index> local_dof_indices(fe->dofs_per_cell);
-
-  //---------------------------------------------------------------------------
-  // Loop over all active cells:
-  //---------------------------------------------------------------------------
-  auto                nummat = dof_handler_util::number_of_materials(dh);
-  std::vector<double> areas(nummat);
-  for (cell_it cell = dh.begin_active(); cell != dh.end(); ++cell)
-  {
-    if (cell->subdomain_id() == this_mpi_process)
-    {
-      fe_v.reinit(cell);
-      cell->get_dof_indices(local_dof_indices);
-
-      const std::vector<Tensor<1, dim>> &normals = fe_v.get_normal_vectors();
-
-      double area = 0.0;
-      for (unsigned int q = 0; q < n_q_points; ++q)
-      {
-        // Interpolate to quadrature point:
-        for (unsigned int j = 0; j < fe->dofs_per_cell; ++j)
-          area += fe_v.shape_value(j, q) * fe_v.JxW(q);
-      }
-      areas[cell->material_id()] += area;
-
-    } // if this cpu
-  }   // for cell in active cells
-
-  return areas;
-}
-
-template <int dim>
-std::vector<Tensor<1, dim>>
-BEMProblem<dim>::volume_integral()
-{
-  Teuchos::TimeMonitor LocalTimer(*AssembleTime);
-
-  FEValues<dim - 1, dim> fe_v(*mapping,
-                              *fe,
-                              *quadrature,
-                              update_values | update_normal_vectors | update_quadrature_points |
-                                update_JxW_values);
-  const unsigned int     n_q_points = fe_v.n_quadrature_points;
-
-  const types::global_dof_index n_dofs = dh.n_dofs();
-  std::vector<Point<dim>>       support_points(n_dofs);
-  DoFTools::map_dofs_to_support_points<dim - 1, dim>(*mapping, dh, support_points);
-
-  std::vector<types::global_dof_index> local_dof_indices(fe->dofs_per_cell);
-
-  //---------------------------------------------------------------------------
-  // Loop over all active cells:
-  //---------------------------------------------------------------------------
-  auto                        nummat = dof_handler_util::number_of_materials(dh);
-  std::vector<Tensor<1, dim>> volumes(nummat);
-  for (cell_it cell = dh.begin_active(); cell != dh.end(); ++cell)
-  {
-    if (cell->subdomain_id() == this_mpi_process)
-    {
-      fe_v.reinit(cell);
-      cell->get_dof_indices(local_dof_indices);
-
-      const std::vector<Point<dim>> &    q_points = fe_v.get_quadrature_points();
-      const std::vector<Tensor<1, dim>> &normals  = fe_v.get_normal_vectors();
-
-      Tensor<1, dim> volume;
-      volume = 0.0;
-      for (unsigned int q = 0; q < n_q_points; ++q)
-      {
-        // Interpolate to quadrature point:
-        for (unsigned int j = 0; j < fe->dofs_per_cell; ++j)
-        {
-          volume[0] += q_points[q][0] * normals[q][0] * fe_v.JxW(q) * fe_v.shape_value(j, q);
-          volume[1] += q_points[q][1] * normals[q][1] * fe_v.JxW(q) * fe_v.shape_value(j, q);
-          volume[2] += q_points[q][2] * normals[q][2] * fe_v.JxW(q) * fe_v.shape_value(j, q);
-        }
-      }
-      volumes[cell->material_id()] += volume;
-    } // if this cpu
-  }   // for cell in active cells
-
-  return volumes;
-}
-
-template <int dim>
-void
-BEMProblem<dim>::free_surface_elevation(const Body &                         body,
-                                        const TrilinosWrappers::MPI::Vector &pressure,
-                                        std::vector<Point<dim>> &            elevation)
-{
-  double density = 1000;
-  double gravAcc = 9.80665;
-
+  int                    dimId = 1;
   FEValues<dim - 1, dim> fe_v(*mapping,
                               dh.get_fe(),
                               *quadrature,
@@ -2538,15 +2461,111 @@ BEMProblem<dim>::free_surface_elevation(const Body &                         bod
                                             update_values | update_normal_vectors |
                                               update_quadrature_points | update_JxW_values);
 
-  const unsigned int n_q_points = fe_v.n_quadrature_points;
+  const types::global_dof_index n_dofs = dh.n_dofs();
+  std::vector<Point<dim>>       support_points(n_dofs);
+  DoFTools::map_dofs_to_support_points<dim - 1, dim>(*mapping, dh, support_points);
+  std::vector<types::global_dof_index> local_dof_indices(fe->dofs_per_cell);
+
+  double area = 0.0;
+  for (const auto &cell : dh.active_cell_iterators())
+  {
+    if (cell->subdomain_id() == Utilities::MPI::this_mpi_process(mpi_communicator))
+    {
+      fe_v.reinit(cell);
+      cell->get_dof_indices(local_dof_indices);
+
+      for (int j = 0; j < 4; ++j)
+      {
+        auto line = cell->line(j);
+        if (line->at_boundary() && body.isWaterline(line->manifold_id()))
+        {
+          fe_face_values.reinit(cell, j);
+
+          auto qpoints  = fe_face_values.get_quadrature_points();
+          auto qnormals = fe_face_values.get_normal_vectors();
+
+          for (unsigned int q = 0; q < fe_face_values.n_quadrature_points; ++q)
+          {
+            double n = qpoints[q][dimId];
+            if (std::fabs(n) > 0.0)
+              n /= std::fabs(n);
+
+            for (unsigned int i = 0; i < fe_face_values.dofs_per_cell; ++i)
+              area +=
+                n * qpoints[q][dimId] * fe_face_values.shape_value(i, q) * fe_face_values.JxW(q);
+          } // for q
+        }   // if line at bnd
+      }     // for j faces
+    }       // if this cpu
+  }         // for cell in active cells
+
+  area = Utilities::MPI::sum(area, mpi_communicator);
+  return area;
+}
+
+template <int dim>
+Tensor<1, dim>
+BEMProblem<dim>::volume_integral(const Body &body)
+{
+  Teuchos::TimeMonitor LocalTimer(*AssembleTime);
+
+  FEValues<dim - 1, dim> fe_v(*mapping,
+                              *fe,
+                              *quadrature,
+                              update_values | update_normal_vectors | update_quadrature_points |
+                                update_JxW_values);
+  const unsigned int     n_q_points = fe_v.n_quadrature_points;
+
+  //---------------------------------------------------------------------------
+  // Loop over all active cells:
+  //---------------------------------------------------------------------------
+  Tensor<1, dim> volume;
+  volume = 0.0;
+  for (cell_it cell = dh.begin_active(); cell != dh.end(); ++cell)
+  {
+    if (cell->subdomain_id() == this_mpi_process && body.hasMaterial(cell->material_id()))
+    {
+      fe_v.reinit(cell);
+      const std::vector<Point<dim>> &    q_points = fe_v.get_quadrature_points();
+      const std::vector<Tensor<1, dim>> &normals  = fe_v.get_normal_vectors();
+
+      for (unsigned int q = 0; q < n_q_points; ++q)
+      {
+        volume[0] += -q_points[q][0] * normals[q][0] * fe_v.JxW(q);
+        volume[1] += -q_points[q][1] * normals[q][1] * fe_v.JxW(q);
+        volume[2] += -q_points[q][2] * normals[q][2] * fe_v.JxW(q);
+      }
+    } // if this cpu
+  }   // for cell in active cells
+  volume = Utilities::MPI::sum(volume, mpi_communicator);
+  return volume;
+}
+
+template <int dim>
+void
+BEMProblem<dim>::free_surface_elevation(double                               gravity,
+                                        double                               density,
+                                        const Body &                         body,
+                                        const TrilinosWrappers::MPI::Vector &pressure,
+                                        std::vector<Point<dim>> &            elevation)
+{
+  FEValues<dim - 1, dim> fe_v(*mapping,
+                              dh.get_fe(),
+                              *quadrature,
+                              update_values | update_normal_vectors | update_quadrature_points |
+                                update_JxW_values);
+
+  FEFaceValues<dim - 1, dim> fe_face_values(*mapping,
+                                            dh.get_fe(),
+                                            *_quadrature1d,
+                                            update_values | update_normal_vectors |
+                                              update_quadrature_points | update_JxW_values);
 
   const types::global_dof_index n_dofs = dh.n_dofs();
   std::vector<Point<dim>>       support_points(n_dofs);
   DoFTools::map_dofs_to_support_points<dim - 1, dim>(*mapping, dh, support_points);
-
   std::vector<types::global_dof_index> local_dof_indices(fe->dofs_per_cell);
 
-  double volume_local = 0.0;
   for (const auto &cell : dh.active_cell_iterators())
   {
     if (cell->subdomain_id() == this_mpi_process && body.hasMaterial(cell->material_id()))
@@ -2573,7 +2592,7 @@ BEMProblem<dim>::free_surface_elevation(const Body &                         bod
             Point<dim> elev;
             elev[0] = qpoints[q][0];
             elev[1] = qpoints[q][1];
-            elev[2] = p / (density * gravAcc);
+            elev[2] = p / (density * gravity);
             elevation.push_back(elev);
 
           } // for q
@@ -2584,81 +2603,4 @@ BEMProblem<dim>::free_surface_elevation(const Body &                         bod
   return;
 }
 
-template <int dim>
-void
-BEMProblem<dim>::velocity(double                               z0,
-                          const TrilinosWrappers::MPI::Vector &phi,
-                          const TrilinosWrappers::MPI::Vector &dphi_dn,
-                          const std::vector<Point<dim>> &      pnts,
-                          std::vector<double> &                pots,
-                          std::vector<Point<dim>> &            vels)
-{}
-
-#include <iomanip>
-
-template <int dim>
-double
-BEMProblem<dim>::ssurffint(const Body &body, const TrilinosWrappers::MPI::Vector &pressure)
-{
-  double density = 1000;
-  double gravAcc = 9.80665;
-
-  FEValues<dim - 1, dim> fe_v(*mapping,
-                              dh.get_fe(),
-                              *quadrature,
-                              update_values | update_normal_vectors | update_quadrature_points |
-                                update_JxW_values);
-
-  FEFaceValues<dim - 1, dim> fe_face_values(*mapping,
-                                            dh.get_fe(),
-                                            *_quadrature1d,
-                                            update_values | update_normal_vectors |
-                                              update_quadrature_points | update_JxW_values);
-
-  const unsigned int n_q_points = fe_v.n_quadrature_points;
-
-  const types::global_dof_index n_dofs = dh.n_dofs();
-  std::vector<Point<dim>>       support_points(n_dofs);
-  DoFTools::map_dofs_to_support_points<dim - 1, dim>(*mapping, dh, support_points);
-  std::vector<types::global_dof_index> local_dof_indices(fe->dofs_per_cell);
-  double                               volume_local = 0.0;
-  for (const auto &cell : dh.active_cell_iterators())
-  {
-    if (cell->subdomain_id() == this_mpi_process && body.hasMaterial(cell->material_id()))
-    {
-      fe_v.reinit(cell);
-      cell->get_dof_indices(local_dof_indices);
-
-      for (int j = 0; j < 4; ++j)
-      {
-        auto line = cell->line(j);
-        if (line->at_boundary() && body.isWaterline(line->manifold_id()))
-        {
-          fe_face_values.reinit(cell, j);
-
-          auto qpoints  = fe_face_values.get_quadrature_points();
-          auto qnormals = fe_face_values.get_normal_vectors();
-
-          for (unsigned int q = 0; q < fe_face_values.n_quadrature_points; ++q)
-          {
-            // Interpolate from nodes to quadrature points:
-            double p = 0.0;
-            for (unsigned int i = 0; i < fe_face_values.dofs_per_cell; ++i)
-              p += pressure(local_dof_indices[i]) * fe_face_values.shape_value(i, q);
-
-            // Integration of submerged volume change:
-            double elevation = p / (density * gravAcc);
-            double beam      = std::fabs(qpoints[q][1]);
-            volume_local += beam * elevation * fe_face_values.JxW(q);
-          } // for q
-        }   // if line at bnd
-      }     // for j faces
-    }       // if this cpu
-  }         // for cell in active cells
-
-  double volume     = Utilities::MPI::sum(volume_local, mpi_communicator);
-  double heaveForce = volume * density * gravAcc;
-  return heaveForce;
-}
-// template class BEMProblem<2>;
 template class BEMProblem<3>;

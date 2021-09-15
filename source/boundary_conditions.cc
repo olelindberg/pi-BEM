@@ -445,7 +445,8 @@ BoundaryConditions<dim>::output_results(const std::string filename)
   // output only on the first processor.
   const Vector<double> localized_phi(phi);
   const Vector<double> localized_dphi_dn(dphi_dn);
-  const Vector<double> localized_pressure(pressure);
+  const Vector<double> localized_hydrostatic_pressure(hydrostatic_pressure);
+  const Vector<double> localized_hydrodynamic_pressure(hydrodynamic_pressure);
   const Vector<double> localized_alpha(bem.alpha);
   const Vector<double> localized_gradients(bem.vector_gradients_solution);
   const Vector<double> localized_surf_gradients(bem.vector_surface_gradients_solution);
@@ -470,8 +471,11 @@ BoundaryConditions<dim>::output_results(const std::string filename)
     dataout_scalar.add_data_vector(localized_phi,
                                    "phi",
                                    DataOut<dim - 1, DoFHandler<dim - 1, dim>>::type_dof_data);
-    dataout_scalar.add_data_vector(localized_pressure,
-                                   "pressure",
+    dataout_scalar.add_data_vector(localized_hydrostatic_pressure,
+                                   "hydrostatic_pressure",
+                                   DataOut<dim - 1, DoFHandler<dim - 1, dim>>::type_dof_data);
+    dataout_scalar.add_data_vector(localized_hydrodynamic_pressure,
+                                   "hydrodynamic_pressure",
                                    DataOut<dim - 1, DoFHandler<dim - 1, dim>>::type_dof_data);
     dataout_scalar.add_data_vector(localized_dphi_dn,
                                    "dphi_dn",

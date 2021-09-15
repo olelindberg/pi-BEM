@@ -23,6 +23,12 @@ public:
     {
       pt::read_json(filename, root);
 
+      auto name = root.get<std::string>("name");
+      body.setName(name);
+
+      auto draft = root.get<double>("draft");
+      body.setDraft(draft);
+
       std::vector<int> materialIndices;
       for (pt::ptree::value_type &id : root.get_child("materialIndices"))
         materialIndices.push_back(id.second.get_value<int>());
@@ -32,6 +38,16 @@ public:
       for (pt::ptree::value_type &id : root.get_child("waterlineIndices"))
         waterlineIndices.push_back(id.second.get_value<int>());
       body.setWaterlineIndices(waterlineIndices);
+
+      std::vector<double> centerOfGravity;
+      for (pt::ptree::value_type &id : root.get_child("centerOfGravity"))
+        centerOfGravity.push_back(id.second.get_value<double>());
+      Tensor<1, 3> tmp;
+      for (int i = 0; i < 3; ++i)
+        tmp[i] = centerOfGravity[i];
+      body.setCenterOfGravity(tmp);
+
+
 
       return true;
     }

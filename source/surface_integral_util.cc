@@ -131,8 +131,8 @@ surface_integral_util<dim>::parse_parameters(ParameterHandler &prm)
 
 
 template <int dim>
-std::vector<double>
-surface_integral_util<dim>::ssurffint(int dimId)
+double
+surface_integral_util<dim>::ssurffint(const Body &body, int dimId)
 {
   FEValues<dim - 1, dim> fe_v(*mapping,
                               dh.get_fe(),
@@ -152,9 +152,8 @@ surface_integral_util<dim>::ssurffint(int dimId)
   std::vector<Point<dim>>       support_points(n_dofs);
   DoFTools::map_dofs_to_support_points<dim - 1, dim>(*mapping, dh, support_points);
   std::vector<types::global_dof_index> local_dof_indices(fe->dofs_per_cell);
-  int                                  numMaterials = dof_handler_util::number_of_materials(dh);
-  std::vector<double>                  areas_local(numMaterials);
-  //  for (cell_it cell = dh.begin_active(); cell != dh.end(); ++cell)
+
+  double area = 0.0;
   for (const auto &cell : dh.active_cell_iterators())
   {
     if (cell->subdomain_id() == Utilities::MPI::this_mpi_process(_mpi_communicator))
@@ -165,7 +164,7 @@ surface_integral_util<dim>::ssurffint(int dimId)
       for (int j = 0; j < 4; ++j)
       {
         auto line = cell->line(j);
-        if (line->at_boundary())
+        if (line->at_boundary() && body.isWaterline(line->manifold_id()))
         {
           fe_face_values.reinit(cell, j);
 
@@ -176,8 +175,8 @@ surface_integral_util<dim>::ssurffint(int dimId)
           {
             for (unsigned int i = 0; i < fe_face_values.dofs_per_cell; ++i)
             {
-              areas_local[line->manifold_id()] +=
-                qpoints[q][dimId] * fe_face_values.shape_value(i, q) * fe_face_values.JxW(q);
+              //              area += qpoints[q][dimId] * fe_face_values.shape_value(i, q) *
+              //              fe_face_values.JxW(q);
             } // for i
           }   // for q
         }     // if line at bnd
@@ -185,11 +184,8 @@ surface_integral_util<dim>::ssurffint(int dimId)
     }         // if this cpu
   }           // for cell in active cells
 
-  std::vector<double> areas(numMaterials);
-  for (int i = 0; i < numMaterials; ++i)
-    areas[i] = Utilities::MPI::sum(areas_local[i], _mpi_communicator);
-
-  return areas;
+  area = Utilities::MPI::sum(area, _mpi_communicator);
+  return area;
 }
 
 

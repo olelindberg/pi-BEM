@@ -6,6 +6,7 @@
 
 #include <fstream>
 
+#include "../include/surface_integral_util.h"
 #include "JSON_BodyReader.h"
 #include "Teuchos_TimeMonitor.hpp"
 
@@ -19,8 +20,6 @@ RCP<Time> OutputTime = Teuchos::TimeMonitor::getNewTimer("Output Time");
 RCP<Time> SolveTime  = Teuchos::TimeMonitor::getNewTimer("Solve Time");
 
 using namespace std;
-
-
 
 template <int dim>
 Driver<dim>::Driver()
@@ -58,6 +57,11 @@ template <int dim>
 void
 Driver<dim>::run(std::string input_path, std::string output_path)
 {
+  // Constant parameters:
+  const double gravity = 9.80665;
+  const double density = 1000;
+
+  // Read and create body/ship:
   std::string bodyfilename = boost::filesystem::path(input_path).append("body.json").string();
   Body        body;
   if (!JSON_BodyReader::read(bodyfilename, body))
@@ -65,7 +69,7 @@ Driver<dim>::run(std::string input_path, std::string output_path)
     std::cout << "Reading json body file failed ..." << std::endl;
     return;
   }
-
+  body.print();
 
 
   {
@@ -106,90 +110,66 @@ Driver<dim>::run(std::string input_path, std::string output_path)
       }
     }
 
-    auto areas   = bem_problem.area_integral();
-    auto volumes = bem_problem.volume_integral();
 
-    bem_problem.dynamic_pressure(boundary_conditions.get_wind(),
-                                 boundary_conditions.get_pressure());
+    //-------------------------------------------------------------------------
+    // Waterplane area and displacement:
+    //-------------------------------------------------------------------------
+    auto area   = bem_problem.area_integral(body);
+    auto volume = bem_problem.volume_integral(body);
+
+    //-------------------------------------------------------------------------
+    // Hydrostatic and hydrodynamic pressures:
+    //-------------------------------------------------------------------------
+    bem_problem.hydrostatic_pressure(gravity,
+                                     density,
+                                     body.getDraft(),
+                                     boundary_conditions.get_hydrostatic_pressure());
+
+    bem_problem.hydrodynamic_pressure(density,
+                                      boundary_conditions.get_wind(),
+                                      boundary_conditions.get_hydrodynamic_pressure());
 
 
+    //-------------------------------------------------------------------------
+    // Pressure centers:
+    //-------------------------------------------------------------------------
+    Tensor<1, dim, double> hydrostatic_pressure_center;
+    bem_problem.center_of_pressure(body,
+                                   boundary_conditions.get_hydrostatic_pressure(),
+                                   hydrostatic_pressure_center);
 
-    Tensor<1, dim, double> pressure_center;
-    bem_problem.center_of_pressure(body, boundary_conditions.get_pressure(), pressure_center);
-    std::cout << "Center of pressure,  cp = " << pressure_center << "\n";
+    Tensor<1, dim, double> hydrodynamic_pressure_center;
+    bem_problem.center_of_pressure(body,
+                                   boundary_conditions.get_hydrodynamic_pressure(),
+                                   hydrodynamic_pressure_center);
+
+    std::cout << "Waterplane area        : A   = " << area << "\n";
+    std::cout << "Displacement           : V   = " << volume << "\n";
+    std::cout << "Center of flotation    : COF = " << hydrostatic_pressure_center << "\n";
+    std::cout << "Dynamic pressure center: COP = " << hydrodynamic_pressure_center << "\n";
+
+    //-------------------------------------------------------------------------
+    // Pressure Forces:
+    //-------------------------------------------------------------------------
+    Tensor<1, dim, double> hydrostaticForce;
+    Tensor<1, dim, double> hydrostaticMoment;
+    bem_problem.pressure_force_and_moment(body,
+                                          boundary_conditions.get_hydrostatic_pressure(),
+                                          hydrostaticForce,
+                                          hydrostaticMoment);
 
     Tensor<1, dim, double> hydrodynamicForce;
-    Tensor<1, dim, double> moment;
-    bem_problem.pressure_force_and_moment(
-      body, pressure_center, boundary_conditions.get_pressure(), hydrodynamicForce, moment);
+    Tensor<1, dim, double> hydrodynamicMoment;
+    bem_problem.pressure_force_and_moment(body,
+                                          boundary_conditions.get_hydrodynamic_pressure(),
+                                          hydrodynamicForce,
+                                          hydrodynamicMoment);
 
-
-
-    std::vector<Point<dim>> points;
-    std::vector<Point<dim>> velocities;
-
-    double Lx = 4.0;
-    double Ly = 4.0;
-    int    Nx = 21;
-    int    Ny = 21;
-
-    double dx = 1.0;
-    if (Nx > 1)
-      dx = Lx / (Nx - 1);
-
-    double dy = 1.0;
-    if (Ny > 1)
-      dy = Ly / (Ny - 1);
-
-    double x0 = -2.0;
-    double y0 = -2.0;
-    double z0 = 0.0;
-    for (int j = 0; j < Ny; ++j)
-    {
-      for (int i = 0; i < Nx; ++i)
-      {
-        double     x = x0 + dx * i;
-        double     y = y0 + dy * j;
-        double     z = z0;
-        Point<dim> pnt(x, y, z);
-        points.push_back(pnt);
-      }
-    }
-
-    std::vector<double> potentials;
-    bem_problem.velocity(0.0,
-                         boundary_conditions.get_phi(),
-                         boundary_conditions.get_dphi_dn(),
-                         points,
-                         potentials,
-                         velocities);
 
     std::vector<Point<dim>> elevation;
-    bem_problem.free_surface_elevation(body, boundary_conditions.get_pressure(), elevation);
+    bem_problem.free_surface_elevation(
+      gravity, density, body, boundary_conditions.get_hydrodynamic_pressure(), elevation);
 
-    Tensor<1, dim, double> hydrostaticForce;
-    hydrostaticForce[2] = bem_problem.ssurffint(body, boundary_conditions.get_pressure());
-    std::cout << "hydrostaticForce  : " << hydrostaticForce[2] << "\n";
-
-    //-------------------------------------------------------------------------
-    // Save forces:
-    //-------------------------------------------------------------------------
-    // {
-    //   std::fstream file;
-    //   std::string  filename =
-    //   boost::filesystem::path(output_path).append("velocity.csv").string(); file.open(filename,
-    //   std::fstream::out); if (file.is_open())
-    //   {
-    //     file << "# x [m], y [m], z [m], phi [m^2/s], u [m/s], v [m/s], w [m/s] \n";
-    //     for (int i = 0; i < (int)points.size(); ++i)
-    //     {
-    //       file << points[i][0] << ", " << points[i][1] << ", " << points[i][2] << ", "
-    //            << potentials[i] << ", " << velocities[i][0] << ", " << velocities[i][1] << ", "
-    //            << velocities[i][2] << "\n";
-    //     }
-    //     file.close();
-    //   }
-    // }
     //-------------------------------------------------------------------------
     // Save forces:
     //-------------------------------------------------------------------------
@@ -200,9 +180,11 @@ Driver<dim>::run(std::string input_path, std::string output_path)
     {
       file << "# Fx [N], Fy [N], Fz [N], Mx [Nm], My [Nm], Mz [Nm]\n";
       file << hydrodynamicForce[0] << ", " << hydrodynamicForce[1] << ", " << hydrodynamicForce[2]
-           << ", " << moment[0] << ", " << moment[1] << ", " << moment[2] << "\n";
+           << ", " << hydrodynamicMoment[0] << ", " << hydrodynamicMoment[1] << ", "
+           << hydrodynamicMoment[2] << "\n";
       file << hydrostaticForce[0] << ", " << hydrostaticForce[1] << ", " << hydrostaticForce[2]
-           << ", " << moment[0] << ", " << moment[1] << ", " << moment[2] << "\n";
+           << ", " << hydrostaticMoment[0] << ", " << hydrostaticMoment[1] << ", "
+           << hydrostaticMoment[2] << "\n";
       file.close();
     }
 
@@ -221,8 +203,6 @@ Driver<dim>::run(std::string input_path, std::string output_path)
         file.close();
       }
     }
-
-    boundary_conditions.compute_errors(output_path);
 
     std::string filename =
       boost::filesystem::path(output_path).append(boundary_conditions.output_file_name).string();

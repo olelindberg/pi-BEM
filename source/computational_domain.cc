@@ -274,29 +274,6 @@ ComputationalDomain<dim>::read_domain(std::string input_path)
   std::cout << "Reading domain done\n";
 }
 
-// @sect4{ComputationalDomain::refine_and_resize}
-
-// This function globally refines the
-// mesh, distributes degrees of
-// freedom, and resizes matrices and
-// vectors.
-
-// template <>
-// void
-// ComputationalDomain<2>::refine_and_resize (const unsigned int refinement_level, std::string
-// input_path)
-// {
-//   pcout << "Refining and resizing mesh as required" << std::endl;
-//   tria.refine_global (refinement_level);
-//   pcout << "We have a tria of " << tria.n_active_cells () << " cells." << std::endl;
-//   GridTools::partition_triangulation (n_mpi_processes, tria);
-//   std::string   filename0 = ("meshResult.inp");
-//   std::ofstream logfile0 (filename0.c_str ());
-//   GridOut       grid_out0;
-//   grid_out0.write_ucd (tria, logfile0);
-//   pcout << "...done refining and resizing mesh" << std::endl;
-// }
-
 template <int dim>
 bool
 ComputationalDomain<dim>::read_cad_files(std::string input_path)

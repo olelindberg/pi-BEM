@@ -14,7 +14,7 @@ subsection BEMFMA<3>
 end
 subsection BEMProblem<3>
   set Continuos gradient across edges = true
-  set Mapping Q Degree                = 3
+  set Mapping Q Degree                = 2
   set Mapping Type                    = FE
   set Preconditioner                  = ILU
   set Solution method                 = Direct
@@ -76,7 +76,7 @@ subsection Driver<3>
 end
 subsection Scalar FE
   set Blocking of the finite element = u
-  set Finite element space           = FE_Q(3)
+  set Finite element space           = FE_Q(2)
 end
 subsection Scalar data out
   set Files to save in run directory = 
@@ -89,7 +89,7 @@ subsection Scalar data out
 end
 subsection Vector FE
   set Blocking of the finite element = u,u,u
-  set Finite element space           = FESystem[FE_Q(3)^3]
+  set Finite element space           = FESystem[FE_Q(2)^3]
 end
 subsection Vector data out
   set Files to save in run directory = 

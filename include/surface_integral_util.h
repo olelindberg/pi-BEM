@@ -95,6 +95,7 @@
 #include <set>
 #include <string>
 
+#include "../include/Body.h"
 #include "../include/ass_leg_function.h"
 #include "../include/bem_fma.h"
 #include "../include/computational_domain.h"
@@ -135,8 +136,8 @@ public:
   virtual void
   parse_parameters(ParameterHandler &prm);
 
-  std::vector<double>
-  ssurffint(int dimId = 1);
+  double
+  ssurffint(const Body &body, int dimId = 1);
 
   ComputationalDomain<dim> &comp_dom;
 
@@ -148,9 +149,9 @@ public:
   DoFHandler<dim - 1, dim>                     dh;
   DoFHandler<dim - 1, dim>                     gradient_dh;
 
-  Vector<double>                    map_vector;
-  shared_ptr<Mapping<dim - 1, dim>> mapping;
-  unsigned int                      mapping_degree;
+  Vector<double>                         map_vector;
+  std::shared_ptr<Mapping<dim - 1, dim>> mapping = std::shared_ptr<Mapping<dim - 1, dim>>();
+  unsigned int                           mapping_degree;
 
   std::shared_ptr<Quadrature<dim - 1>> quadrature;
   std::shared_ptr<Quadrature<dim - 2>> _quadrature1d;

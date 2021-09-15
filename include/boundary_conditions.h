@@ -134,14 +134,25 @@ public:
   }
 
   TrilinosWrappers::MPI::Vector &
-  get_pressure()
+  get_hydrostatic_pressure()
   {
-    return pressure;
+    return hydrostatic_pressure;
   }
   const TrilinosWrappers::MPI::Vector &
-  get_pressure() const
+  get_hydrostatic_pressure() const
   {
-    return pressure;
+    return hydrostatic_pressure;
+  }
+  TrilinosWrappers::MPI::Vector &
+  get_hydrodynamic_pressure()
+  {
+    return hydrodynamic_pressure;
+  }
+
+  const TrilinosWrappers::MPI::Vector &
+  get_hydrodynamic_pressure() const
+  {
+    return hydrodynamic_pressure;
   }
 
 protected:
@@ -164,7 +175,8 @@ protected:
   TrilinosWrappers::MPI::Vector tmp_rhs;
   TrilinosWrappers::MPI::Vector phi;
   TrilinosWrappers::MPI::Vector dphi_dn;
-  TrilinosWrappers::MPI::Vector pressure;
+
+
 
   MPI_Comm mpi_communicator;
 
@@ -180,6 +192,10 @@ protected:
 
   ParsedDataOut<dim - 1, dim> data_out_scalar;
   ParsedDataOut<dim - 1, dim> data_out_vector;
+
+private:
+  TrilinosWrappers::MPI::Vector hydrostatic_pressure;
+  TrilinosWrappers::MPI::Vector hydrodynamic_pressure;
 };
 
 #endif

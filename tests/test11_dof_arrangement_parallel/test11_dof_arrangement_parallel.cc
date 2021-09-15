@@ -11,9 +11,10 @@
 #include <deal.II/fe/fe_values.h>
 #include <deal.II/fe/mapping_c1.h>
 #include <deal.II/fe/mapping_cartesian.h>
-#include <deal.II/fe/mapping_q.h>
+#include <deal.II/fe/mapping_q_generic.h>
 
 #include <deal.II/grid/grid_generator.h>
+#include <deal.II/grid/grid_in.h>
 #include <deal.II/grid/grid_out.h>
 #include <deal.II/grid/grid_tools.h>
 #include <deal.II/grid/tria.h>
@@ -48,10 +49,20 @@ main(int argc, char **argv)
     subdivisions = std::stoi(argv[2]);
 
 
-  const int dim = 3;
-
+  const int                     dim = 3;
   dealii::Triangulation<2, dim> tria;
+
   dealii::GridGenerator::subdivided_hyper_cube(tria, subdivisions);
+
+  // std::string grid_filename =
+  //   "/home/ole/dev/projects/pi-BEM/docs/data/DTC_MASHCON_2019/C3/mesh.inp";
+  // std::ifstream in;
+  // in.open(grid_filename);
+  // dealii::GridIn<dim - 1, dim> gridIn;
+  // gridIn.attach_triangulation(tria);
+  // gridIn.read_ucd(in, true);
+
+
   dealii::GridTools::partition_triangulation(np, tria);
 
   std::ofstream   out("/home/ole/dev/temp/grid.inp");
@@ -90,8 +101,8 @@ main(int argc, char **argv)
   dealii::TrilinosWrappers::MPI::Vector scalar_solution(this_cpu_set, MPI_COMM_WORLD);
   dealii::TrilinosWrappers::MPI::Vector vector_solution(this_cpu_set_vector, MPI_COMM_WORLD);
 
-  int  mapping_degree = 1;
-  auto mapping        = std::make_shared<dealii::MappingQ<dim - 1, dim>>(mapping_degree);
+  int  mapping_degree = 3;
+  auto mapping        = std::make_shared<dealii::MappingQGeneric<dim - 1, dim>>(mapping_degree);
   std::vector<dealii::Point<dim>> support_points(dh_scalar.n_dofs());
   dealii::DoFTools::map_dofs_to_support_points(*mapping, dh_scalar, support_points);
 

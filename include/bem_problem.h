@@ -186,14 +186,19 @@ public:
   assemble_system();
 
 
+  void
+  hydrostatic_pressure(double                         gravity,
+                       double                         density,
+                       double                         z0,
+                       TrilinosWrappers::MPI::Vector &pressure);
 
   void
-  dynamic_pressure(const Functions::ParsedFunction<dim> &wind,
-                   TrilinosWrappers::MPI::Vector &       pressure);
+  hydrodynamic_pressure(double                                density,
+                        const Functions::ParsedFunction<dim> &wind,
+                        TrilinosWrappers::MPI::Vector &       pressure);
 
   void
   pressure_force_and_moment(const Body &                         body,
-                            const Tensor<1, dim> &               pressure_center,
                             const TrilinosWrappers::MPI::Vector &pressure,
                             Tensor<1, dim> &                     force,
                             Tensor<1, dim> &                     moment);
@@ -204,26 +209,18 @@ public:
                      const TrilinosWrappers::MPI::Vector &pressure,
                      Tensor<1, dim> &                     pressure_center);
 
-  std::vector<double>
-  area_integral();
-
-  std::vector<Tensor<1, dim>>
-  volume_integral();
-
   double
-  ssurffint(const Body &body, const TrilinosWrappers::MPI::Vector &pressure);
+  area_integral(const Body &body);
+
+  Tensor<1, dim>
+  volume_integral(const Body &body);
 
   void
-  free_surface_elevation(const Body &                         body,
+  free_surface_elevation(double                               gravity,
+                         double                               density,
+                         const Body &                         body,
                          const TrilinosWrappers::MPI::Vector &pressure,
                          std::vector<Point<dim>> &            elevation);
-  void
-  velocity(double                               z0,
-           const TrilinosWrappers::MPI::Vector &phi,
-           const TrilinosWrappers::MPI::Vector &dphi_dn,
-           const std::vector<Point<dim>> &      pnts,
-           std::vector<double> &                pots,
-           std::vector<Point<dim>> &            vels);
 
   /// The next three methods are
   /// needed by the GMRES solver:

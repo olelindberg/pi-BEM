@@ -33,24 +33,19 @@ main(int argc, char **argv)
   if (argc > 1)
     degree = std::stoi(argv[1]);
 
-  const int                dim = 3;
-  dealii::ParameterHandler prm;
-  prm.enter_subsection("Wind function 3d");
-  {
-    dealii::Functions::ParsedFunction<dim>::declare_parameters(prm, dim);
-    prm.set("Function expression", "x; y; z");
-  }
-  prm.leave_subsection();
+  int mapping_degree = 3;
+  if (argc > 2)
+    mapping_degree = std::stoi(argv[2]);
 
-  dealii::Functions::ParsedFunction<dim> wind(dim);
-  prm.enter_subsection("Wind function 3d");
-  {
-    wind.parse_parameters(prm);
-  }
-  prm.leave_subsection();
+  int subdivisions = 3;
+  if (argc > 3)
+    subdivisions = std::stoi(argv[3]);
+
+
+  const int dim = 3;
 
   dealii::Triangulation<2, dim> tria;
-  dealii::GridGenerator::subdivided_hyper_cube(tria, 2);
+  dealii::GridGenerator::subdivided_hyper_cube(tria, subdivisions);
 
   std::ofstream   out("/home/ole/dev/temp/grid.inp");
   dealii::GridOut grid_out;
@@ -73,8 +68,7 @@ main(int argc, char **argv)
   scalar_solution.reinit(dh_scalar.n_dofs());
   vector_solution.reinit(dh_vector.n_dofs());
 
-  int  mapping_degree = 1;
-  auto mapping        = std::make_shared<dealii::MappingQ<dim - 1, dim>>(mapping_degree);
+  auto mapping = std::make_shared<dealii::MappingQ<dim - 1, dim>>(mapping_degree);
   std::vector<dealii::Point<dim>> support_points(dh_scalar.n_dofs());
   dealii::DoFTools::map_dofs_to_support_points(*mapping, dh_scalar, support_points);
 
@@ -86,16 +80,12 @@ main(int argc, char **argv)
 
     for (std::size_t i = 0; i < local_dofs_scalar.size(); ++i)
     {
-      auto                   pnt = support_points[local_dofs_scalar[i]];
-      dealii::Vector<double> result(dim);
-      wind.vector_value(pnt, result);
+      auto pnt = support_points[local_dofs_scalar[i]];
 
       for (std::size_t j = 0; j < 3; ++j)
-        vector_solution[local_dofs_vector[i * 3 + j]] = result[j];
+        vector_solution[local_dofs_vector[i * 3 + j]] = pnt[j];
 
-      scalar_solution[local_dofs_scalar[i]] = result[0];
-
-      std::cout << result << std::endl;
+      scalar_solution[local_dofs_scalar[i]] = pnt[0];
     }
 
     std::cout << "scalar dofs ";
