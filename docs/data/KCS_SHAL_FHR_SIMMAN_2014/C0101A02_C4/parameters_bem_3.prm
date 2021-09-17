@@ -52,7 +52,7 @@ subsection BoundaryConditions<3>
   end
   subsection Wind function 3d
     set Function constants  = 
-    set Function expression = 3.08675574; 0; 0
+    set Function expression = 3.599572845769342; 0; 0
     set Variable names      = x,y,z,t
   end
 end

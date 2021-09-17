@@ -598,7 +598,7 @@ ComputationalDomain<dim>::refine_and_resize(const unsigned int refinement_level,
   //---------------------------------------------------------------------------
 
   {
-    for (int refineId = 0; refineId < 1; ++refineId)
+    for (int refineId = 0; refineId < 2; ++refineId)
     {
       Triangulation<2, 3>::active_cell_iterator cell = tria.begin_active();
       Triangulation<2, 3>::active_cell_iterator endc = tria.end();
