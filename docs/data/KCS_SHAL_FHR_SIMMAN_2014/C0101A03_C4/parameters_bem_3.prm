@@ -68,7 +68,7 @@ subsection ComputationalDomain<3>
   set Cad tolerance to projectors tolerance ratio = 1.0
   subsection Boundary Conditions ID Numbers
     set Dirichlet boundary ids = 
-    set Neumann boundary ids   = 1,2
+    set Neumann boundary ids   = 1,2,3
   end
 end
 
