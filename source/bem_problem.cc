@@ -1060,7 +1060,6 @@ BEMProblem<dim>::assemble_system()
       pcout << std::endl;
     }
   }
-  pcout << "done assembling system matrices" << std::endl;
   // std::cout<<"printing Neumann Matrix"<<std::endl;
   // for(unsigned int i=0; i<dh.n_dofs(); ++i)
   // {
@@ -1261,7 +1260,7 @@ BEMProblem<dim>::_assemble_system_double_body(double z0)
       }
     }
   }
-  pcout << "done assembling system double body matrices" << std::endl;
+
 } // _assemble_system_double_body()
 
 
@@ -1438,8 +1437,6 @@ BEMProblem<dim>::solve_system(TrilinosWrappers::MPI::Vector &      phi,
     solver.solve(cc, sol, system_rhs, fma_preconditioner);
     // solver.solve (cc, sol, system_rhs, PreconditionIdentity());
   }
-
-  std::cout << "Number of Diriclet nodes is " << dirichlet_nodes.size() << "\n";
 
   for (types::global_dof_index i = 0; i < dirichlet_nodes.size(); i++)
   {
@@ -1885,7 +1882,7 @@ void
 BEMProblem<dim>::compute_gradients(const TrilinosWrappers::MPI::Vector &glob_phi,
                                    const TrilinosWrappers::MPI::Vector &glob_dphi_dn)
 {
-  std::cout << "BEMProblem<dim>::compute_gradients" << std::endl;
+  pcout << "BEMProblem<dim>::compute_gradients" << std::endl;
 
   Teuchos::TimeMonitor LocalTimer(*GradientTime);
 
@@ -2019,7 +2016,7 @@ template <int dim>
 void
 BEMProblem<dim>::compute_surface_gradients(const TrilinosWrappers::MPI::Vector &tmp_rhs)
 {
-  std::cout << "BEMProblem<dim>::compute_surface_gradients" << std::endl;
+  pcout << "BEMProblem<dim>::compute_surface_gradients" << std::endl;
 
   Teuchos::TimeMonitor          LocalTimer(*SurfaceGradientTime);
   TrilinosWrappers::MPI::Vector phi(ghosted_set);
@@ -2141,7 +2138,7 @@ template <int dim>
 void
 BEMProblem<dim>::compute_normals()
 {
-  std::cout << "Computing boundary normals ...\n";
+  pcout << "Computing boundary normals ...\n";
 
   Teuchos::TimeMonitor LocalTimer(*NormalsTime);
   vector_normals_solution.reinit(vector_this_cpu_set, mpi_communicator);
@@ -2241,8 +2238,8 @@ BEMProblem<dim>::adaptive_refinement(const TrilinosWrappers::MPI::Vector &error_
 
   //  GridRefinement::refine_and_coarsen_fixed_fraction(comp_dom.tria,estimated_error_per_cell,0.,0.0);
 
-  //  comp_dom.tria.prepare_coarsening_and_refinement ();
-  //  comp_dom.tria.execute_coarsening_and_refinement ();
+  comp_dom.tria.prepare_coarsening_and_refinement();
+  comp_dom.tria.execute_coarsening_and_refinement();
 }
 
 template <int dim>
@@ -2281,7 +2278,6 @@ BEMProblem<dim>::hydrostatic_pressure(double                         gravity,
       } // for j in cell dofs
     }   // if this cpu
   }     // for cell in active cells
-  pcout << "Calculation of hydrostatic pressure done." << std::endl;
 }
 
 
@@ -2333,7 +2329,6 @@ BEMProblem<dim>::hydrodynamic_pressure(double                                den
     }   // if this cpu
     ++cell_v;
   } // for cell in active cells
-  pcout << "... calculation of pressure force and moment done" << std::endl;
 }
 
 

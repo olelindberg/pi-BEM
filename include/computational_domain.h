@@ -25,24 +25,8 @@
 #include <deal.II/base/quadrature_selector.h>
 #include <deal.II/base/smartpointer.h>
 #include <deal.II/base/std_cxx11/tuple.h>
-#include <deal.II/base/utilities.h>
-
-#include <deal.II/grid/grid_generator.h>
-#include <deal.II/grid/grid_in.h>
-#include <deal.II/grid/grid_out.h>
-#include <deal.II/grid/tria.h>
-#include <deal.II/grid/tria_accessor.h>
-#include <deal.II/grid/tria_iterator.h>
-
-#include <deal.II/lac/full_matrix.h>
-#include <deal.II/lac/precondition.h>
-#include <deal.II/lac/solver_control.h>
-#include <deal.II/lac/solver_gmres.h>
-#include <deal.II/lac/sparse_direct.h>
-#include <deal.II/lac/sparse_matrix.h>
-#include <deal.II/lac/vector.h>
-// #include <deal.II/grid/tria_boundary_lib.h>
 #include <deal.II/base/types.h>
+#include <deal.II/base/utilities.h>
 
 #include <deal.II/dofs/dof_accessor.h>
 #include <deal.II/dofs/dof_handler.h>
@@ -55,7 +39,21 @@
 #include <deal.II/fe/mapping_q.h>
 #include <deal.II/fe/mapping_q_eulerian.h>
 
+#include <deal.II/grid/grid_generator.h>
+#include <deal.II/grid/grid_in.h>
+#include <deal.II/grid/grid_out.h>
 #include <deal.II/grid/manifold_lib.h>
+#include <deal.II/grid/tria.h>
+#include <deal.II/grid/tria_accessor.h>
+#include <deal.II/grid/tria_iterator.h>
+
+#include <deal.II/lac/full_matrix.h>
+#include <deal.II/lac/precondition.h>
+#include <deal.II/lac/solver_control.h>
+#include <deal.II/lac/solver_gmres.h>
+#include <deal.II/lac/sparse_direct.h>
+#include <deal.II/lac/sparse_matrix.h>
+#include <deal.II/lac/vector.h>
 
 #include <deal.II/numerics/data_out.h>
 #include <deal.II/numerics/solution_transfer.h>
@@ -137,20 +135,31 @@ public:
   /// according to the level requested in
   /// the parameters file
 
-bool
+  bool
   read_cad_files(std::string input_path = "");
 
   void
   assign_manifold_projectors(double tolerance);
 
-  void
-  refine_and_resize(const unsigned int refinement_level, std::string input_path = "");
+  double
+  read_cad_files_and_assign_manifold_projectors(std::string input_path);
 
   void
-  aspect_ratio_refinement(const unsigned int itermax = 100);
+  refine_and_resize(const unsigned int refinement_level);
 
   void
-  conditional_refine_and_resize(const unsigned int refinement_level);
+  aspect_ratio_refinement(std::vector<int>   manifold_ids,
+                          const unsigned int itermax,
+                          double             aspect_ratio_max);
+
+  void
+  curvature_refinement(double max_tol);
+
+  void
+  manifold_refinement(int manifoldId, int levels);
+
+  void
+  distance_refinement(unsigned int manifold_id, const unsigned int levels);
 
   void
   update_triangulation();
@@ -203,11 +212,13 @@ bool
   // const unsigned int fe_degree;
   // const unsigned int mapping_degree;
 
-  const Triangulation<dim - 1, dim>& getTria() const
+  const Triangulation<dim - 1, dim> &
+  getTria() const
   {
     return tria;
   }
-  Triangulation<dim - 1, dim>& getTria()
+  Triangulation<dim - 1, dim> &
+  getTria()
   {
     return tria;
   }
@@ -283,13 +294,10 @@ bool
   // to deal with conformity on edges with double nodes
   std::vector<bool>                      vertex_on_boundary;
   std::vector<std::vector<unsigned int>> double_vertex_vector;
-  std::map<
-    unsigned int,
-    std::vector<typename Triangulation<dim - 1, dim>::active_cell_iterator>>
-    vert_to_elems;
-  std::set<typename Triangulation<dim - 1, dim>::active_cell_iterator>
-                          edge_cells;
-  Manifold<dim - 1, dim> *manifold;
+  std::map<unsigned int, std::vector<typename Triangulation<dim - 1, dim>::active_cell_iterator>>
+                                                                       vert_to_elems;
+  std::set<typename Triangulation<dim - 1, dim>::active_cell_iterator> edge_cells;
+  Manifold<dim - 1, dim> *                                             manifold;
 
   bool   spheroid_bool, used_spherical_manifold;
   double spheroid_x_axis, spheroid_y_axis, spheroid_z_axis;
@@ -304,22 +312,17 @@ bool
 
   /// vectors containing the CAD surfaces and curves projectors
   /// to be (optionally) used for refinement of the triangulation
-//  std::vector<
-//    std::shared_ptr<OpenCASCADE::NormalToMeshProjectionManifold<2, 3>>>
-//    normal_to_mesh_projectors;
-    
-  std::vector<
-    std::shared_ptr<MyNormalToMeshProjectionManifold<2, 3>>>
-    normal_to_mesh_projectors;
+  //  std::vector<
+  //    std::shared_ptr<OpenCASCADE::NormalToMeshProjectionManifold<2, 3>>>
+  //    normal_to_mesh_projectors;
 
-  std::vector<
-    std::shared_ptr<OpenCASCADE::ArclengthProjectionLineManifold<2, 3>>>
-    line_projectors;
+  std::vector<std::shared_ptr<MyNormalToMeshProjectionManifold<2, 3>>> normal_to_mesh_projectors;
+
+  std::vector<std::shared_ptr<OpenCASCADE::ArclengthProjectionLineManifold<2, 3>>> line_projectors;
 
 private:
-
-  bool    _withDoubleNodes      = false;
-
+  double _max_tol         = 0.0;
+  bool   _withDoubleNodes = false;
 };
 
 #endif

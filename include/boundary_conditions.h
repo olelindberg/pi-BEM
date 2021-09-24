@@ -176,8 +176,6 @@ protected:
   TrilinosWrappers::MPI::Vector phi;
   TrilinosWrappers::MPI::Vector dphi_dn;
 
-
-
   MPI_Comm mpi_communicator;
 
   unsigned int n_mpi_processes;

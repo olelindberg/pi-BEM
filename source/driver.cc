@@ -57,6 +57,10 @@ template <int dim>
 void
 Driver<dim>::run(std::string input_path, std::string output_path)
 {
+  //-------------------------------------------------------------------------
+  // Pre steps:
+  //-------------------------------------------------------------------------
+
   // Constant parameters:
   const double gravity = 9.80665;
   const double density = 1000;
@@ -71,44 +75,46 @@ Driver<dim>::run(std::string input_path, std::string output_path)
   }
   body.print();
 
-
+  if (global_refinement)
   {
+    std::cout << "Global refinement ...\n";
+    Teuchos::TimeMonitor LocalTimer(*TotalTime);
+    computational_domain.read_domain(input_path);
+    computational_domain.refine_and_resize(computational_domain.n_cycles);
+    computational_domain.update_triangulation();
+    bem_problem.reinit();
+    boundary_conditions.solve_problem(body);
+  }
+  else // adaptive refinement
+  {
+    pcout << "Adaptive refinement ...\n";
     Teuchos::TimeMonitor LocalTimer(*TotalTime);
     unsigned int         local_refinement_cycles = 0;
-    {
-      computational_domain.read_domain(input_path);
-      if (global_refinement)
-      {
-        std::cout << "Global refinement ...\n";
-        computational_domain.refine_and_resize(computational_domain.n_cycles, input_path);
-      }
-      else
-      {
-        std::cout << "---------------------------------------------------------\n";
-        std::cout << "Pre adaptive global refinement ...\n";
-        computational_domain.refine_and_resize(computational_domain.pre_global_refinements,
-                                               input_path);
-        local_refinement_cycles = computational_domain.n_cycles;
-      }
-    }
-
+    computational_domain.read_domain(input_path);
+    computational_domain.refine_and_resize(computational_domain.pre_global_refinements);
     computational_domain.update_triangulation();
-    for (unsigned int i = 0; i <= local_refinement_cycles; ++i)
+
+    for (unsigned int i = 0; i <= computational_domain.n_cycles; ++i)
     {
-      std::cout << "-----------------------------------------------------------\n";
-      std::cout << "Adaptive refinement " << i << " ...\n";
+      pcout << "Refinement level " << i << " ...\n";
+      bem_problem.reinit();
+      boundary_conditions.solve_problem(body);
+      if (i < local_refinement_cycles)
       {
-        Teuchos::TimeMonitor LocalTimer(*SolveTime);
-        bem_problem.reinit();
-        boundary_conditions.solve_problem(body);
-      }
-      if (!global_refinement && i < local_refinement_cycles)
-      {
-        // Compute error estimator and local refinement strategy
         bem_problem.adaptive_refinement(boundary_conditions.get_phi());
         computational_domain.update_triangulation();
       }
     }
+  }
+
+
+  //-------------------------------------------------------------------------
+  // Main steps:
+  //-------------------------------------------------------------------------
+  {
+    //-------------------------------------------------------------------------
+    // Post steps:
+    //-------------------------------------------------------------------------
 
 
     //-------------------------------------------------------------------------
