@@ -2,18 +2,28 @@
 
 #include "../include/computational_domain.h"
 
+#include "../include/GridRefinementCreator.h"
+
 #include <deal.II/grid/grid_reordering.h>
 #include <deal.II/grid/grid_tools.h>
 
 #include <boost/filesystem.hpp>
 
 #include <BRepBndLib.hxx>
+#include <BRepBuilderAPI_MakeVertex.hxx>
 #include <BRepExtrema_DistShapeShape.hxx>
 #include <BRep_Builder.hxx>
 #include <BRep_Tool.hxx>
 #include <Bnd_Box.hxx>
+#include <GeomLProp_SLProps.hxx>
+#include <TopExp_Explorer.hxx>
+#include <TopoDS.hxx>
 #include <TopoDS_Builder.hxx>
+#include <TopoDS_Edge.hxx>
+#include <TopoDS_Face.hxx>
+#include <TopoDS_Shape.hxx>
 #include <TopoDS_Vertex.hxx>
+
 #include <deal2lkit/utilities.h>
 
 #include "Teuchos_TimeMonitor.hpp"
@@ -23,6 +33,7 @@ Teuchos::RCP<Teuchos::Time> readDomainTime = Teuchos::TimeMonitor::getNewTimer("
 Teuchos::RCP<Teuchos::Time> refineAndResizeTime =
   Teuchos::TimeMonitor::getNewTimer("Refine and resize");
 Teuchos::RCP<Teuchos::Time> refineGlobalTime = Teuchos::TimeMonitor::getNewTimer("Refine global");
+
 
 // @sect4{ComputationalDomain::ComputationalDomain and
 // ComputationalDomain::read_parameters}
@@ -393,274 +404,26 @@ ComputationalDomain<dim>::read_cad_files_and_assign_manifold_projectors(std::str
   return max_tol;
 }
 
-template <int dim>
-void
-ComputationalDomain<dim>::curvature_refinement(double max_tol)
-{
-  // the following refinement cycle is based upon the original CAD
-  // geometry curvature. For this reason it can be activated not only
-  // when the user requires it with the surface_curvature_refinement
-  // option in the input file. Of course, this is possible only if
-  // also the use_cad_surface_and_curves flag is set to thrue through
-  // the input file. Only in this way in fact, CAD surfaces and curves
-  // are prescribed for the triangulation refinements on some of
-  // its manifold ids.
-  if (use_cad_surface_and_curves && surface_curvature_refinement)
-  {
-    pcout << "Refining based on surface curvature ...\n";
-    const double tolerance          = cad_to_projectors_tolerance_ratio * max_tol;
-    unsigned int refinedCellCounter = 1;
-    unsigned int cycles_counter     = 0;
-    // the refinement procedure is recursively repeated until no more cells
-    // are flagged for refinement, or until the user specified maximum number
-    // of curvature refinement cycles is reached
-    while ((refinedCellCounter) && (cycles_counter < max_curvature_ref_cycles))
-    {
-      std::vector<double> cell_size_all;
-
-      // the refined cells counter is zeroed at the start of each cycle
-      refinedCellCounter = 0;
-      // we loop on the all the triangulation active cells
-      Triangulation<2, 3>::active_cell_iterator cell = tria.begin_active();
-      Triangulation<2, 3>::active_cell_iterator endc = tria.end();
-      for (; cell != endc; ++cell)
-      {
-        // In the following lines, we try to come up with an estimation
-        // of the cell normal. It is obtained from the average of the
-        // normal to the 4 triangles in which the cell can be split using
-        // the vertices and the center. The commented lines can be used
-        // for checks in case something goes wrong.
-
-        Point<3> t0 = cell->vertex(0) + (-1.0) * cell->center();
-        Point<3> t1 = cell->vertex(1) + (-1.0) * cell->center();
-        Point<3> t2 = cell->vertex(2) + (-1.0) * cell->center();
-        Point<3> t3 = cell->vertex(3) + (-1.0) * cell->center();
-
-        Point<3> nn0(t0(1) * t1(2) - t0(2) * t1(1),
-                     t0(2) * t1(0) - t0(0) * t1(2),
-                     t0(0) * t1(1) - t0(1) * t1(0));
-        nn0 /= nn0.norm();
-        Point<3> nn1(t1(1) * t3(2) - t1(2) * t3(1),
-                     t1(2) * t3(0) - t1(0) * t3(2),
-                     t1(0) * t3(1) - t1(1) * t3(0));
-        nn1 /= nn1.norm();
-        Point<3> nn2(t3(1) * t2(2) - t3(2) * t2(1),
-                     t3(2) * t2(0) - t3(0) * t2(2),
-                     t3(0) * t2(1) - t3(1) * t2(0));
-        nn2 /= nn2.norm();
-        Point<3> nn3(t2(1) * t0(2) - t2(2) * t0(1),
-                     t2(2) * t0(0) - t2(0) * t0(2),
-                     t2(0) * t0(1) - t2(1) * t0(0));
-        nn3 /= nn3.norm();
-        Point<3> n = (nn0 + nn1 + nn2 + nn3) / 4.0;
-        n /= n.norm();
-
-        // once the cell normal has beed created, we want to use it as
-        // the direction of the projection onto the CAD surface first
-        // though, let's check that we are using a CAD surface for the
-        // refinement of the manifold_id associated with the present cell
-        double cell_size;
-        if (int(cell->material_id()) - 1 < (int)cad_surfaces.size())
-        {
-          // if so, the cad_surface associated with the present
-          // manifold_id is identified...
-          TopoDS_Shape neededShape = cad_surfaces[int(cell->material_id()) - 1];
-          // ...and used to set up a line intersection to project the
-          // cell center on the CAD surface along the direction
-          // specified by the previously computed cell normal
-          Point<3> projection = my_line_intersection<3>(neededShape, cell->center(), n, tolerance);
-
-          double min_curvature = 0.0;
-          double max_curvature = 0.0;
-          OpenCASCADE::surface_curvature(
-            neededShape, projection, tolerance, min_curvature, max_curvature);
-
-          // among the differential point, we select the maximum
-          // absolute curvature
-          double max_abs_curv = fmax(fabs(min_curvature), fabs(max_curvature));
-
-          // radius is computed from the maximum absolute curvatur
-          double curvature_radius = 1.0 / fmax(max_abs_curv, tolerance);
-
-          // the target cell size is selected so that it corresponds to
-          // a cells_per_circle fraction of the circumference
-          // corresponding to the minimum curvature radius
-          cell_size = 2.0 * dealii::numbers::PI / cells_per_circle * curvature_radius;
-        }
-        else
-        {
-          // if the cell manifold_id is not associated to a CAD
-          // surface, the target cell_size is set to and extremely high
-          // value, so that the cell is never refined
-          cell_size = 2 * dealii::numbers::PI / cells_per_circle / tolerance;
-        }
-        cell_size_all.push_back(cell_size);
-        // the following line si for debug puropses and should be
-        // uncommented if something is not working with the refinement
-
-        // if the cell diameter is higher than the target cell size, the
-        // refinement flag is set (unless the cell is already very small
-        // ---which for us means 10xtolerance)
-        if ((cell->diameter() > cell_size) && (cell->diameter() > 10 * tolerance))
-        {
-          cell->set_refine_flag();
-          refinedCellCounter++;
-        }
-      }
-      double min_cell_size = *std::min_element(cell_size_all.begin(), cell_size_all.end());
-      double max_cell_size = *std::max_element(cell_size_all.begin(), cell_size_all.end());
-
-      pcout << "min_cell_size: " << min_cell_size << std::endl;
-      pcout << "max_cell_size: " << max_cell_size << std::endl;
-
-      // the number of cells to be refined in this cycle is reported, the
-      // refinement is carried out and the make_edges_conformal function is
-      // called to check no edge presents non comformities
-      pcout << "Curvature Based Local Refinement Cycle: " << cycles_counter << " ("
-            << refinedCellCounter << ")" << std::endl;
-      tria.execute_coarsening_and_refinement();
-      make_edges_conformal(_withDoubleNodes);
-      cycles_counter++;
-    }
-  }
-  pcout << "We have a tria of " << tria.n_active_cells() << " cells." << std::endl;
-}
+#include <memory>
 
 template <int dim>
 void
-ComputationalDomain<dim>::manifold_refinement(int manifoldId, int levels)
-{
-  for (int refineId = 0; refineId < levels; ++refineId)
-  {
-    for (Triangulation<2, 3>::active_cell_iterator cell = tria.begin_active(); cell != tria.end();
-         ++cell)
-    {
-      if (cell->manifold_id() == manifoldId)
-        cell->set_refine_flag();
-    }
-    tria.execute_coarsening_and_refinement();
-  }
-}
-
-template <int dim>
-void
-ComputationalDomain<dim>::refine_and_resize(const unsigned int refinement_level)
+ComputationalDomain<dim>::refine_and_resize(std::string input_path)
 {
   Teuchos::TimeMonitor localTimer(*refineAndResizeTime);
 
   pcout << "Refining and resizing ... " << std::endl;
+  auto filename       = boost::filesystem::path(input_path).append("refinement.json").string();
+  auto gridrefinement = GridRefinementCreator::create(filename,
+                                                      pcout,
+                                                      cad_to_projectors_tolerance_ratio * _max_tol,
+                                                      cad_surfaces);
 
-  double           aspect_ratio_max = 2;
-  std::vector<int> shipmanifoldIds  = {1, 2};
-  this->aspect_ratio_refinement(shipmanifoldIds, 4, aspect_ratio_max);
-
-  this->curvature_refinement(_max_tol);
-
-  this->manifold_refinement(3, 0);
-
-  uint bottomManifoldId = 3;
-  int  levels           = 6;
-  this->distance_refinement(bottomManifoldId, levels);
-
-  tria.refine_global(refinement_level);
+  // Do the refinement:
+  for (const auto &refinement : gridrefinement)
+    refinement->refine(tria, cad_surfaces);
 }
 
-template <int dim>
-void
-ComputationalDomain<dim>::aspect_ratio_refinement(std::vector<int>   manifold_id,
-                                                  const unsigned int itermax,
-                                                  double             aspect_ratio_max)
-{
-  unsigned int refinedCellCounter = 1;
-  unsigned int cycles_counter     = 0;
-  // we repeat the aspect ratio refinement cycle until no cell has been
-  // flagged for refinement, or until we reach a maximum of 10 cycles
-  while (refinedCellCounter > 0 && (cycles_counter < itermax))
-  {
-    pcout << "Refining based on element aspect ratio ...\n";
-    // the refined cells counter is zeroed at the start of each cycle
-    refinedCellCounter = 0;
-    // we loop on the all the triangulation active cells
-    for (Triangulation<2, 3>::active_cell_iterator cell = tria.begin_active(); cell != tria.end();
-         ++cell)
-    {
-      bool refineManifold = false;
-      for (const auto &id : manifold_id)
-        if (cell->manifold_id() == id)
-          refineManifold = true;
-
-      if (refineManifold)
-      {
-        // the following lines determine if the cell is more elongated
-        // in its 0 or 1 direction
-        unsigned int max_extent_dim = 0;
-        unsigned int min_extent_dim = 1;
-        if (cell->extent_in_direction(0) < cell->extent_in_direction(1))
-        {
-          max_extent_dim = 1;
-          min_extent_dim = 0;
-        }
-        // we compute the extent of the cell in its maximum and minimum
-        // elongation direction respectively
-        double min_extent = cell->extent_in_direction(min_extent_dim);
-        double max_extent = cell->extent_in_direction(max_extent_dim);
-
-        // if the aspect ratio exceeds the prescribed maximum value, the cell
-        // is refined
-        if (max_extent > aspect_ratio_max * min_extent || max_extent > max_element_length)
-        {
-          cell->set_refine_flag(RefinementCase<2>::cut_axis(max_extent_dim));
-          refinedCellCounter++;
-        }
-      }
-    }
-    // the number of cells refined in this cycle is reported before
-    // proceeding with the next one
-    pcout << "Aspect Ratio Reduction Cycle: " << cycles_counter << " (" << refinedCellCounter << ")"
-          << std::endl;
-    tria.prepare_coarsening_and_refinement();
-    tria.execute_coarsening_and_refinement();
-
-    //    make_edges_conformal(_withDoubleNodes);
-    cycles_counter++;
-  }
-}
-
-template <int dim>
-void
-ComputationalDomain<dim>::distance_refinement(unsigned int manifold_id, const unsigned int levels)
-{
-  pcout << "Distance refinement ... \n";
-
-  for (int refineId = 0; refineId < levels; ++refineId)
-  {
-    for (Triangulation<2, 3>::active_cell_iterator cell = tria.begin_active(); cell != tria.end();
-         ++cell)
-    {
-      if (cell->manifold_id() == manifold_id)
-      {
-        std::vector<Point<3>> pnts;
-        for (int i = 0; i < 4; ++i)
-          pnts.push_back(cell->vertex(i));
-
-        Bnd_Box boxx;
-        for (const auto pnt : pnts)
-          boxx.Add(gp_Pnt(pnt[0], pnt[1], pnt[2]));
-
-        Bnd_Box box;
-        for (const auto &shape : cad_surfaces)
-          BRepBndLib::Add(shape, box);
-
-        auto dist = box.Distance(boxx);
-
-        if (dist < 20.0)
-          cell->set_refine_flag();
-      }
-    }
-    tria.prepare_coarsening_and_refinement();
-    tria.execute_coarsening_and_refinement();
-  }
-}
 
 template <int dim>
 void

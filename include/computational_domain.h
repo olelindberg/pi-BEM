@@ -145,21 +145,7 @@ public:
   read_cad_files_and_assign_manifold_projectors(std::string input_path);
 
   void
-  refine_and_resize(const unsigned int refinement_level);
-
-  void
-  aspect_ratio_refinement(std::vector<int>   manifold_ids,
-                          const unsigned int itermax,
-                          double             aspect_ratio_max);
-
-  void
-  curvature_refinement(double max_tol);
-
-  void
-  manifold_refinement(int manifoldId, int levels);
-
-  void
-  distance_refinement(unsigned int manifold_id, const unsigned int levels);
+  refine_and_resize(std::string input_path = "");
 
   void
   update_triangulation();

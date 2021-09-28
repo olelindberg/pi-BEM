@@ -128,26 +128,35 @@ BEMProblem<dim>::reinit()
   DoFRenumbering::component_wise(dh);
   DoFRenumbering::component_wise(gradient_dh);
 
-  pcout << "re-ordering vector" << std::endl;
-
+  pcout << "Re-ordering vectors ..." << std::endl;
   compute_reordering_vectors();
 
   DoFRenumbering::subdomain_wise(dh);
   DoFRenumbering::subdomain_wise(gradient_dh);
 
+  pcout << "Making hanging nodes constraints1 ..." << std::endl;
   vector_constraints.reinit();
+  pcout << "Making hanging nodes constraints2 ..." << std::endl;
   DoFTools::make_hanging_node_constraints(gradient_dh, vector_constraints);
+  pcout << "Making hanging nodes constraints3 ..." << std::endl;
   vector_constraints.close();
+  pcout << "Making hanging nodes constraints4 ..." << std::endl;
+
   if (mapping_type == "FE")
   {
+    pcout << "Making hanging nodes constraints5 ..." << std::endl;
     map_vector.reinit(gradient_dh.n_dofs());
     // Fills the euler vector with information from the Triangulation
+    pcout << "Making hanging nodes constraints6 ..." << std::endl;
     VectorTools::get_position_vector(gradient_dh, map_vector);
+    pcout << "Making hanging nodes constraints7 ..." << std::endl;
     vector_constraints.distribute(map_vector);
   }
   // mapping_degree = fe->get_degree();
   if (!mapping)
   {
+    pcout << "Creating mapping ..." << std::endl;
+    pcout << mapping_type << std::endl;
     if (comp_dom.spheroid_bool && comp_dom.used_spherical_manifold)
     {
       for (types::global_dof_index ii = 0; ii < gradient_dh.n_dofs() / dim; ++ii)
@@ -160,6 +169,7 @@ BEMProblem<dim>::reinit()
             comp_dom.spheroid_z_axis;
       }
     }
+
     if (mapping_type == "FE")
       mapping = std::make_shared<MappingFEField<dim - 1, dim>>(gradient_dh, map_vector);
     else

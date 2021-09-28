@@ -80,7 +80,7 @@ Driver<dim>::run(std::string input_path, std::string output_path)
     std::cout << "Global refinement ...\n";
     Teuchos::TimeMonitor LocalTimer(*TotalTime);
     computational_domain.read_domain(input_path);
-    computational_domain.refine_and_resize(computational_domain.n_cycles);
+    computational_domain.refine_and_resize(input_path);
     computational_domain.update_triangulation();
     bem_problem.reinit();
     boundary_conditions.solve_problem(body);
@@ -91,7 +91,7 @@ Driver<dim>::run(std::string input_path, std::string output_path)
     Teuchos::TimeMonitor LocalTimer(*TotalTime);
     unsigned int         local_refinement_cycles = 0;
     computational_domain.read_domain(input_path);
-    computational_domain.refine_and_resize(computational_domain.pre_global_refinements);
+    computational_domain.refine_and_resize(input_path);
     computational_domain.update_triangulation();
 
     for (unsigned int i = 0; i <= computational_domain.n_cycles; ++i)
@@ -216,7 +216,7 @@ Driver<dim>::run(std::string input_path, std::string output_path)
   }
 
   // Write a summary of all timers
-  //  Teuchos::TimeMonitor::summarize();
+  Teuchos::TimeMonitor::summarize();
 }
 
 // template class Driver<2>;
