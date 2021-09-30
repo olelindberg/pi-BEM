@@ -81,7 +81,7 @@ gives
 and inserting the coordinate transform i the later integral gives
 \begin{align}
 \V{F}_{HS}&= \V{k} \rho g\left( \int_{V_0} dV - \int_{S_0}  (z_T + x_R y' - y_R x')  dx'dy' \right),  \\
-&= \V{k} \rho g\left( \int_{V_0} dV 
+&= \V{k} \rho g\left( V_0
 - z_T S_0   
 - x_R S_y 
 + y_R S_x\right),  
@@ -115,32 +115,63 @@ and the earth fixed coordinates are replaced by the body fixed
 and collecting the terms 
 \begin{align}
 \V{M}'_{HS} =& 
--\rho g\V{i}\left(    \int_{V_0}  y'  dV
+-\rho g\V{i}\left(    
+	\int_{V_0}  y'  dV
 +  z_R\int_{V_0} x' dV 
--  x_R\int_{V_0} z' dV 
--  z_T\int_{S_0}    y' ~ dx'dy'
--  x_R\int_{S_0}   y'  y' ~ dx'dy' 
-+  y_R\int_{S_0}   x'  y' ~ dx'dy' \right),\nonumber \\ 
-& + \rho g \V{j} \left(  \int_{V_0}  x' dV 
+-  x_R\int_{V_0} z' dV \right. \nn \\
+&- \left. z_T\int_{S_0} y' ~ dx'dy'
+-  x_R\int_{S_0} y'  y' ~ dx'dy' 
++  y_R\int_{S_0} x'  y' ~ dx'dy' \right)\nonumber \\ 
+& + \rho g \V{j} \left(  
+	\int_{V_0}  x' dV 
 + y_R\int_{V_0}  z' dV
-- z_R\int_{V_0}  y' dV
-- z_T\int_{S_0}     x' ~ dx'dy'
-- x_R\int_{S_0}   y'  x' ~ dx'dy'
-+ y_R\int_{S_0}   x'  x' ~ dx'dy' \right), \\
+- z_R\int_{V_0}  y' dV \right. \nn \\
+& \left. - z_T\int_{S_0}  x' ~ dx'dy'
+- x_R\int_{S_0}  y'  x' ~ dx'dy'
++ y_R\int_{S_0}  x'  x' ~ dx'dy' \right), \\
  =& 
--\rho g\V{i}\left(    \int_{V_0}  y'  dV
-+  z_R\int_{V_0} x' dV 
--  x_R\int_{V_0} z' dV 
--  z_T\int_{S_0}    y' ~ dx'dy'
--  x_R\int_{S_0}   y'  y' ~ dx'dy' 
-+  y_R\int_{S_0}   x'  y' ~ dx'dy' \right),\nonumber \\ 
-& + \rho g \V{j} \left(  \int_{V_0}  x' dV 
-+ y_R\int_{V_0}  z' dV
-- z_R\int_{V_0}  y' dV
-- z_T\int_{S_0}     x' ~ dx'dy'
-- x_R\int_{S_0}   y'  x' ~ dx'dy'
-+ y_R\int_{S_0}   x'  x' ~ dx'dy' \right),
+-\rho g\V{i}\left(    
+	V_0 (y_B
++  z_R x_B
+-  x_R z_B )
+-  z_T S_y
+-  x_R S_{yy}
++  y_R S_{xy} \right) \nonumber \\ 
+& + \rho g \V{j} \left(  
+	V_0 (x_B
++ y_R  z_B
+- z_R  y_B)
+- z_T S_x
+- x_R S_{xy}
++ y_R S_{xx} \right),
 \end{align}
+where center of buoyancy is 
+\begin{equation}
+	\V{x}_{B} = \frac{1}{V_0} \int_{V_0} \V{x} ~dV, 
+\end{equation}
+and the second water plane moment are
+\begin{align}
+S_{xx} =& \int_{S_0} xx ~dxdy, \\
+S_{xy} =& \int_{S_0} xy ~dxdy, \\
+S_{yy} =& \int_{S_0} yy ~dxdy 
+\end{align}
+Placing the origin at the center of flotation, makes the integrals first water plane moments vanish, that is $S_x=0$ and $S_y=0$, and with $x'$ direction along the ships centerline we also have $S_{xy} = 0$,
+\begin{align}
+	\V{F}_{HS}=& \V{k} \rho g\left( V_0 
+	- z_T S_0\right),  \\
+		\V{M}'_{HS} =&
+		-\rho g\V{i}\left(    
+			V_0 (y_B
+		+  z_R x_B
+		-  x_R z_B )
+		-  x_R S_{yy} \right) \nonumber \\ 
+		& + \rho g \V{j} \left(  
+			V_0 (x_B
+		+ y_R  z_B
+		- z_R  y_B)
+		+ y_R S_{xx} \right),
+		\end{align}	
+
 
 \chapter{Boundary element method}
 The velocity potential $\phi(\V{x})$ at the point $\V{x} = \left[x,y,z\right]^T$ is, according to Greens first identity, 
