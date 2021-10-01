@@ -172,6 +172,54 @@ Placing the origin at the center of flotation, makes the integrals first water p
 		+ y_R S_{xx} \right),
 		\end{align}	
 
+Force and moment due to body weight
+\begin{align}
+\V{F}_{W}=& 
+\begin{bmatrix}
+0\\0\\-mg
+\end{bmatrix},  \\
+\V{M}_{W} =&
+\begin{bmatrix}
+ mgy_G - mgz_Gx_R + mgx_Gz_R\\
+-mgx_G + mgy_Gz_R - mgz_Gy_R \\
+0
+\end{bmatrix}, 
+\end{align}	
+Total static force $\V{F}_{TS}= \V{F}_{HS} + \V{F}_{W}$ and moment $\V{M}_{TS}= \V{M}_{HS} + \V{M}_{W}$ are
+\begin{align}
+\V{F}_{TS}=& 
+\begin{bmatrix}
+0\\0\\\rho g\left( V_0 
+- z_T S_0\right)-mg
+\end{bmatrix},  \\
+\V{M}_{TS} =&
+\begin{bmatrix}
+- \rho g \left( V_0 (y_B +  z_R x_B - x_R z_B ) - x_R S_{yy} \right) + mgy_G - mgz_Gx_R + mgx_Gz_R\\
++ \rho g \left( V_0 (x_B + y_R  z_B - z_R  y_B) + y_R S_{xx} \right) - mgx_G + mgy_Gz_R - mgz_Gy_R\\
+0
+\end{bmatrix}, 
+\end{align}	
+At static equilibrium we have that the mass of displaced water is equal to the body mass and centers of mass and flotation coincides horizontally
+\begin{equation}
+	\rho V_0 = m, \quad x_G = x_B, \quad y_G = y_B,
+\end{equation}
+leading to the following total static force and moment
+\begin{align}
+\V{F}_{TS}=& 
+\begin{bmatrix}
+0\\
+0\\
+-\rho g  S_0z_T
+\end{bmatrix},  \\
+\V{M}_{TS} =&
+\begin{bmatrix}
+ \rho g V_0 \left( z_B  - z_G  + S_{yy}/ V_0 \right)x_R   \\
+ \rho g V_0 \left( z_B  - z_G +  S_{xx}/ V_0 \right)y_R  \\
+0
+\end{bmatrix}, 
+\end{align}	
+
+
 
 \chapter{Boundary element method}
 The velocity potential $\phi(\V{x})$ at the point $\V{x} = \left[x,y,z\right]^T$ is, according to Greens first identity, 

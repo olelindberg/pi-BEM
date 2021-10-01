@@ -2450,10 +2450,9 @@ BEMProblem<dim>::pressure_force_and_moment(const Body &                         
 }
 
 template <int dim>
-double
-BEMProblem<dim>::area_integral(const Body &body)
+WaterPlaneMoments
+BEMProblem<dim>::water_plane_moments(const Body &body, const Point<dim> &centerOfFlotation)
 {
-  int                    dimId = 1;
   FEValues<dim - 1, dim> fe_v(*mapping,
                               dh.get_fe(),
                               *quadrature,
@@ -2471,7 +2470,12 @@ BEMProblem<dim>::area_integral(const Body &body)
   DoFTools::map_dofs_to_support_points<dim - 1, dim>(*mapping, dh, support_points);
   std::vector<types::global_dof_index> local_dof_indices(fe->dofs_per_cell);
 
-  double area = 0.0;
+  double S0  = 0.0;
+  double Sx  = 0.0;
+  double Sy  = 0.0;
+  double Sxx = 0.0;
+  double Sxy = 0.0;
+  double Syy = 0.0;
   for (const auto &cell : dh.active_cell_iterators())
   {
     if (cell->subdomain_id() == Utilities::MPI::this_mpi_process(mpi_communicator))
@@ -2491,21 +2495,130 @@ BEMProblem<dim>::area_integral(const Body &body)
 
           for (unsigned int q = 0; q < fe_face_values.n_quadrature_points; ++q)
           {
-            double n = qpoints[q][dimId];
-            if (std::fabs(n) > 0.0)
-              n /= std::fabs(n);
+            double x = qpoints[q][0] - 0.0 * centerOfFlotation[0];
+            double y = qpoints[q][1] - 0.0 * centerOfFlotation[1];
+
+            double nx = x;
+            if (std::fabs(nx) > 0.0)
+              nx /= std::fabs(nx);
+
+            double ny = y;
+            if (std::fabs(ny) > 0.0)
+              ny /= std::fabs(ny);
 
             for (unsigned int i = 0; i < fe_face_values.dofs_per_cell; ++i)
-              area +=
-                n * qpoints[q][dimId] * fe_face_values.shape_value(i, q) * fe_face_values.JxW(q);
+            {
+              double tmp = fe_face_values.shape_value(i, q) * fe_face_values.JxW(q);
+              S0 += y * ny * tmp;
+              Sx += 2.0 * x * x * nx * tmp;
+              Sy += 2.0 * y * y * ny * tmp;
+              Sxx += 3.0 * x * x * x * nx * tmp;
+              Sxy += 2.0 * x * x * y * nx * tmp;
+              Syy += 3.0 * y * y * y * ny * tmp;
+            }
           } // for q
         }   // if line at bnd
       }     // for j faces
     }       // if this cpu
   }         // for cell in active cells
 
-  area = Utilities::MPI::sum(area, mpi_communicator);
-  return area;
+  S0  = Utilities::MPI::sum(S0, mpi_communicator);
+  Sx  = Utilities::MPI::sum(Sx, mpi_communicator);
+  Sy  = Utilities::MPI::sum(Sy, mpi_communicator);
+  Sxx = Utilities::MPI::sum(Sxx, mpi_communicator);
+  Sxy = Utilities::MPI::sum(Sxy, mpi_communicator);
+  Syy = Utilities::MPI::sum(Syy, mpi_communicator);
+
+  WaterPlaneMoments wpm;
+  wpm.setS0(S0);
+  wpm.setSx(Sx);
+  wpm.setSy(Sy);
+  wpm.setSxx(Sxx);
+  wpm.setSxy(Sxy);
+  wpm.setSyy(Syy);
+
+  return wpm;
+}
+
+template <int dim>
+double
+BEMProblem<dim>::area_integral(const Body &body)
+{
+  int                    dimId = 1;
+  FEValues<dim - 1, dim> fe_v(*mapping,
+                              dh.get_fe(),
+                              *quadrature,
+                              update_values | update_normal_vectors | update_quadrature_points |
+                                update_JxW_values | update_gradients);
+
+  FEFaceValues<dim - 1, dim> fe_face_values(*mapping,
+                                            dh.get_fe(),
+                                            *_quadrature1d,
+                                            update_values | update_normal_vectors |
+                                              update_quadrature_points | update_JxW_values |
+                                              update_gradients);
+
+  const types::global_dof_index n_dofs = dh.n_dofs();
+  std::vector<Point<dim>>       support_points(n_dofs);
+  DoFTools::map_dofs_to_support_points<dim - 1, dim>(*mapping, dh, support_points);
+  std::vector<types::global_dof_index> local_dof_indices(fe->dofs_per_cell);
+
+  double areax = 0.0;
+  double areay = 0.0;
+  for (const auto &cell : dh.active_cell_iterators())
+  {
+    if (cell->subdomain_id() == Utilities::MPI::this_mpi_process(mpi_communicator))
+    {
+      fe_v.reinit(cell);
+      cell->get_dof_indices(local_dof_indices);
+
+      for (int j = 0; j < 4; ++j)
+      {
+        auto line = cell->line(j);
+        if (line->at_boundary() && body.isWaterline(line->manifold_id()))
+        {
+          fe_face_values.reinit(cell, j);
+
+          auto qpoints  = fe_face_values.get_quadrature_points();
+          auto qnormals = fe_face_values.get_normal_vectors();
+
+          for (unsigned int q = 0; q < fe_face_values.n_quadrature_points; ++q)
+          {
+            //            std::cout << qnormals[q] << std::endl;
+
+            double nx = qpoints[q][0];
+            if (std::fabs(nx) > 0.0)
+              nx /= std::fabs(nx);
+
+            double ny = qpoints[q][1];
+            if (std::fabs(ny) > 0.0)
+              ny /= std::fabs(ny);
+
+            for (unsigned int i = 0; i < fe_face_values.dofs_per_cell; ++i)
+            {
+              areax +=
+                nx * qpoints[q][0] * fe_face_values.shape_value(i, q) * fe_face_values.JxW(q);
+              areay +=
+                ny * qpoints[q][1] * fe_face_values.shape_value(i, q) * fe_face_values.JxW(q);
+
+              const auto sgrad = fe_face_values.shape_grad(i, q);
+
+              std::cout << fe_face_values.shape_value(i, q) << std::endl;
+              std::cout << qpoints[q] << std::endl;
+            }
+          } // for q
+        }   // if line at bnd
+      }     // for j faces
+    }       // if this cpu
+  }         // for cell in active cells
+
+  areax = Utilities::MPI::sum(areax, mpi_communicator);
+  areay = Utilities::MPI::sum(areay, mpi_communicator);
+
+  std::cout << areax << std::endl;
+  std::cout << areay << std::endl;
+
+  return areax;
 }
 
 template <int dim>

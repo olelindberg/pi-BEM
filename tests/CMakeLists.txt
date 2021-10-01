@@ -9,6 +9,7 @@ add_subdirectory(test08_center_of_pressure)
 add_subdirectory(test09_line_loop)
 add_subdirectory(test10_dof_arrangement)
 add_subdirectory(test11_dof_arrangement_parallel)
+add_subdirectory(test12_water_plane_moments)
 INCLUDE_DIRECTORIES(${D2K_INCLUDE_DIRS})
 DEAL_II_PICKUP_TESTS()
 
