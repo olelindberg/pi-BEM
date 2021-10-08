@@ -34,6 +34,12 @@ public:
     return _materialIndices;
   }
 
+  const std::vector<int> &
+  getWaterlineIndices() const
+  {
+    return _waterlineIndices;
+  }
+
   bool
   hasMaterial(int index) const
   {

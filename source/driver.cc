@@ -10,6 +10,9 @@
 #include "JSON_BodyReader.h"
 #include "Teuchos_TimeMonitor.hpp"
 
+#include "../include/WireUtil.h"
+#include <BRepBuilderAPI_MakeWire.hxx>
+
 using Teuchos::RCP;
 using Teuchos::Time;
 using Teuchos::TimeMonitor;
@@ -120,7 +123,6 @@ Driver<dim>::run(std::string input_path, std::string output_path)
     //-------------------------------------------------------------------------
     // Waterplane area and displacement:
     //-------------------------------------------------------------------------
-    auto area   = bem_problem.area_integral(body);
     auto volume = bem_problem.volume_integral(body);
 
     //-------------------------------------------------------------------------
@@ -149,22 +151,42 @@ Driver<dim>::run(std::string input_path, std::string output_path)
                                    boundary_conditions.get_hydrodynamic_pressure(),
                                    hydrodynamic_pressure_center);
 
-    std::cout << "Waterplane area        : A   = " << area << "\n";
-    std::cout << "Displacement           : V   = " << volume << "\n";
-    std::cout << "Center of flotation    : COF = " << hydrostatic_pressure_center << "\n";
-    std::cout << "Dynamic pressure center: COP = " << hydrodynamic_pressure_center << "\n";
+    std::cout << "Displacement           : V = " << volume << "\n";
+    std::cout << "Static pressure center :     " << hydrostatic_pressure_center << "\n";
+    std::cout << "Dynamic pressure center:     " << hydrodynamic_pressure_center << "\n";
 
-    dealii::Point<3> tmp;
-    for (int i = 0; i < 3; ++i)
-      tmp[i] = hydrostatic_pressure_center[i];
-    WaterPlaneMoments wpm = bem_problem.water_plane_moments(body, tmp);
+    BRepBuilderAPI_MakeWire wirebuilder;
+    for (auto id : body.getWaterlineIndices())
+      wirebuilder.Add(TopoDS::Wire(computational_domain.cad_curves[id - 11]));
+    if (wirebuilder.IsDone())
+    {
+      double         x0 = body.getCenterOfGravity()[0];
+      double         y0 = body.getCenterOfGravity()[1];
+      SurfaceMoments sm(x0, y0);
+      if (!WireUtil::surfaceMoments(wirebuilder.Wire(), sm))
+        pcout << "Surface moments failed ..." << std::endl;
 
-    std::cout << "S0  = " << wpm.getS0() << "\n";
-    std::cout << "Sx  = " << wpm.getSx() << "\n";
-    std::cout << "Sy  = " << wpm.getSy() << "\n";
-    std::cout << "Sxx = " << wpm.getSxx() << "\n";
-    std::cout << "Sxy = " << wpm.getSxy() << "\n";
-    std::cout << "Syy = " << wpm.getSyy() << "\n";
+      pcout << "x0  : " << sm.getx0() << std::endl;
+      pcout << "y0  : " << sm.gety0() << std::endl;
+      pcout << "S0  : " << sm.getS0() << std::endl;
+      pcout << "Sx  : " << sm.getSx() << std::endl;
+      pcout << "Sy  : " << sm.getSy() << std::endl;
+      pcout << "Sxx : " << sm.getSxx() << std::endl;
+      pcout << "Sxy : " << sm.getSxy() << std::endl;
+      pcout << "Syy : " << sm.getSyy() << std::endl;
+    }
+
+    // dealii::Point<3> tmp;
+    // for (int i = 0; i < 3; ++i)
+    //   tmp[i] = hydrostatic_pressure_center[i];
+    // WaterPlaneMoments wpm = bem_problem.water_plane_moments(body, tmp);
+
+    // std::cout << "S0  = " << wpm.getS0() << "\n";
+    // std::cout << "Sx  = " << wpm.getSx() << "\n";
+    // std::cout << "Sy  = " << wpm.getSy() << "\n";
+    // std::cout << "Sxx = " << wpm.getSxx() << "\n";
+    // std::cout << "Sxy = " << wpm.getSxy() << "\n";
+    // std::cout << "Syy = " << wpm.getSyy() << "\n";
 
 
 
@@ -230,7 +252,7 @@ Driver<dim>::run(std::string input_path, std::string output_path)
   }
 
   // Write a summary of all timers
-  Teuchos::TimeMonitor::summarize();
+  //  Teuchos::TimeMonitor::summarize();
 }
 
 // template class Driver<2>;

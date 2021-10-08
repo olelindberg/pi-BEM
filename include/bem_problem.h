@@ -104,8 +104,6 @@
 #include "../include/multipole_expansion.h"
 #include "../include/octree_block.h"
 
-#include "../include/WaterPlaneMoments.h"
-
 using namespace dealii;
 using namespace deal2lkit;
 
@@ -212,14 +210,9 @@ public:
                      const TrilinosWrappers::MPI::Vector &pressure,
                      Tensor<1, dim> &                     pressure_center);
 
-  double
-  area_integral(const Body &body);
 
   Tensor<1, dim>
   volume_integral(const Body &body);
-
-  WaterPlaneMoments
-  water_plane_moments(const Body &body, const Point<dim> &centerOfFlotation);
 
   void
   free_surface_elevation(double                               gravity,

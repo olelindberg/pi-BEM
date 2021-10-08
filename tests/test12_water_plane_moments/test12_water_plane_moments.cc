@@ -13,11 +13,14 @@
 // format.
 
 #include <deal.II/fe/fe_values.h>
-
 #include <deal.II/grid/grid_tools.h>
 
+#include <BRepBuilderAPI_MakeWire.hxx>
+
+
 #include "./../tests.h"
-#include "bem_problem.h"
+#include "Body.h"
+#include "WireUtil.h"
 #include "computational_domain.h"
 
 int
@@ -27,27 +30,33 @@ main(int argc, char **argv)
   // initlog();
   MPI_Comm               mpi_communicator(MPI_COMM_WORLD);
   ComputationalDomain<3> computational_domain(mpi_communicator);
-  BEMProblem<3>          bem_problem(computational_domain, mpi_communicator);
 
   deal2lkit::ParameterAcceptor::initialize("test06_area_and_volume.prm", "used.prm");
 
   computational_domain.read_domain();
-  computational_domain.getTria().refine_global(3);
-
-  bem_problem.reinit();
 
   Body             body;
   std::vector<int> wl = {11, 12};
   body.setWaterlineIndices(wl);
 
-  auto area   = bem_problem.area_integral(body);
-  auto volume = bem_problem.volume_integral(body);
+  auto shapes = computational_domain.cad_curves;
 
-  std::cout << "area   = " << area << std::endl;
-  std::cout << "volume = " << volume << std::endl;
-
-  std::string   filename0 = ("meshResult.inp");
-  std::ofstream logfile0(filename0.c_str());
-  GridOut       grid_out0;
-  grid_out0.write_ucd(computational_domain.getTria(), logfile0);
+  BRepBuilderAPI_MakeWire wirebuilder;
+  wirebuilder.Add(TopoDS::Wire(shapes[0]));
+  wirebuilder.Add(TopoDS::Wire(shapes[1]));
+  if (wirebuilder.IsDone())
+  {
+    double x0 = 100.0;
+    double y0 = 0.0;
+    double S0, Sx, Sy, Sxx, Sxy, Syy;
+    WireUtil::surfaceMoments(wirebuilder.Wire(), x0, y0, S0, Sx, Sy, Sxx, Sxy, Syy);
+    std::cout << "x0 : " << x0 << std::endl;
+    std::cout << "y0 : " << y0 << std::endl;
+    std::cout << "S0 : " << S0 << std::endl;
+    std::cout << "Sx : " << Sx << std::endl;
+    std::cout << "Sy : " << Sy << std::endl;
+    std::cout << "Sxx : " << Sxx << std::endl;
+    std::cout << "Sxy : " << Sxy << std::endl;
+    std::cout << "Syy : " << Syy << std::endl;
+  }
 }

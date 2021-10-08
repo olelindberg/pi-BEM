@@ -11,13 +11,14 @@ waterplanearea = 16963.3
 Lpp_model = 1/scale*Lpp_full
 Tm_model  = 1/scale*Tm_full
 
+
 df = pd.read_csv('pmm_app_shal_fhr_App01_pure_surge.csv')
 df_fs = pd.read_csv('pmm_app_shal_fhr_App01_pure_surge_full_scale.csv')
 
-U       = df_fs['surge velocity [m/s]'].values
+U_fullscale       = df_fs['surge velocity [m/s]'].values
 h       = df_fs['depth [m]'].values
-Frh = U/np.sqrt(g*h)
-FrL = U/np.sqrt(g*Lpp_full)
+Frh = U_fullscale/np.sqrt(g*h)
+FrL = U_fullscale/np.sqrt(g*Lpp_full)
 print(Frh)
 print(FrL)
 
