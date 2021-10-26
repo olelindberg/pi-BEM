@@ -1,4 +1,7 @@
 {
+"name": "Hemisphere",
 "materialIndices":[1],
-"waterlineIndices":[]
+"waterlineIndices":[],
+"draft": 0.0,
+"centerOfGravity":[0.0,0.0,0.0]
 }

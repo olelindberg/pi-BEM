@@ -46,17 +46,19 @@ main(int argc, char **argv)
   wirebuilder.Add(TopoDS::Wire(shapes[1]));
   if (wirebuilder.IsDone())
   {
-    double x0 = 100.0;
-    double y0 = 0.0;
-    double S0, Sx, Sy, Sxx, Sxy, Syy;
-    WireUtil::surfaceMoments(wirebuilder.Wire(), x0, y0, S0, Sx, Sy, Sxx, Sxy, Syy);
-    std::cout << "x0 : " << x0 << std::endl;
-    std::cout << "y0 : " << y0 << std::endl;
-    std::cout << "S0 : " << S0 << std::endl;
-    std::cout << "Sx : " << Sx << std::endl;
-    std::cout << "Sy : " << Sy << std::endl;
-    std::cout << "Sxx : " << Sxx << std::endl;
-    std::cout << "Sxy : " << Sxy << std::endl;
-    std::cout << "Syy : " << Syy << std::endl;
+    double         x0 = 100.0;
+    double         y0 = 0.0;
+    SurfaceMoments sm(x0, y0);
+    if (!WireUtil::surfaceMoments(wirebuilder.Wire(), sm))
+      std::cout << "Surface moments failed ..." << std::endl;
+
+    std::cout << "x0  : " << sm.getx0() << std::endl;
+    std::cout << "y0  : " << sm.gety0() << std::endl;
+    std::cout << "S0  : " << sm.getS0() << std::endl;
+    std::cout << "Sx  : " << sm.getSx() << std::endl;
+    std::cout << "Sy  : " << sm.getSy() << std::endl;
+    std::cout << "Sxx : " << sm.getSxx() << std::endl;
+    std::cout << "Sxy : " << sm.getSxy() << std::endl;
+    std::cout << "Syy : " << sm.getSyy() << std::endl;
   }
 }
