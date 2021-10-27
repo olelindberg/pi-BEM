@@ -77,7 +77,7 @@ main(int argc, char **argv)
   computational_domain.getTria().refine_global(2);
 
   surf_integr.reinit();
-  std::vector<double> areas = surf_integr.ssurffint();
-  for (auto &area : areas)
-    std::cout << "area,               A  = " << area << std::endl;
+//  std::vector<double> areas = surf_integr.ssurffint();
+//  for (auto &area : areas)
+//    std::cout << "area,               A  = " << area << std::endl;
 }
