@@ -1,5 +1,5 @@
-SET(TARGET test02_make_edges_conformal)
-SET(_main test02_make_edges_conformal.cc)
+SET(TARGET test13_residual)
+SET(_main test13_residual.cc)
 
 
 set(OPENCASCADE_DIR /home/ole/dev/tools/oce-0.18.3)

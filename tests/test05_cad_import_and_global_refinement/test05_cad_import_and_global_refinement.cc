@@ -39,10 +39,10 @@ main(int argc, char **argv)
   computational_domain.assign_manifold_projectors(1.0e-6);
 
 
-  if (refine == REFINE::GLOBAL)
+//  if (refine == REFINE::GLOBAL)
     computational_domain.getTria().refine_global(1);
-  else if (refine == REFINE::ASPECT_RATIO)
-    computational_domain.aspect_ratio_refinement(4);
+//  else if (refine == REFINE::ASPECT_RATIO)
+//    computational_domain.aspect_ratio_refinement(4);
 
 
   std::string   filename0 = ("meshResult.inp");

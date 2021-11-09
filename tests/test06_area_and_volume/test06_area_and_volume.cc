@@ -38,11 +38,11 @@ main(int argc, char **argv)
 
   bem_problem.reinit();
   std::cout << "Reinit done ..." << std::endl;
-  auto area   = bem_problem.area_integral();
-  auto volume = bem_problem.volume_integral();
+//  auto area   = bem_problem.area_integral();
+//  auto volume = bem_problem.volume_integral();
 
-  std::cout << "area   = " << area << std::endl;
-  std::cout << "volume = " << volume << std::endl;
+//  std::cout << "area   = " << area << std::endl;
+//  std::cout << "volume = " << volume << std::endl;
 
   std::string   filename0 = ("meshResult.inp");
   std::ofstream logfile0(filename0.c_str());

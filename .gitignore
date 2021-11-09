@@ -4,3 +4,6 @@ output/
 *.log
 *.aux
 *.gz
+.vscode/
+*.fls
+*.fdb_latexmk

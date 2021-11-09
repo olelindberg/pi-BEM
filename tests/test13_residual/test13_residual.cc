@@ -78,12 +78,12 @@ main(int argc, char **argv)
 
   bem_problem.reinit();
 
-//  bem_problem.dynamic_pressure(boundary_conditions.get_wind(), boundary_conditions.get_pressure());
+ // bem_problem.dynamic_pressure(boundary_conditions.get_wind(), boundary_conditions.get_pressure());
 
 //  std::vector<double>               areas   = bem_problem.area_integral();
-//  std::vector<Tensor<1, 3, double>> volumes = bem_problem.volume_integral();
+////  std::vector<Tensor<1, 3, double>> volumes = bem_problem.volume_integral();
 
-  std::vector<Tensor<1, 3, double>> pressure_centers;
+//  std::vector<Tensor<1, 3, double>> pressure_centers;
 //  bem_problem.center_of_pressure(boundary_conditions.get_pressure(), pressure_centers);
 
 //  for (auto &area : areas)
