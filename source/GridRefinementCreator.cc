@@ -2,7 +2,7 @@
 
 #include "../include/AspectRatioRefinement.h"
 #include "../include/CurvatureRefinement.h"
-#include "../include/DistanceRefinement.h"
+#include "../include/DistanceRatioRefinement.h"
 #include "../include/HeightRatioRefinement.h"
 #include "../include/ManifoldRefinement.h"
 
@@ -62,7 +62,7 @@ GridRefinementCreator::create(const std::string &              filename,
         int    manifold_id       = child.get<int>("manifold_id");
         int    refinement_levels = child.get<int>("refinement_levels");
         double distance_max      = child.get<double>("distance_max");
-        gridrefinement.push_back(std::make_shared<DistanceRefinement>(
+        gridrefinement.push_back(std::make_shared<DistanceRatioRefinement>(
           pcout, box, manifold_id, refinement_levels, distance_max));
       }
     }

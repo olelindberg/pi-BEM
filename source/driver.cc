@@ -92,21 +92,21 @@ Driver<dim>::run(std::string input_path, std::string output_path)
   {
     pcout << "Adaptive refinement ...\n";
     Teuchos::TimeMonitor LocalTimer(*TotalTime);
-    unsigned int         local_refinement_cycles = 0;
     computational_domain.read_domain(input_path);
     computational_domain.refine_and_resize(input_path);
     computational_domain.update_triangulation();
+    bem_problem.reinit();
+    boundary_conditions.solve_problem(body);
 
     for (unsigned int i = 0; i <= computational_domain.n_cycles; ++i)
     {
       pcout << "Refinement level " << i << " ...\n";
+
+      bem_problem.adaptive_refinement(boundary_conditions.get_phi());
+      computational_domain.update_triangulation();
+
       bem_problem.reinit();
       boundary_conditions.solve_problem(body);
-      if (i < local_refinement_cycles)
-      {
-        bem_problem.adaptive_refinement(boundary_conditions.get_phi());
-        computational_domain.update_triangulation();
-      }
     }
   }
 

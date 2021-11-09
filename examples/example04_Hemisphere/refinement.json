@@ -1,0 +1,16 @@
+{
+ "aspectRatioRefinement": { 
+    "aspect_ratio_max"  : 5.0,
+    "manifold_ids"      : [1,2],
+    "refinement_levels" : 0
+},
+"heightRatioRefinement": { 
+    "height_ratio_max"  : 0.3,
+    "refinement_levels" : 1000
+},
+"distanceRefinement": {
+    "distance_max"      : 1.0,
+    "manifold_id"       : 2,
+    "refinement_levels" : 1000
+}
+}

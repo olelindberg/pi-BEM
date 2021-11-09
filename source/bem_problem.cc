@@ -2239,8 +2239,33 @@ BEMProblem<dim>::adaptive_refinement(const TrilinosWrappers::MPI::Vector &error_
   Vector<float>  estimated_error_per_cell(comp_dom.tria.n_active_cells());
   Vector<double> helper(error_vector);
 
-  KellyErrorEstimator<dim - 1, dim>::estimate(
-    *mapping, dh, QGauss<dim - 2>(3), {}, helper, estimated_error_per_cell);
+
+  std::vector<types::global_dof_index> local_dof_indices(fe->dofs_per_cell);
+
+  for (cell_it cell = dh.begin_active(); cell != dh.end(); ++cell)
+  {
+    if (cell->subdomain_id() == this_mpi_process)
+    {
+      cell->get_dof_indices(local_dof_indices);
+
+
+      double minval = std::numeric_limits<double>::max();
+      double maxval = std::numeric_limits<double>::min();
+      for (unsigned int j = 0; j < fe->dofs_per_cell; ++j)
+      {
+        auto val = error_vector(local_dof_indices[j]);
+        minval   = std::min(val, minval);
+        maxval   = std::max(val, maxval);
+      } // for j in cell dofs
+      estimated_error_per_cell[cell->index()] = maxval - minval;
+
+    } // if this cpu
+  }   // for cell in active cells
+
+
+
+  //  KellyErrorEstimator<dim - 1, dim>::estimate(
+  //    *mapping, dh, QGauss<dim - 2>(3), {}, helper, estimated_error_per_cell);
 
   pgr.mark_cells(estimated_error_per_cell, comp_dom.tria);
   //  GridRefinement::refine_and_coarsen_fixed_number (comp_dom.tria,
