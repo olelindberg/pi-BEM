@@ -98,9 +98,13 @@ Driver<dim>::run(std::string input_path, std::string output_path)
     bem_problem.reinit();
     boundary_conditions.solve_problem(body);
 
-    for (unsigned int i = 0; i <= computational_domain.n_cycles; ++i)
+    for (unsigned int i = 0; i < computational_domain.n_cycles; ++i)
     {
       pcout << "Refinement level " << i << " ...\n";
+
+    bem_problem.hydrodynamic_pressure(density,
+                                      boundary_conditions.get_wind(),
+                                      boundary_conditions.get_hydrodynamic_pressure());
 
       bem_problem.adaptive_refinement(boundary_conditions.get_phi());
       computational_domain.update_triangulation();

@@ -2250,15 +2250,46 @@ BEMProblem<dim>::adaptive_refinement(const TrilinosWrappers::MPI::Vector &error_
 
 
       double minval = std::numeric_limits<double>::max();
-      double maxval = std::numeric_limits<double>::min();
+      double maxval = -std::numeric_limits<double>::max();
       for (unsigned int j = 0; j < fe->dofs_per_cell; ++j)
       {
-        auto val = error_vector(local_dof_indices[j]);
+        auto val = error_vector[local_dof_indices[j]];
         minval   = std::min(val, minval);
         maxval   = std::max(val, maxval);
       } // for j in cell dofs
-      estimated_error_per_cell[cell->index()] = maxval - minval;
+      estimated_error_per_cell[cell->active_cell_index()] = maxval - minval;
+    } // if this cpu
+  }   // for cell in active cells
 
+  double mean = 0.0;
+  for (auto& val : estimated_error_per_cell)
+    mean += val;
+  mean /= estimated_error_per_cell.size();
+
+  double tmp = 0.0;
+  for (auto& val : estimated_error_per_cell)
+  {
+    const auto delta = val-mean;
+    tmp += delta*delta;
+  }
+  tmp /= estimated_error_per_cell.size();
+  double SD = std::sqrt(tmp);
+
+  std::cout << "Mean " << mean << std::endl;
+  std::cout << "SD   " << SD << std::endl;
+
+   for (auto& val : estimated_error_per_cell)
+   {
+     val -= mean;
+     val /= SD;
+   }
+
+  for (cell_it cell = dh.begin_active(); cell != dh.end(); ++cell)
+  {
+    if (cell->subdomain_id() == this_mpi_process)
+    {
+      if (estimated_error_per_cell[cell->active_cell_index()]>1.4)
+        cell->set_refine_flag();
     } // if this cpu
   }   // for cell in active cells
 
@@ -2267,7 +2298,7 @@ BEMProblem<dim>::adaptive_refinement(const TrilinosWrappers::MPI::Vector &error_
   //  KellyErrorEstimator<dim - 1, dim>::estimate(
   //    *mapping, dh, QGauss<dim - 2>(3), {}, helper, estimated_error_per_cell);
 
-  pgr.mark_cells(estimated_error_per_cell, comp_dom.tria);
+//  pgr.mark_cells(estimated_error_per_cell, comp_dom.tria);
   //  GridRefinement::refine_and_coarsen_fixed_number (comp_dom.tria,
   //                                                  estimated_error_per_cell,
   //                                                  refinement_threshold,
