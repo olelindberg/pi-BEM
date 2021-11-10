@@ -8,8 +8,8 @@
     "height_ratio_max"  : 0.3,
     "refinement_levels" : 1000
 },
-"distanceRefinement": {
-    "distance_max"      : 1.0,
+"distanceRatioRefinement": {
+    "distance_ratio_max"      : 1.0,
     "manifold_id"       : 2,
     "refinement_levels" : 1000
 }

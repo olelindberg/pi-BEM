@@ -2236,9 +2236,11 @@ template <int dim>
 void
 BEMProblem<dim>::adaptive_refinement(const TrilinosWrappers::MPI::Vector &error_vector)
 {
-  Vector<float>  estimated_error_per_cell(comp_dom.tria.n_active_cells());
+  //---------------------------------------------------------------------------
+  // Adaptation to velocity potential:
+  //---------------------------------------------------------------------------
+  Vector<float>  error_estimator_potential(comp_dom.tria.n_active_cells());
   Vector<double> helper(error_vector);
-
 
   std::vector<types::global_dof_index> local_dof_indices(fe->dofs_per_cell);
 
@@ -2257,54 +2259,103 @@ BEMProblem<dim>::adaptive_refinement(const TrilinosWrappers::MPI::Vector &error_
         minval   = std::min(val, minval);
         maxval   = std::max(val, maxval);
       } // for j in cell dofs
-      estimated_error_per_cell[cell->active_cell_index()] = maxval - minval;
+      error_estimator_potential[cell->active_cell_index()] = maxval - minval;
     } // if this cpu
   }   // for cell in active cells
 
-  double mean = 0.0;
-  for (auto& val : estimated_error_per_cell)
-    mean += val;
-  mean /= estimated_error_per_cell.size();
-
-  double tmp = 0.0;
-  for (auto& val : estimated_error_per_cell)
   {
-    const auto delta = val-mean;
-    tmp += delta*delta;
+    double mean = 0.0;
+    for (auto &val : error_estimator_potential)
+      mean += val;
+    mean /= error_estimator_potential.size();
+
+    double tmp = 0.0;
+    for (auto &val : error_estimator_potential)
+    {
+      const auto delta = val - mean;
+      tmp += delta * delta;
+    }
+    tmp /= error_estimator_potential.size();
+    double SD = std::sqrt(tmp);
+
+    std::cout << "Mean " << mean << std::endl;
+    std::cout << "SD   " << SD << std::endl;
+
+    for (auto &val : error_estimator_potential)
+    {
+      val -= mean;
+      val /= SD;
+    }
   }
-  tmp /= estimated_error_per_cell.size();
-  double SD = std::sqrt(tmp);
 
-  std::cout << "Mean " << mean << std::endl;
-  std::cout << "SD   " << SD << std::endl;
 
-   for (auto& val : estimated_error_per_cell)
-   {
-     val -= mean;
-     val /= SD;
-   }
+  //---------------------------------------------------------------------------
+  // Adaptation to velocity gradient magnitude:
+  //---------------------------------------------------------------------------
+  Vector<float> error_estimator_velocity(comp_dom.tria.n_active_cells());
+
+  std::vector<types::global_dof_index> local_dof_indices_v(gradient_fe->dofs_per_cell);
+  cell_it                              cell_v = gradient_dh.begin_active();
 
   for (cell_it cell = dh.begin_active(); cell != dh.end(); ++cell)
   {
     if (cell->subdomain_id() == this_mpi_process)
     {
-      if (estimated_error_per_cell[cell->active_cell_index()]>1.4)
+      cell_v->get_dof_indices(local_dof_indices_v);
+
+      double minval = std::numeric_limits<double>::max();
+      double maxval = -std::numeric_limits<double>::max();
+      for (unsigned int j = 0; j < fe->dofs_per_cell; ++j)
+      {
+        double u   = vector_gradients_solution[local_dof_indices_v[j * 3 + 0]];
+        double v   = vector_gradients_solution[local_dof_indices_v[j * 3 + 1]];
+        double w   = vector_gradients_solution[local_dof_indices_v[j * 3 + 2]];
+        double val = std::sqrt(u * u + v * v + w * w);
+        minval     = std::min(val, minval);
+        maxval     = std::max(val, maxval);
+
+      } // for j in cell dofs
+
+      error_estimator_velocity[cell->active_cell_index()] = maxval - minval;
+    } // if this cpu
+    ++cell_v;
+  } // for cell in active cells
+
+
+  {
+    double mean = 0.0;
+    for (auto &val : error_estimator_velocity)
+      mean += val;
+    mean /= error_estimator_potential.size();
+
+    double tmp = 0.0;
+    for (auto &val : error_estimator_velocity)
+    {
+      const auto delta = val - mean;
+      tmp += delta * delta;
+    }
+    tmp /= error_estimator_velocity.size();
+    double SD = std::sqrt(tmp);
+
+    std::cout << "Mean " << mean << std::endl;
+    std::cout << "SD   " << SD << std::endl;
+
+    for (auto &val : error_estimator_velocity)
+    {
+      val -= mean;
+      val /= SD;
+    }
+  }
+
+  for (cell_it cell = dh.begin_active(); cell != dh.end(); ++cell)
+  {
+    if (cell->subdomain_id() == this_mpi_process)
+    {
+      if (error_estimator_velocity[cell->active_cell_index()] > 1.4)
         cell->set_refine_flag();
     } // if this cpu
   }   // for cell in active cells
 
-
-
-  //  KellyErrorEstimator<dim - 1, dim>::estimate(
-  //    *mapping, dh, QGauss<dim - 2>(3), {}, helper, estimated_error_per_cell);
-
-//  pgr.mark_cells(estimated_error_per_cell, comp_dom.tria);
-  //  GridRefinement::refine_and_coarsen_fixed_number (comp_dom.tria,
-  //                                                  estimated_error_per_cell,
-  //                                                  refinement_threshold,
-  //                                                  coarsening_threshold);
-
-  //  GridRefinement::refine_and_coarsen_fixed_fraction(comp_dom.tria,estimated_error_per_cell,0.,0.0);
 
   comp_dom.tria.prepare_coarsening_and_refinement();
   comp_dom.tria.execute_coarsening_and_refinement();

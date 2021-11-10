@@ -102,11 +102,11 @@ Driver<dim>::run(std::string input_path, std::string output_path)
     {
       pcout << "Refinement level " << i << " ...\n";
 
-    bem_problem.hydrodynamic_pressure(density,
-                                      boundary_conditions.get_wind(),
-                                      boundary_conditions.get_hydrodynamic_pressure());
+      bem_problem.hydrodynamic_pressure(density,
+                                        boundary_conditions.get_wind(),
+                                        boundary_conditions.get_hydrodynamic_pressure());
 
-      bem_problem.adaptive_refinement(boundary_conditions.get_phi());
+      bem_problem.adaptive_refinement(boundary_conditions.get_hydrodynamic_pressure());
       computational_domain.update_triangulation();
 
       bem_problem.reinit();
@@ -159,27 +159,29 @@ Driver<dim>::run(std::string input_path, std::string output_path)
     std::cout << "Static pressure center :     " << hydrostatic_pressure_center << "\n";
     std::cout << "Dynamic pressure center:     " << hydrodynamic_pressure_center << "\n";
 
-    BRepBuilderAPI_MakeWire wirebuilder;
-    for (auto id : body.getWaterlineIndices())
-      wirebuilder.Add(TopoDS::Wire(computational_domain.cad_curves[id - 11]));
-    if (wirebuilder.IsDone())
+    if (false)
     {
-      double         x0 = body.getCenterOfGravity()[0];
-      double         y0 = body.getCenterOfGravity()[1];
-      SurfaceMoments sm(x0, y0);
-      if (!WireUtil::surfaceMoments(wirebuilder.Wire(), sm))
-        pcout << "Surface moments failed ..." << std::endl;
+      BRepBuilderAPI_MakeWire wirebuilder;
+      for (auto id : body.getWaterlineIndices())
+        wirebuilder.Add(TopoDS::Wire(computational_domain.cad_curves[id - 11]));
+      if (wirebuilder.IsDone())
+      {
+        double         x0 = body.getCenterOfGravity()[0];
+        double         y0 = body.getCenterOfGravity()[1];
+        SurfaceMoments sm(x0, y0);
+        if (!WireUtil::surfaceMoments(wirebuilder.Wire(), sm))
+          pcout << "Surface moments failed ..." << std::endl;
 
-      pcout << "x0  : " << sm.getx0() << std::endl;
-      pcout << "y0  : " << sm.gety0() << std::endl;
-      pcout << "S0  : " << sm.getS0() << std::endl;
-      pcout << "Sx  : " << sm.getSx() << std::endl;
-      pcout << "Sy  : " << sm.getSy() << std::endl;
-      pcout << "Sxx : " << sm.getSxx() << std::endl;
-      pcout << "Sxy : " << sm.getSxy() << std::endl;
-      pcout << "Syy : " << sm.getSyy() << std::endl;
+        pcout << "x0  : " << sm.getx0() << std::endl;
+        pcout << "y0  : " << sm.gety0() << std::endl;
+        pcout << "S0  : " << sm.getS0() << std::endl;
+        pcout << "Sx  : " << sm.getSx() << std::endl;
+        pcout << "Sy  : " << sm.getSy() << std::endl;
+        pcout << "Sxx : " << sm.getSxx() << std::endl;
+        pcout << "Sxy : " << sm.getSxy() << std::endl;
+        pcout << "Syy : " << sm.getSyy() << std::endl;
+      }
     }
-
     // dealii::Point<3> tmp;
     // for (int i = 0; i < 3; ++i)
     //   tmp[i] = hydrostatic_pressure_center[i];
