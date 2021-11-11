@@ -311,10 +311,6 @@ public:
   void
   compute_reordering_vectors();
 
-  void
-  adaptive_refinement(const TrilinosWrappers::MPI::Vector &error_vector);
-
-
 
   ConditionalOStream        pcout;
   ComputationalDomain<dim> &comp_dom;

@@ -6,6 +6,7 @@
 
 #include <fstream>
 
+#include "../include/AdaptiveRefinement.h"
 #include "../include/surface_integral_util.h"
 #include "JSON_BodyReader.h"
 #include "Teuchos_TimeMonitor.hpp"
@@ -102,11 +103,17 @@ Driver<dim>::run(std::string input_path, std::string output_path)
     {
       pcout << "Refinement level " << i << " ...\n";
 
-      bem_problem.hydrodynamic_pressure(density,
-                                        boundary_conditions.get_wind(),
-                                        boundary_conditions.get_hydrodynamic_pressure());
-
-      bem_problem.adaptive_refinement(boundary_conditions.get_hydrodynamic_pressure());
+      double             errorEstimatorMax = 2.0;
+      double             aspectRatioMax    = 2.5;
+      AdaptiveRefinement adaptiveRefinement(pcout, errorEstimatorMax, aspectRatioMax);
+      adaptiveRefinement.refine(bem_problem.this_mpi_process,
+                                bem_problem.fe,
+                                bem_problem.gradient_fe,
+                                bem_problem.dh,
+                                bem_problem.gradient_dh,
+                                boundary_conditions.get_phi(),
+                                bem_problem.vector_gradients_solution,
+                                computational_domain.tria);
       computational_domain.update_triangulation();
 
       bem_problem.reinit();
