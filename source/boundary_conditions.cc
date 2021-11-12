@@ -138,6 +138,7 @@ BoundaryConditions<dim>::solve_problem(const Body &body)
   pcout << "Solving Laplace equation for potential ...\n";
   bem.solve(phi, dphi_dn, tmp_rhs);
   have_dirichlet_bc = bem.have_dirichlet_bc;
+  std::cout << have_dirichlet_bc << std::endl;
   if (!have_dirichlet_bc)
   {
     std::vector<Point<dim>> support_points(n_dofs);

@@ -1,53 +1,13 @@
 #include "../include/AdaptiveRefinement.h"
 #include <deal.II/dofs/dof_accessor.h>
 
-
-class AdaptiveRefinementUtil
-{
-public:
-  static void
-  normalizeVector(dealii::Vector<double> &vec, const MPI_Comm& mpi_comm)
-  {
-    //-------------------------------------------------------------------------
-    // Calculate mean:
-    //-------------------------------------------------------------------------
-    double mean = 0.0;
-    for (auto &val : vec)
-      mean += val;
-    mean  = dealii::Utilities::MPI::sum(mean, mpi_comm);
-    mean /= vec.size();
-
-    //-------------------------------------------------------------------------
-    // Calculate standard deviation:
-    //-------------------------------------------------------------------------
-    double tmp = 0.0;
-    for (auto &val : vec)
-    {
-      const auto delta = val - mean;
-      tmp += delta * delta;
-    }
-    tmp  = dealii::Utilities::MPI::sum(tmp, mpi_comm);
-    tmp /= vec.size();
-    double SD = std::sqrt(tmp);
-
-    //-------------------------------------------------------------------------
-    // Normalize by vec = (vec-mean)/SD:
-    //-------------------------------------------------------------------------
-    for (auto &val : vec)
-    {
-      val -= mean;
-      val /= SD;
-    }
-
-  }
-};
-
-AdaptiveRefinement::AdaptiveRefinement( dealii::ConditionalOStream pcout,
-                                        MPI_Comm mpi_comm,
-                                        double                     errorEstimatorMax,
-                                        double                     aspectRatioMax)
-  : _pcout(pcout), _mpi_comm(mpi_comm),
-  _errorEstimatorMax(errorEstimatorMax)
+AdaptiveRefinement::AdaptiveRefinement(dealii::ConditionalOStream pcout,
+                                       MPI_Comm                   mpi_comm,
+                                       double                     errorEstimatorMax,
+                                       double                     aspectRatioMax)
+  : _pcout(pcout)
+  , _mpi_comm(mpi_comm)
+  , _errorEstimatorMax(errorEstimatorMax)
   , _aspectRatioMax(aspectRatioMax)
 {}
 
@@ -65,19 +25,16 @@ AdaptiveRefinement::refine(unsigned int                                        p
   //---------------------------------------------------------------------------
   // Adaptation to velocity potential:
   //---------------------------------------------------------------------------
-
-  std::cout << pid << " Number of active cells " << tria.n_active_cells() << std::endl;
-  dealii::Vector<double> error_estimator_potential(tria.n_active_cells());
+  dealii::TrilinosWrappers::MPI::Vector error_estimator_potential(error_vector);
+  error_estimator_potential = 0.0;
 
   std::vector<dealii::types::global_dof_index> local_dof_indices(fe->dofs_per_cell);
 
-  int cnt = 0;
   for (cell_it cell = dh.begin_active(); cell != dh.end(); ++cell)
   {
     if (cell->subdomain_id() == pid)
     {
       cell->get_dof_indices(local_dof_indices);
-
 
       double minval = std::numeric_limits<double>::max();
       double maxval = -std::numeric_limits<double>::max();
@@ -88,55 +45,57 @@ AdaptiveRefinement::refine(unsigned int                                        p
         maxval   = std::max(val, maxval);
       } // for j in cell dofs
       error_estimator_potential[cell->active_cell_index()] = maxval - minval;
-//      std::cout << pid << " cell id " << cell->active_cell_index() << std::endl;
-      ++cnt;
     } // if this cpu
   }   // for cell in active cells
-//  std::cout << pid << "----------------------- Number cells visited " << cnt << std::endl;
 
-  AdaptiveRefinementUtil::normalizeVector(error_estimator_potential,_mpi_comm);
+  //---------------------------------------------------------------------------
+  // Extact mean and divide by standard deviation:
+  //---------------------------------------------------------------------------
+  error_estimator_potential.add(-error_estimator_potential.mean_value());
+  error_estimator_potential /=
+    (error_estimator_potential.l2_norm() * std::sqrt(1.0 / error_estimator_potential.size()));
 
   //---------------------------------------------------------------------------
   // Adaptation to velocity gradient magnitude:
   //---------------------------------------------------------------------------
-  dealii::Vector<double> error_estimator_velocity(tria.n_active_cells());
+  //   dealii::Vector<double> error_estimator_velocity(tria.n_active_cells());
 
-  std::vector<dealii::types::global_dof_index> local_dof_indices_v(gradient_fe->dofs_per_cell);
-  cell_it                                      cell_v = gradient_dh.begin_active();
+  //   std::vector<dealii::types::global_dof_index> local_dof_indices_v(gradient_fe->dofs_per_cell);
+  //   cell_it                                      cell_v = gradient_dh.begin_active();
+
+  //   for (cell_it cell = dh.begin_active(); cell != dh.end(); ++cell)
+  //   {
+  //     if (cell->subdomain_id() == pid)
+  //     {
+  //       cell_v->get_dof_indices(local_dof_indices_v);
+
+  //       double minval = std::numeric_limits<double>::max();
+  //       double maxval = -std::numeric_limits<double>::max();
+  //       for (unsigned int j = 0; j < fe->dofs_per_cell; ++j)
+  //       {
+  //         double u   = vector_gradients_solution[local_dof_indices_v[j * 3 + 0]];
+  //         double v   = vector_gradients_solution[local_dof_indices_v[j * 3 + 1]];
+  //         double w   = vector_gradients_solution[local_dof_indices_v[j * 3 + 2]];
+  //         double val = std::sqrt(u * u + v * v + w * w);
+  //         minval     = std::min(val, minval);
+  //         maxval     = std::max(val, maxval);
+
+  //       } // for j in cell dofs
+
+  //       error_estimator_velocity[cell->active_cell_index()] = maxval - minval;
+  //     } // if this cpu
+  //     ++cell_v;
+  //   } // for cell in active cells
+
+
+  //   AdaptiveRefinementUtil::normalizeVector(error_estimator_velocity, _mpi_comm);
 
   for (cell_it cell = dh.begin_active(); cell != dh.end(); ++cell)
   {
     if (cell->subdomain_id() == pid)
     {
-      cell_v->get_dof_indices(local_dof_indices_v);
-
-      double minval = std::numeric_limits<double>::max();
-      double maxval = -std::numeric_limits<double>::max();
-      for (unsigned int j = 0; j < fe->dofs_per_cell; ++j)
-      {
-        double u   = vector_gradients_solution[local_dof_indices_v[j * 3 + 0]];
-        double v   = vector_gradients_solution[local_dof_indices_v[j * 3 + 1]];
-        double w   = vector_gradients_solution[local_dof_indices_v[j * 3 + 2]];
-        double val = std::sqrt(u * u + v * v + w * w);
-        minval     = std::min(val, minval);
-        maxval     = std::max(val, maxval);
-
-      } // for j in cell dofs
-
-      error_estimator_velocity[cell->active_cell_index()] = maxval - minval;
-    } // if this cpu
-    ++cell_v;
-  } // for cell in active cells
-
-
-  AdaptiveRefinementUtil::normalizeVector(error_estimator_velocity,_mpi_comm);
-
-  for (cell_it cell = dh.begin_active(); cell != dh.end(); ++cell)
-  {
-    if (cell->subdomain_id() == pid)
-    {
-      if (error_estimator_potential[cell->active_cell_index()] > _errorEstimatorMax ||
-          error_estimator_velocity[cell->active_cell_index()] > _errorEstimatorMax)
+      if (error_estimator_potential[cell->active_cell_index()] > 1.4) //||
+      //          error_estimator_velocity[cell->active_cell_index()] > _errorEstimatorMax)
       {
         unsigned int max_extent_dim = 0;
         unsigned int min_extent_dim = 1;

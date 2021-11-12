@@ -121,8 +121,11 @@ BEMProblem<dim>::reinit()
   // FiniteElement<dim-1,dim> * pippo = FETools::get_fe_by_name<dim-1,
   // dim>(foo); std::cout<<pippo->get_name()<<std::endl;
 
+  std::cout << this_mpi_process << " number of cells 1 " << comp_dom.tria.n_cells() << std::endl;
+  std::cout << this_mpi_process << " number of scalar dofs 1 " << dh.n_dofs() << std::endl;
   dh.distribute_dofs(*fe);
   gradient_dh.distribute_dofs(*gradient_fe);
+  std::cout << this_mpi_process << " number of scalar dofs 2 " << dh.n_dofs() << std::endl;
 
   // we should choose the appropriate renumbering strategy and then stick with
   // it. in step 32 they use component_wise which is very straight-forward but
@@ -130,28 +133,22 @@ BEMProblem<dim>::reinit()
   DoFRenumbering::component_wise(dh);
   DoFRenumbering::component_wise(gradient_dh);
 
+
   pcout << "Re-ordering vectors ..." << std::endl;
   compute_reordering_vectors();
 
   DoFRenumbering::subdomain_wise(dh);
   DoFRenumbering::subdomain_wise(gradient_dh);
 
-  pcout << "Making hanging nodes constraints1 ..." << std::endl;
   vector_constraints.reinit();
-  pcout << "Making hanging nodes constraints2 ..." << std::endl;
   DoFTools::make_hanging_node_constraints(gradient_dh, vector_constraints);
-  pcout << "Making hanging nodes constraints3 ..." << std::endl;
   vector_constraints.close();
-  pcout << "Making hanging nodes constraints4 ..." << std::endl;
 
   if (mapping_type == "FE")
   {
-    pcout << "Making hanging nodes constraints5 ..." << std::endl;
     map_vector.reinit(gradient_dh.n_dofs());
     // Fills the euler vector with information from the Triangulation
-    pcout << "Making hanging nodes constraints6 ..." << std::endl;
     VectorTools::get_position_vector(gradient_dh, map_vector);
-    pcout << "Making hanging nodes constraints7 ..." << std::endl;
     vector_constraints.distribute(map_vector);
   }
   // mapping_degree = fe->get_degree();
@@ -180,8 +177,8 @@ BEMProblem<dim>::reinit()
 
   const types::global_dof_index n_dofs = dh.n_dofs();
 
-  pcout << "Scalar DOFs: " << dh.n_dofs() << std::endl;
-  pcout << "Vector DOFs: " << gradient_dh.n_dofs() << std::endl;
+  std::cout << this_mpi_process << " Scalar DOFs: " << dh.n_dofs() << std::endl;
+  std::cout << this_mpi_process << " Vector DOFs: " << gradient_dh.n_dofs() << std::endl;
 
   std::vector<types::subdomain_id> dofs_domain_association(n_dofs);
 
@@ -1464,6 +1461,8 @@ BEMProblem<dim>::solve_system(TrilinosWrappers::MPI::Vector &      phi,
       }
     }
   }
+
+
   phi(this_cpu_set.nth_index_in_set(0))     = phi(this_cpu_set.nth_index_in_set(0));
   dphi_dn(this_cpu_set.nth_index_in_set(0)) = dphi_dn(this_cpu_set.nth_index_in_set(0));
   phi.compress(VectorOperation::insert);
@@ -2232,10 +2231,12 @@ BEMProblem<dim>::compute_normals()
   TrilinosWrappers::PreconditionAMG mass_prec;
   std::cout << this_mpi_process << " Computing boundary normals, 6 \n";
 
- std::cout << this_mpi_process << ", M          " << vector_normals_matrix.m () << std::endl;
- std::cout << this_mpi_process << ", N          " << vector_normals_matrix.n () << std::endl;
- std::cout << this_mpi_process << ", NNZ        " << vector_normals_matrix.n_nonzero_elements () << std::endl;
- std::cout << this_mpi_process << ", memory     " << vector_normals_matrix.memory_consumption () << std::endl;
+  std::cout << this_mpi_process << ", M          " << vector_normals_matrix.m() << std::endl;
+  std::cout << this_mpi_process << ", N          " << vector_normals_matrix.n() << std::endl;
+  std::cout << this_mpi_process << ", NNZ        " << vector_normals_matrix.n_nonzero_elements()
+            << std::endl;
+  std::cout << this_mpi_process << ", memory     " << vector_normals_matrix.memory_consumption()
+            << std::endl;
 
   mass_prec.initialize(vector_normals_matrix);
 
