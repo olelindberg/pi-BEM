@@ -6,34 +6,48 @@ class AdaptiveRefinementUtil
 {
 public:
   static void
-  normalizeVector(dealii::Vector<double> &vec)
+  normalizeVector(dealii::Vector<double> &vec, const MPI_Comm& mpi_comm)
   {
+    //-------------------------------------------------------------------------
+    // Calculate mean:
+    //-------------------------------------------------------------------------
     double mean = 0.0;
     for (auto &val : vec)
       mean += val;
+    mean  = dealii::Utilities::MPI::sum(mean, mpi_comm);
     mean /= vec.size();
 
+    //-------------------------------------------------------------------------
+    // Calculate standard deviation:
+    //-------------------------------------------------------------------------
     double tmp = 0.0;
     for (auto &val : vec)
     {
       const auto delta = val - mean;
       tmp += delta * delta;
     }
+    tmp  = dealii::Utilities::MPI::sum(tmp, mpi_comm);
     tmp /= vec.size();
     double SD = std::sqrt(tmp);
 
+    //-------------------------------------------------------------------------
+    // Normalize by vec = (vec-mean)/SD:
+    //-------------------------------------------------------------------------
     for (auto &val : vec)
     {
       val -= mean;
       val /= SD;
     }
+
   }
 };
 
-AdaptiveRefinement::AdaptiveRefinement(dealii::ConditionalOStream pcout,
-                                       double                     errorEstimatorMax,
-                                       double                     aspectRatioMax)
-  : _errorEstimatorMax(errorEstimatorMax)
+AdaptiveRefinement::AdaptiveRefinement( dealii::ConditionalOStream pcout,
+                                        MPI_Comm mpi_comm,
+                                        double                     errorEstimatorMax,
+                                        double                     aspectRatioMax)
+  : _pcout(pcout), _mpi_comm(mpi_comm),
+  _errorEstimatorMax(errorEstimatorMax)
   , _aspectRatioMax(aspectRatioMax)
 {}
 
@@ -74,13 +88,13 @@ AdaptiveRefinement::refine(unsigned int                                        p
         maxval   = std::max(val, maxval);
       } // for j in cell dofs
       error_estimator_potential[cell->active_cell_index()] = maxval - minval;
-      std::cout << pid << " cell id " << cell->active_cell_index() << std::endl;
+//      std::cout << pid << " cell id " << cell->active_cell_index() << std::endl;
       ++cnt;
     } // if this cpu
   }   // for cell in active cells
-  std::cout << pid << "----------------------- Number cells visited " << cnt << std::endl;
+//  std::cout << pid << "----------------------- Number cells visited " << cnt << std::endl;
 
-  AdaptiveRefinementUtil::normalizeVector(error_estimator_potential);
+  AdaptiveRefinementUtil::normalizeVector(error_estimator_potential,_mpi_comm);
 
   //---------------------------------------------------------------------------
   // Adaptation to velocity gradient magnitude:
@@ -115,7 +129,7 @@ AdaptiveRefinement::refine(unsigned int                                        p
   } // for cell in active cells
 
 
-  AdaptiveRefinementUtil::normalizeVector(error_estimator_velocity);
+  AdaptiveRefinementUtil::normalizeVector(error_estimator_velocity,_mpi_comm);
 
   for (cell_it cell = dh.begin_active(); cell != dh.end(); ++cell)
   {

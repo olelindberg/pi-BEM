@@ -105,7 +105,7 @@ Driver<dim>::run(std::string input_path, std::string output_path)
 
       double             errorEstimatorMax = 2.0;
       double             aspectRatioMax    = 2.5;
-      AdaptiveRefinement adaptiveRefinement(pcout, errorEstimatorMax, aspectRatioMax);
+      AdaptiveRefinement adaptiveRefinement(pcout,mpi_communicator, errorEstimatorMax, aspectRatioMax);
       adaptiveRefinement.refine(bem_problem.this_mpi_process,
                                 bem_problem.fe,
                                 bem_problem.gradient_fe,

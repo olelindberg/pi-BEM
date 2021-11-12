@@ -17,6 +17,7 @@ public:
   typedef typename dealii::DoFHandler<2, 3>::active_cell_iterator cell_it;
 
   AdaptiveRefinement(dealii::ConditionalOStream pcout,
+                     MPI_Comm mpi_comm,
                      double                     errorEstimatorMax,
                      double                     aspectRatioMax);
 
@@ -34,6 +35,8 @@ public:
          dealii::Triangulation<2, 3> &                       tria);
 
 private:
+  dealii::ConditionalOStream _pcout;
+  MPI_Comm _mpi_comm;
   double _errorEstimatorMax = 0.0;
   double _aspectRatioMax    = 0.0;
 };

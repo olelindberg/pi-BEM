@@ -54,6 +54,9 @@ main(int argc, char *argv[])
     else
       threads = atoi(argv[1]);
     Utilities::MPI::MPI_InitFinalize mpi_initialization(argc, argv, threads);
+    std::cout << "MPI initialized with " << threads << " threads" << std::endl;
+
+
 
     auto output_path = boost::filesystem::path(options.get_input_path()).append("output").string();
     if (!boost::filesystem::exists(output_path))

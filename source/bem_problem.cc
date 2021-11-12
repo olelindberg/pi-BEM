@@ -2180,6 +2180,7 @@ BEMProblem<dim>::compute_normals()
   Vector<double>     local_normals_rhs(vector_dofs_per_cell);
 
   cell_it vector_cell = gradient_dh.begin_active(), vector_endc = gradient_dh.end();
+  std::cout << this_mpi_process << " Computing boundary normals, 1 \n";
 
   for (; vector_cell != vector_endc; ++vector_cell)
   {
@@ -2219,15 +2220,28 @@ BEMProblem<dim>::compute_normals()
     }
   }
 
+  std::cout << this_mpi_process << " Computing boundary normals, 2 \n";
   vector_normals_matrix.compress(VectorOperation::add);
+  std::cout << this_mpi_process << " Computing boundary normals, 3 \n";
   vector_normals_rhs.compress(VectorOperation::add);
 
+  std::cout << this_mpi_process << " Computing boundary normals, 4 \n";
   SolverGMRES<TrilinosWrappers::MPI::Vector> solver(
     solver_control, SolverGMRES<TrilinosWrappers::MPI::Vector>::AdditionalData(1000));
+  std::cout << this_mpi_process << " Computing boundary normals, 5 \n";
   TrilinosWrappers::PreconditionAMG mass_prec;
+  std::cout << this_mpi_process << " Computing boundary normals, 6 \n";
+
+ std::cout << this_mpi_process << ", M          " << vector_normals_matrix.m () << std::endl;
+ std::cout << this_mpi_process << ", N          " << vector_normals_matrix.n () << std::endl;
+ std::cout << this_mpi_process << ", NNZ        " << vector_normals_matrix.n_nonzero_elements () << std::endl;
+ std::cout << this_mpi_process << ", memory     " << vector_normals_matrix.memory_consumption () << std::endl;
+
   mass_prec.initialize(vector_normals_matrix);
 
+  std::cout << this_mpi_process << " Computing boundary normals, 7 \n";
   solver.solve(vector_normals_matrix, vector_normals_solution, vector_normals_rhs, mass_prec);
+  std::cout << this_mpi_process << " Computing boundary normals, 8 \n";
 
   vector_constraints.distribute(vector_normals_solution);
   pcout << "Computing boundary normals, done \n";
