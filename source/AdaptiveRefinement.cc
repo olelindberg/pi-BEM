@@ -20,11 +20,14 @@ AdaptiveRefinement::refine(unsigned int                                        p
                            const dealii::DoFHandler<2, 3> &                    gradient_dh,
                            const dealii::TrilinosWrappers::MPI::Vector &       error_vector,
                            const dealii::TrilinosWrappers::MPI::Vector &vector_gradients_solution,
+        const std::vector<dealii::types::global_dof_index>& original_to_sub_wise,
+        const std::vector<dealii::types::global_dof_index>& sub_wise_to_original,         
                            dealii::Triangulation<2, 3> &                tria)
 {
   //---------------------------------------------------------------------------
   // Adaptation to velocity potential:
   //---------------------------------------------------------------------------
+
   dealii::TrilinosWrappers::MPI::Vector error_estimator_potential(error_vector);
   error_estimator_potential = 0.0;
 
@@ -89,12 +92,11 @@ AdaptiveRefinement::refine(unsigned int                                        p
 
 
   //   AdaptiveRefinementUtil::normalizeVector(error_estimator_velocity, _mpi_comm);
+  const dealii::Vector<double> error_estimator_potential_local(error_estimator_potential);
 
   for (cell_it cell = dh.begin_active(); cell != dh.end(); ++cell)
   {
-    if (cell->subdomain_id() == pid)
-    {
-      if (error_estimator_potential[cell->active_cell_index()] > 1.4) //||
+      if (error_estimator_potential_local[cell->active_cell_index()] > 1.4) //||
       //          error_estimator_velocity[cell->active_cell_index()] > _errorEstimatorMax)
       {
         unsigned int max_extent_dim = 0;
@@ -113,7 +115,6 @@ AdaptiveRefinement::refine(unsigned int                                        p
         else
           cell->set_refine_flag();
       }
-    } // if this cpu
   }   // for cell in active cells
 
 

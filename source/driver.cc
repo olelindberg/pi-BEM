@@ -113,6 +113,8 @@ Driver<dim>::run(std::string input_path, std::string output_path)
                                 bem_problem.gradient_dh,
                                 boundary_conditions.get_phi(),
                                 bem_problem.vector_gradients_solution,
+                                bem_problem.original_to_sub_wise,
+                                bem_problem.sub_wise_to_original,         
                                 computational_domain.tria);
       computational_domain.update_triangulation();
 

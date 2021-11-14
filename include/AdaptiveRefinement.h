@@ -32,6 +32,8 @@ public:
          const dealii::DoFHandler<2, 3> &                    gradient_dh,
          const dealii::TrilinosWrappers::MPI::Vector &       error_vector,
          const dealii::TrilinosWrappers::MPI::Vector &       vector_gradients_solution,
+        const std::vector<dealii::types::global_dof_index>& original_to_sub_wise,
+        const std::vector<dealii::types::global_dof_index>& sub_wise_to_original,         
          dealii::Triangulation<2, 3> &                       tria);
 
 private:
