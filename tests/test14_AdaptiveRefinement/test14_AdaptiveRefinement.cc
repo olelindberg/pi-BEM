@@ -25,7 +25,16 @@
 #include "boundary_conditions.h"
 #include "computational_domain.h"
 
-
+void processIndexSet(unsigned int pid,const dealii::DoFHandler<2,3>& dh, dealii::IndexSet& pset)
+{
+    std::vector<dealii::types::subdomain_id> dofs_domain_association(dh.n_dofs());
+    dealii::DoFTools::get_subdomain_association(dh, dofs_domain_association);
+    pset.set_size(dh.n_dofs());
+    for (dealii::types::global_dof_index i = 0; i < dh.n_dofs(); ++i)
+      if (dofs_domain_association[i] == pid)
+        pset.add_index(i);
+    pset.compress();
+}
 
 void
 flowAroundSphere(double  x0,
@@ -106,7 +115,7 @@ main(int argc, char **argv)
     numRefinements = atoi(argv[2]);
 
   dealii::ConditionalOStream pcout(std::cout);
-  double                     errorEstimatorMax = 1.0;
+  double                     errorEstimatorMax = 1.1;
   double                     aspectRatioMax    = 2.5;
 
   //---------------------------------------------------------------------------
@@ -127,38 +136,23 @@ main(int argc, char **argv)
     std::cout << "Unable to open file\n";
   }
 
-
   for (int j = 0; j < numRefinements; ++j)
   {
     //---------------------------------------------------------------------------
     // Initialize scalar stuff:
     //---------------------------------------------------------------------------
-    std::cout << pid << " Initialize scalar stuff 1\n";
     dealii::FE_Q<2, 3> fe_scalar(1);
-    std::cout << pid << " Initialize scalar stuff 2\n";
     dealii::DoFHandler dh_scalar(tria);
-    std::cout << pid << " Initialize scalar stuff 3\n";
     dh_scalar.distribute_dofs(fe_scalar);
-    DoFRenumbering::component_wise(dh_scalar);
-    std::cout << pid << " Initialize scalar stuff 4\n";
-    std::vector<dealii::types::subdomain_id> dofs_domain_association(dh_scalar.n_dofs());
-    std::cout << pid << " Initialize scalar stuff 5\n";
-    dealii::DoFTools::get_subdomain_association(dh_scalar, dofs_domain_association);
-    std::cout << pid << " Initialize scalar stuff 6\n";
-    dealii::IndexSet this_cpu_set;
-    this_cpu_set.set_size(dh_scalar.n_dofs());
-    std::cout << pid << " Initialize scalar stuff 7\n";
-    for (dealii::types::global_dof_index i = 0; i < dh_scalar.n_dofs(); ++i)
-      if (dofs_domain_association[i] == pid)
-        this_cpu_set.add_index(i);
-    std::cout << pid << " Initialize scalar stuff 8\n";
-    this_cpu_set.compress();
-    std::cout << pid << " Initialize scalar stuff 9\n";
+
+//  DoFRenumbering::component_wise(dh_scalar);
+//  DoFRenumbering::subdomain_wise(dh_scalar);
+
+    dealii::IndexSet pset_scalar;
+    processIndexSet(pid,dh_scalar,pset_scalar);
+
     TrilinosWrappers::MPI::Vector sol_scalar;
-    std::cout << pid << " Initialize scalar stuff 10\n";
-    sol_scalar.reinit(this_cpu_set, MPI_COMM_WORLD);
-    std::cout << pid << " Initialize scalar stuff 11\n";
-    MPI_Barrier(MPI_COMM_WORLD);
+    sol_scalar.reinit(pset_scalar, MPI_COMM_WORLD);
 
     //---------------------------------------------------------------------------
     // Initialize vector stuff:
@@ -167,16 +161,14 @@ main(int argc, char **argv)
     dealii::FESystem<2, 3> fe_vector(fe_scalar, 3);
     dealii::DoFHandler     dh_vector(tria);
     dh_vector.distribute_dofs(fe_vector);
-    //    DoFRenumbering::component_wise(dh_vector);
-    std::vector<dealii::types::subdomain_id> dofs_domain_association_vector(dh_vector.n_dofs());
-    dealii::DoFTools::get_subdomain_association(dh_vector, dofs_domain_association_vector);
-    dealii::IndexSet this_cpu_set_vector(dh_vector.n_dofs());
-    for (dealii::types::global_dof_index i = 0; i < dh_vector.n_dofs(); ++i)
-      if (dofs_domain_association_vector[i] == pid)
-        this_cpu_set_vector.add_index(i);
-    this_cpu_set_vector.compress();
+
+//  DoFRenumbering::component_wise(dh_vector);
+//  DoFRenumbering::subdomain_wise(dh_vector);
+    dealii::IndexSet pset_vector;
+    processIndexSet(pid,dh_vector,pset_vector);
+
     TrilinosWrappers::MPI::Vector sol_vector;
-    sol_vector.reinit(this_cpu_set_vector, MPI_COMM_WORLD);
+    sol_vector.reinit(pset_vector, MPI_COMM_WORLD);
 
     std::cout << pid << " Calculate support points\n";
     dealii::MappingQ<2, 3> mapping(1);
@@ -246,14 +238,12 @@ main(int argc, char **argv)
         mapping, 1, dealii::DataOut<2, dealii::DoFHandler<2, 3>>::curved_inner_cells);
       std::ofstream file_vector(filename_vector.c_str());
       dataout_vector.write_vtu(file_vector);
-    }
-    std::cout << pid << " Writing output, done\n";
-
+   }
+ 
     std::cout << pid << " Refining mesh adaptively ...\n";
     AdaptiveRefinement adaptiveRefinement(pcout, MPI_COMM_WORLD, errorEstimatorMax, aspectRatioMax);
     adaptiveRefinement.refine(
       pid, fe_scalar, fe_vector, dh_scalar, dh_vector, sol_scalar, sol_vector, tria);
-    std::cout << pid << " Refining mesh adaptively, done\n";
 
     if (pid == 0)
     {
