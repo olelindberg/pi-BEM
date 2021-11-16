@@ -13,10 +13,37 @@ AdaptiveRefinement::AdaptiveRefinement(dealii::ConditionalOStream pcout,
 
 
 void
+AdaptiveRefinement::_assignRefinement(const dealii::Vector<double> &error_estimator,
+                                      dealii::DoFHandler<2, 3> &    dh)
+{
+  for (cell_it cell = dh.begin_active(); cell != dh.end(); ++cell)
+  {
+    if (error_estimator[cell->active_cell_index()] > _errorEstimatorMax)
+    {
+      unsigned int max_extent_dim = 0;
+      unsigned int min_extent_dim = 1;
+      if (cell->extent_in_direction(0) < cell->extent_in_direction(1))
+      {
+        max_extent_dim = 1;
+        min_extent_dim = 0;
+      }
+      double min_extent = cell->extent_in_direction(min_extent_dim);
+      double max_extent = cell->extent_in_direction(max_extent_dim);
+
+      double aspect_ratio = max_extent / min_extent;
+      if (aspect_ratio > _aspectRatioMax)
+        cell->set_refine_flag(dealii::RefinementCase<2>::cut_axis(max_extent_dim));
+      else
+        cell->set_refine_flag();
+    }
+  } // for cell in active cells
+}
+
+void
 AdaptiveRefinement::refine(unsigned int                                 pid,
                            const dealii::FiniteElement<2, 3> &          fe,
                            const dealii::FiniteElement<2, 3> &          gradient_fe,
-                           const dealii::DoFHandler<2, 3> &             dh,
+                           dealii::DoFHandler<2, 3> &                   dh,
                            const dealii::DoFHandler<2, 3> &             gradient_dh,
                            const dealii::TrilinosWrappers::MPI::Vector &error_vector,
                            const dealii::TrilinosWrappers::MPI::Vector &vector_gradients_solution,
@@ -43,6 +70,7 @@ AdaptiveRefinement::refine(unsigned int                                 pid,
         minval   = std::min(val, minval);
         maxval   = std::max(val, maxval);
       } // for j in cell dofs
+
       error_estimator_potential[cell->active_cell_index()] = maxval - minval;
     } // if this cpu
   }   // for cell in active cells
@@ -92,28 +120,8 @@ AdaptiveRefinement::refine(unsigned int                                 pid,
   const dealii::Vector<double> error_estimator_potential_local(error_estimator_potential);
   const dealii::Vector<double> error_estimator_velocity_local(error_estimator_velocity);
 
-  for (cell_it cell = dh.begin_active(); cell != dh.end(); ++cell)
-  {
-    if (error_estimator_potential_local[cell->active_cell_index()] > _errorEstimatorMax ||
-        error_estimator_velocity_local[cell->active_cell_index()] > _errorEstimatorMax)
-    {
-      unsigned int max_extent_dim = 0;
-      unsigned int min_extent_dim = 1;
-      if (cell->extent_in_direction(0) < cell->extent_in_direction(1))
-      {
-        max_extent_dim = 1;
-        min_extent_dim = 0;
-      }
-      double min_extent = cell->extent_in_direction(min_extent_dim);
-      double max_extent = cell->extent_in_direction(max_extent_dim);
-
-      double aspect_ratio = max_extent / min_extent;
-      if (aspect_ratio > _aspectRatioMax)
-        cell->set_refine_flag(dealii::RefinementCase<2>::cut_axis(max_extent_dim));
-      else
-        cell->set_refine_flag();
-    }
-  } // for cell in active cells
+  _assignRefinement(error_estimator_potential_local, dh);
+  //  _assignRefinement(error_estimator_velocity_local, dh);
 
   tria.prepare_coarsening_and_refinement();
   tria.execute_coarsening_and_refinement();

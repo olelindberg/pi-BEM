@@ -28,7 +28,7 @@ public:
   refine(unsigned int                                 pid,
          const dealii::FiniteElement<2, 3> &          fe,
          const dealii::FiniteElement<2, 3> &          gradient_fe,
-         const dealii::DoFHandler<2, 3> &             dh,
+         dealii::DoFHandler<2, 3> &                   dh,
          const dealii::DoFHandler<2, 3> &             gradient_dh,
          const dealii::TrilinosWrappers::MPI::Vector &error_vector,
          const dealii::TrilinosWrappers::MPI::Vector &vector_gradients_solution,
@@ -39,6 +39,9 @@ private:
   MPI_Comm                   _mpi_comm;
   double                     _errorEstimatorMax = 0.0;
   double                     _aspectRatioMax    = 0.0;
+
+  void
+  _assignRefinement(const dealii::Vector<double> &error_estimator, dealii::DoFHandler<2, 3> &dh);
 };
 
 #endif // ADAPTIVE_REFINEMENT_H

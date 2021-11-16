@@ -57,7 +57,7 @@ end
 subsection ComputationalDomain<3>
   set Input grid format = inp
   set Input grid name   = mesh
-  set Number of cycles  = 10
+  set Number of cycles  = 0
   set Cells per circle = 12
   set Use iges surfaces and curves = true
   set Surface curvature adaptive refinement = false
