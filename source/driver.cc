@@ -7,6 +7,7 @@
 #include <fstream>
 
 #include "../include/AdaptiveRefinement.h"
+#include "../include/Writer.h"
 #include "../include/surface_integral_util.h"
 #include "JSON_BodyReader.h"
 #include "Teuchos_TimeMonitor.hpp"
@@ -103,12 +104,15 @@ Driver<dim>::run(std::string input_path, std::string output_path)
     {
       pcout << "Refinement level " << i << " ...\n";
 
-      double             errorEstimatorMax = 2.0;
+      double             errorEstimatorMax = 1.0;
       double             aspectRatioMax    = 2.5;
       AdaptiveRefinement adaptiveRefinement(pcout,
                                             mpi_communicator,
                                             errorEstimatorMax,
                                             aspectRatioMax);
+
+
+
       adaptiveRefinement.refine(bem_problem.this_mpi_process,
                                 *bem_problem.fe,
                                 *bem_problem.gradient_fe,
@@ -117,6 +121,14 @@ Driver<dim>::run(std::string input_path, std::string output_path)
                                 boundary_conditions.get_phi(),
                                 bem_problem.vector_gradients_solution,
                                 computational_domain.tria);
+
+  Writer writer;
+  writer.addScalarField("error_estimator",adaptiveRefinement.get_error_estimator_potential());
+  writer.saveScalarFields(std::string(input_path).append("/scalars.vtu"), 
+                    bem_problem.dh,  
+                    bem_problem.mapping,
+                    bem_problem.mapping_degree);
+
       computational_domain.update_triangulation();
 
       bem_problem.reinit();

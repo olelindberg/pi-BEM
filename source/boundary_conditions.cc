@@ -451,8 +451,6 @@ BoundaryConditions<dim>::output_results(const std::string filename)
   const Vector<double> localized_normals(bem.vector_normals_solution);
   if (this_mpi_process == 0)
   {
-    for (auto &var : localized_phi)
-      std::cout << var << std::endl;
 
     std::string filename_scalar, filename_vector;
     filename_scalar = filename + "_scalar_results" + ".vtu";

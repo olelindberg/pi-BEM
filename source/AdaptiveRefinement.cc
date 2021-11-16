@@ -52,8 +52,8 @@ AdaptiveRefinement::refine(unsigned int                                 pid,
   //---------------------------------------------------------------------------
   // Adaptation to velocity potential:
   //---------------------------------------------------------------------------
-  dealii::TrilinosWrappers::MPI::Vector error_estimator_potential(error_vector);
-  error_estimator_potential = 0.0;
+  _error_estimator_potential = error_vector;
+  _error_estimator_potential = 0.0;
 
   std::vector<dealii::types::global_dof_index> local_dof_indices(fe.dofs_per_cell);
   for (cell_it cell = dh.begin_active(); cell != dh.end(); ++cell)
@@ -71,16 +71,16 @@ AdaptiveRefinement::refine(unsigned int                                 pid,
         maxval   = std::max(val, maxval);
       } // for j in cell dofs
 
-      error_estimator_potential[cell->active_cell_index()] = maxval - minval;
+      _error_estimator_potential[cell->active_cell_index()] = maxval - minval;
     } // if this cpu
   }   // for cell in active cells
 
   //---------------------------------------------------------------------------
   // Substract mean and divide by standard deviation:
   //---------------------------------------------------------------------------
-  error_estimator_potential.add(-error_estimator_potential.mean_value());
-  error_estimator_potential /=
-    (error_estimator_potential.l2_norm() * std::sqrt(1.0 / error_estimator_potential.size()));
+  _error_estimator_potential.add(-_error_estimator_potential.mean_value());
+  _error_estimator_potential /=
+    (_error_estimator_potential.l2_norm() * std::sqrt(1.0 / _error_estimator_potential.size()));
 
   //---------------------------------------------------------------------------
   // Adaptation to velocity gradient magnitude:
@@ -117,12 +117,12 @@ AdaptiveRefinement::refine(unsigned int                                 pid,
   error_estimator_velocity /=
     (error_estimator_velocity.l2_norm() * std::sqrt(1.0 / error_estimator_velocity.size()));
 
-  const dealii::Vector<double> error_estimator_potential_local(error_estimator_potential);
+  const dealii::Vector<double> error_estimator_potential_local(_error_estimator_potential);
   const dealii::Vector<double> error_estimator_velocity_local(error_estimator_velocity);
 
   _assignRefinement(error_estimator_potential_local, dh);
   //  _assignRefinement(error_estimator_velocity_local, dh);
 
-  tria.prepare_coarsening_and_refinement();
-  tria.execute_coarsening_and_refinement();
+//  tria.prepare_coarsening_and_refinement();
+//  tria.execute_coarsening_and_refinement();
 }

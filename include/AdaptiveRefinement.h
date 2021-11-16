@@ -34,11 +34,18 @@ public:
          const dealii::TrilinosWrappers::MPI::Vector &vector_gradients_solution,
          dealii::Triangulation<2, 3> &                tria);
 
+const dealii::TrilinosWrappers::MPI::Vector& get_error_estimator_potential()
+{
+  return _error_estimator_potential;
+}
+
 private:
   dealii::ConditionalOStream _pcout;
   MPI_Comm                   _mpi_comm;
   double                     _errorEstimatorMax = 0.0;
   double                     _aspectRatioMax    = 0.0;
+
+  dealii::TrilinosWrappers::MPI::Vector _error_estimator_potential;
 
   void
   _assignRefinement(const dealii::Vector<double> &error_estimator, dealii::DoFHandler<2, 3> &dh);
