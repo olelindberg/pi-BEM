@@ -40,7 +40,8 @@ AdaptiveRefinement::_assignRefinement(const dealii::Vector<double> &error_estima
 }
 
 void
-AdaptiveRefinement::refine(unsigned int                                 pid,
+AdaptiveRefinement::refine(unsigned int                                 np,
+                           unsigned int                                 pid,
                            const dealii::FiniteElement<2, 3> &          fe,
                            const dealii::FiniteElement<2, 3> &          gradient_fe,
                            dealii::DoFHandler<2, 3> &                   dh,
@@ -110,6 +111,30 @@ AdaptiveRefinement::refine(unsigned int                                 pid,
     ++cell_v;
   } // for cell in active cells
 
+
+  auto        np_str  = std::to_string(np);
+  auto        pid_str = std::to_string(pid);
+  std::string filename =
+    std::string("cellcenters_np_").append(np_str).append("_pid_").append(pid_str).append(".csv");
+  std::cout << filename << std::endl;
+  std::ofstream file(filename);
+  if (file.is_open())
+  {
+    for (cell_it cell = dh.begin_active(); cell != dh.end(); ++cell)
+    {
+      if (cell->subdomain_id() == pid)
+      {
+        auto cc = cell->center();
+        std::cout << cc[0] << std::endl;
+        std::cout << cc[1] << std::endl;
+        std::cout << cc[2] << std::endl;
+        file << cell->active_cell_index() << " " << cc[0] << " " << cc[1] << " " << cc[2]
+             << std::endl;
+      } // if this cpu
+    }   // for cell in active cells
+  }
+  else
+    std::cout << "Unable to open " << filename << std::endl;
   //---------------------------------------------------------------------------
   // Substract mean and divide by standard deviation:
   //---------------------------------------------------------------------------
@@ -123,6 +148,6 @@ AdaptiveRefinement::refine(unsigned int                                 pid,
   _assignRefinement(error_estimator_potential_local, dh);
   //  _assignRefinement(error_estimator_velocity_local, dh);
 
-//  tria.prepare_coarsening_and_refinement();
-//  tria.execute_coarsening_and_refinement();
+  //  tria.prepare_coarsening_and_refinement();
+  //  tria.execute_coarsening_and_refinement();
 }

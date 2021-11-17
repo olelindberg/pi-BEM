@@ -113,7 +113,8 @@ Driver<dim>::run(std::string input_path, std::string output_path)
 
 
 
-      adaptiveRefinement.refine(bem_problem.this_mpi_process,
+      adaptiveRefinement.refine(n_mpi_processes,
+                                bem_problem.this_mpi_process,
                                 *bem_problem.fe,
                                 *bem_problem.gradient_fe,
                                 bem_problem.dh,
@@ -122,12 +123,18 @@ Driver<dim>::run(std::string input_path, std::string output_path)
                                 bem_problem.vector_gradients_solution,
                                 computational_domain.tria);
 
-  Writer writer;
-  writer.addScalarField("error_estimator",adaptiveRefinement.get_error_estimator_potential());
-  writer.saveScalarFields(std::string(input_path).append("/scalars.vtu"), 
-                    bem_problem.dh,  
-                    bem_problem.mapping,
-                    bem_problem.mapping_degree);
+
+      auto        np_str  = std::to_string(n_mpi_processes);
+      auto        pid_str = std::to_string(this_mpi_process);
+      std::string filename =
+        std::string("scalars_np_").append(np_str).append("_pid_").append(pid_str).append(".vtu");
+
+      Writer writer;
+      writer.addScalarField("error_estimator", adaptiveRefinement.get_error_estimator_potential());
+      writer.saveScalarFields(filename,
+                              bem_problem.dh,
+                              bem_problem.mapping,
+                              bem_problem.mapping_degree);
 
       computational_domain.update_triangulation();
 

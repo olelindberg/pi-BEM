@@ -25,7 +25,8 @@ public:
   {}
 
   void
-  refine(unsigned int                                 pid,
+  refine(unsigned int                                 np,
+         unsigned int                                 pid,
          const dealii::FiniteElement<2, 3> &          fe,
          const dealii::FiniteElement<2, 3> &          gradient_fe,
          dealii::DoFHandler<2, 3> &                   dh,
@@ -34,10 +35,11 @@ public:
          const dealii::TrilinosWrappers::MPI::Vector &vector_gradients_solution,
          dealii::Triangulation<2, 3> &                tria);
 
-const dealii::TrilinosWrappers::MPI::Vector& get_error_estimator_potential()
-{
-  return _error_estimator_potential;
-}
+  const dealii::TrilinosWrappers::MPI::Vector &
+  get_error_estimator_potential()
+  {
+    return _error_estimator_potential;
+  }
 
 private:
   dealii::ConditionalOStream _pcout;
