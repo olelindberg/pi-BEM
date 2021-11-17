@@ -22,15 +22,12 @@ saveScalarFields(std::string filename,
                     const shared_ptr<Mapping<2, 3>>& mapping,
                     unsigned int mapping_degree)
 {
-    std::vector<dealii::Vector<double>> localScalarFields;
-    for (auto& field : _scalarFields)
-        localScalarFields.push_back(Vector<double>(field));
 
     dealii::DataOut<2,dealii::DoFHandler<2,3>> dataout_scalar;
     dataout_scalar.attach_dof_handler(dh);
    
     auto nameIt = _scalarFieldNames.begin();
-    for (auto& field : localScalarFields)
+    for (auto& field : _scalarFields)
     {
         dataout_scalar.add_data_vector(field,*nameIt,dealii::DataOut<2,dealii::DoFHandler<2,3>>::type_cell_data);
         ++nameIt;
@@ -52,7 +49,7 @@ saveScalarFields(std::string filename,
   }
 
 
-void addScalarField(std::string name,const TrilinosWrappers::MPI::Vector& scalarField)
+void addScalarField(std::string name,const dealii::Vector<double>& scalarField)
 {
     _scalarFieldNames.push_back(name);
     _scalarFields.push_back(scalarField);
@@ -60,7 +57,7 @@ void addScalarField(std::string name,const TrilinosWrappers::MPI::Vector& scalar
 
 private:
 std::vector<std::string> _scalarFieldNames;
-std::vector<TrilinosWrappers::MPI::Vector> _scalarFields;
+std::vector<dealii::Vector<double>> _scalarFields;
 
 };
 

@@ -1,5 +1,6 @@
 #include "../include/AdaptiveRefinement.h"
 #include <deal.II/dofs/dof_accessor.h>
+#include <deal.II/dofs/dof_tools.h>
 
 AdaptiveRefinement::AdaptiveRefinement(dealii::ConditionalOStream pcout,
                                        MPI_Comm                   mpi_comm,
@@ -42,6 +43,9 @@ AdaptiveRefinement::_assignRefinement(const dealii::Vector<double> &error_estima
 void
 AdaptiveRefinement::refine(unsigned int                                 np,
                            unsigned int                                 pid,
+                           const dealii::Mapping<2,3>& mapping,
+                           const std::vector<dealii::types::global_dof_index>& original_to_sub_wise,
+                           const std::vector<dealii::types::global_dof_index>& sub_wise_to_original,
                            const dealii::FiniteElement<2, 3> &          fe,
                            const dealii::FiniteElement<2, 3> &          gradient_fe,
                            dealii::DoFHandler<2, 3> &                   dh,
@@ -50,30 +54,36 @@ AdaptiveRefinement::refine(unsigned int                                 np,
                            const dealii::TrilinosWrappers::MPI::Vector &vector_gradients_solution,
                            dealii::Triangulation<2, 3> &                tria)
 {
+
+
+
+
+
   //---------------------------------------------------------------------------
   // Adaptation to velocity potential:
   //---------------------------------------------------------------------------
-  _error_estimator_potential = error_vector;
-  _error_estimator_potential = 0.0;
+    const dealii::Vector<double> error_vector_local(error_vector);
+  _error_estimator_potential.reinit(tria.n_active_cells());
 
   std::vector<dealii::types::global_dof_index> local_dof_indices(fe.dofs_per_cell);
   for (cell_it cell = dh.begin_active(); cell != dh.end(); ++cell)
   {
-    if (cell->subdomain_id() == pid)
-    {
       cell->get_dof_indices(local_dof_indices);
 
       double minval = std::numeric_limits<double>::max();
       double maxval = -std::numeric_limits<double>::max();
       for (unsigned int j = 0; j < fe.dofs_per_cell; ++j)
       {
-        auto val = error_vector[local_dof_indices[j]];
+        auto val = error_vector_local[local_dof_indices[j]];
         minval   = std::min(val, minval);
         maxval   = std::max(val, maxval);
       } // for j in cell dofs
 
       _error_estimator_potential[cell->active_cell_index()] = maxval - minval;
-    } // if this cpu
+      std::cout << pid << " cell " << cell->active_cell_index() << " nodes";
+      for (unsigned int j = 0; j < fe.dofs_per_cell; ++j)
+          std::cout << " " << local_dof_indices[j];
+      std::cout << "\n";
   }   // for cell in active cells
 
   //---------------------------------------------------------------------------
@@ -111,30 +121,54 @@ AdaptiveRefinement::refine(unsigned int                                 np,
     ++cell_v;
   } // for cell in active cells
 
-
-  auto        np_str  = std::to_string(np);
-  auto        pid_str = std::to_string(pid);
-  std::string filename =
-    std::string("cellcenters_np_").append(np_str).append("_pid_").append(pid_str).append(".csv");
-  std::cout << filename << std::endl;
-  std::ofstream file(filename);
-  if (file.is_open())
   {
-    for (cell_it cell = dh.begin_active(); cell != dh.end(); ++cell)
+    auto        np_str  = std::to_string(np);
+    auto        pid_str = std::to_string(pid);
+    std::string filename =
+      std::string("cellcenters_np_").append(np_str).append("_pid_").append(pid_str).append(".csv");
+    std::cout << filename << std::endl;
+    std::ofstream file(filename);
+    if (file.is_open())
     {
-      if (cell->subdomain_id() == pid)
+      for (cell_it cell = dh.begin_active(); cell != dh.end(); ++cell)
       {
-        auto cc = cell->center();
-        std::cout << cc[0] << std::endl;
-        std::cout << cc[1] << std::endl;
-        std::cout << cc[2] << std::endl;
-        file << cell->active_cell_index() << " " << cc[0] << " " << cc[1] << " " << cc[2]
-             << std::endl;
-      } // if this cpu
-    }   // for cell in active cells
+        if (cell->subdomain_id() == pid)
+        {
+          auto cc = cell->center();
+          file << cell->active_cell_index() << " " << cc[0] << " " << cc[1] << " " << cc[2]
+              << std::endl;
+        } // if this cpu
+      }   // for cell in active cells
+    }
+    else
+      std::cout << "Unable to open " << filename << std::endl;
   }
-  else
-    std::cout << "Unable to open " << filename << std::endl;
+  {
+    std::vector<dealii::Point<3>> support_points(dh.n_dofs());
+    dealii::DoFTools::map_dofs_to_support_points<2,3>(mapping, dh, support_points);
+
+    auto        np_str  = std::to_string(np);
+    auto        pid_str = std::to_string(pid);
+    std::string filename =
+      std::string("nodes_np_").append(np_str).append("_pid_").append(pid_str).append(".csv");
+    std::cout << filename << std::endl;
+    std::ofstream file(filename);
+    if (file.is_open())
+    {
+      int cnt = 0;
+      for (auto& pnt : support_points)
+      {
+          //file << sub_wise_to_original[cnt] << " " << pnt[0] << " " << pnt[1] << " " << pnt[2] << std::endl;
+          file << cnt << " " << pnt[0] << " " << pnt[1] << " " << pnt[2] << std::endl;
+        ++cnt;
+      }
+    }
+    else
+      std::cout << "Unable to open " << filename << std::endl;
+
+  }
+
+
   //---------------------------------------------------------------------------
   // Substract mean and divide by standard deviation:
   //---------------------------------------------------------------------------
@@ -142,10 +176,9 @@ AdaptiveRefinement::refine(unsigned int                                 np,
   error_estimator_velocity /=
     (error_estimator_velocity.l2_norm() * std::sqrt(1.0 / error_estimator_velocity.size()));
 
-  const dealii::Vector<double> error_estimator_potential_local(_error_estimator_potential);
   const dealii::Vector<double> error_estimator_velocity_local(error_estimator_velocity);
 
-  _assignRefinement(error_estimator_potential_local, dh);
+  _assignRefinement(_error_estimator_potential, dh);
   //  _assignRefinement(error_estimator_velocity_local, dh);
 
   //  tria.prepare_coarsening_and_refinement();

@@ -27,6 +27,9 @@ public:
   void
   refine(unsigned int                                 np,
          unsigned int                                 pid,
+         const dealii::Mapping<2,3>& mapping,
+         const std::vector<dealii::types::global_dof_index>& original_to_sub_wise,
+         const std::vector<dealii::types::global_dof_index>& sub_wise_to_original,
          const dealii::FiniteElement<2, 3> &          fe,
          const dealii::FiniteElement<2, 3> &          gradient_fe,
          dealii::DoFHandler<2, 3> &                   dh,
@@ -35,7 +38,7 @@ public:
          const dealii::TrilinosWrappers::MPI::Vector &vector_gradients_solution,
          dealii::Triangulation<2, 3> &                tria);
 
-  const dealii::TrilinosWrappers::MPI::Vector &
+  const dealii::Vector<double> &
   get_error_estimator_potential()
   {
     return _error_estimator_potential;
@@ -47,7 +50,7 @@ private:
   double                     _errorEstimatorMax = 0.0;
   double                     _aspectRatioMax    = 0.0;
 
-  dealii::TrilinosWrappers::MPI::Vector _error_estimator_potential;
+  dealii::Vector<double> _error_estimator_potential;
 
   void
   _assignRefinement(const dealii::Vector<double> &error_estimator, dealii::DoFHandler<2, 3> &dh);

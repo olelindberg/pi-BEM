@@ -115,6 +115,9 @@ Driver<dim>::run(std::string input_path, std::string output_path)
 
       adaptiveRefinement.refine(n_mpi_processes,
                                 bem_problem.this_mpi_process,
+                                *bem_problem.mapping,
+                                bem_problem.original_to_sub_wise,
+                                bem_problem.sub_wise_to_original,
                                 *bem_problem.fe,
                                 *bem_problem.gradient_fe,
                                 bem_problem.dh,
