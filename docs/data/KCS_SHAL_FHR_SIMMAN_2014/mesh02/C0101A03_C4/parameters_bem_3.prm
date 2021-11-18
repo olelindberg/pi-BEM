@@ -52,14 +52,14 @@ subsection BoundaryConditions<3>
   end
   subsection Wind function 3d
     set Function constants  = 
-    set Function expression = 3.599572845769342; 0; 0
+    set Function expression = 3.5995728457693414; 0; 0
     set Variable names      = x,y,z,t
   end
 end
 subsection ComputationalDomain<3>
   set Input grid format = inp
   set Input grid name   = mesh
-  set Number of cycles  = 0
+  set Number of cycles  = 1
   set Cells per circle = 12
   set Use iges surfaces and curves = true
   set Surface curvature adaptive refinement = false

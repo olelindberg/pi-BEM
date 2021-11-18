@@ -48,7 +48,7 @@ for meshId in range(1, 9):
         file.close()
 
         temp_obj = Template(text)
-        dct = {'velocity': str(vel)}
+        dct = {"velocity": str(vel),"numberOfCycles": str(meshId-1)}
         temp_obj = temp_obj.substitute(dct)
         text = str(temp_obj)
 
@@ -70,16 +70,3 @@ for meshId in range(1, 9):
         file = open(filename, "w")
         file.write(text)
         file.close()
-
-
-file = open("runKCS.sh", "w")
-for meshId in range(1, 9):
-    meshName = "mesh0" + str(meshId)
-    for testId in range(0, numTests):
-
-        testName = testNames[testId]
-        pathName = meshName + "/" + testName
-        command = "mpiexec -np 4 ./bem_fma_3d 4 --input-path" + \
-            " ../docs/data/KCS_SHAL_FHR_SIMMAN_2014/" + pathName + "\n"
-        file.write(command)
-file.close()

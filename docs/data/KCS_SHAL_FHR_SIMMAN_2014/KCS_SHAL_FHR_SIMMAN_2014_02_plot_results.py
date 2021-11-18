@@ -1,6 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from numpy.core.fromnumeric import argsort
 import pandas as pd
+
+numMeshes = 8
 
 g = 9.80665
 density = 1000
@@ -44,11 +47,11 @@ print(FrL)
 
 heaveforceAll = []
 pitchmomentAll = []
-for meshId in range(1, 9):
+for meshId in range(1, numMeshes+1):
 
     heaveforce = []
     pitchmoment = []
-    for testId in testIds[0:1]:
+    for testId in testIds:
 
         filename = "mesh0" + str(meshId) + "/" + testId + "/output/force.csv"
         print(filename)
@@ -63,8 +66,8 @@ for meshId in range(1, 9):
 heaveforceAll = np.array(heaveforceAll)
 pitchmomentAll = np.array(pitchmomentAll)
 
-print(heaveforceAll)
-
+sinkage = heaveforceAll/(g*density*A)
+pitch   = pitchmomentAll/((g*density*V0*(zB-zG+Sxx/V0)))
 
 if False:
     plt.figure()
@@ -80,22 +83,44 @@ if False:
     plt.grid(True)
     plt.legend()
 
-plt.figure(1)
-plt.plot(range(0, len(heaveforceAll[:, 0])),
-         heaveforceAll[:, 0], 'ro-', label="BEM")
-plt.xlabel(r"$x$")
-plt.ylabel(r"$y$")
-plt.grid(True)
-plt.legend()
+perm = argsort(Frh)
+
+
+
+for meshId in range(1, numMeshes+1):
+    plt.figure(1)
+    plt.plot(Frh[perm],heaveforceAll[meshId-1,perm], 'o-', label="BEM")
+    plt.xlabel(r"$Fr_h$")
+    plt.ylabel(r"$F_z [N]$")
+    plt.grid(True)
+    plt.legend()
+
+    plt.figure(2)
+    plt.plot(Frh[perm],-100*sinkage[meshId-1,perm]/Tm_full, 'o-', label="BEM")
+    plt.xlabel(r"$Fr_h$")
+    plt.ylabel(r"$sinkage [\%]$")
+    plt.grid(True)
+    plt.legend()
+
+    plt.figure(3)
+    plt.plot(Frh[perm],pitchmomentAll[meshId-1,perm], 'o-', label="BEM")
+    plt.xlabel(r"$Fr_h [ ]$")
+    plt.ylabel(r"$M_y [Nm]$")
+    plt.grid(True)
+    plt.legend()
+
+    plt.figure(4)
+    plt.plot(Frh[perm],-np.tan(pitch[meshId-1,perm]), 'o-', label="BEM")
+    plt.xlabel(r"$Fr_h [ ]$")
+    plt.ylabel(r"$pitch [m/m]$")
+    plt.grid(True)
+    plt.legend()
 
 
 plt.figure(2)
-plt.plot(range(0, len(pitchmomentAll[:, 0])),
-         pitchmomentAll[:, 0], 'ro-', label="BEM")
-plt.xlabel(r"$x$")
-plt.ylabel(r"$y$")
-plt.grid(True)
-plt.legend()
+plt.plot(Frh[perm],0.1*sink_m[perm]/Tm_model, 'ko-', label="EFD")
 
+plt.figure(4)
+plt.plot(Frh[perm],trim[perm], 'ko-', label="EFD")
 
 plt.show()
