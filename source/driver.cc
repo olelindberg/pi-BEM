@@ -104,7 +104,7 @@ Driver<dim>::run(std::string input_path, std::string output_path)
     {
       pcout << "Refinement level " << i << " ...\n";
 
-      double             errorEstimatorMax = 1.0;
+      double             errorEstimatorMax = 1.5;
       double             aspectRatioMax    = 2.5;
       AdaptiveRefinement adaptiveRefinement(pcout,
                                             mpi_communicator,
@@ -113,11 +113,7 @@ Driver<dim>::run(std::string input_path, std::string output_path)
 
 
 
-      adaptiveRefinement.refine(n_mpi_processes,
-                                bem_problem.this_mpi_process,
-                                *bem_problem.mapping,
-                                bem_problem.original_to_sub_wise,
-                                bem_problem.sub_wise_to_original,
+      adaptiveRefinement.refine(bem_problem.this_mpi_process,
                                 *bem_problem.fe,
                                 *bem_problem.gradient_fe,
                                 bem_problem.dh,
@@ -125,19 +121,6 @@ Driver<dim>::run(std::string input_path, std::string output_path)
                                 boundary_conditions.get_phi(),
                                 bem_problem.vector_gradients_solution,
                                 computational_domain.tria);
-
-
-      auto        np_str  = std::to_string(n_mpi_processes);
-      auto        pid_str = std::to_string(this_mpi_process);
-      std::string filename =
-        std::string("scalars_np_").append(np_str).append("_pid_").append(pid_str).append(".vtu");
-
-      Writer writer;
-      writer.addScalarField("error_estimator", adaptiveRefinement.get_error_estimator_potential());
-      writer.saveScalarFields(filename,
-                              bem_problem.dh,
-                              bem_problem.mapping,
-                              bem_problem.mapping_degree);
 
       computational_domain.update_triangulation();
 
@@ -286,7 +269,7 @@ Driver<dim>::run(std::string input_path, std::string output_path)
 
     std::string filename =
       boost::filesystem::path(output_path).append(boundary_conditions.output_file_name).string();
-    boundary_conditions.output_results(filename);
+    boundary_conditions.output_results(filename); // \todo change to Writer in Writer.h
   }
 
   // Write a summary of all timers

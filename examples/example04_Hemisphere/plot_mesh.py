@@ -5,8 +5,8 @@ showCellCenters = True
 
 filepath = "/home/ole/dev/projects/pi-BEM/build"
 
-numProc = 2
-pid = 1
+numProc = 4
+pid = 3
 filename = "scalars_np_" + str(numProc) + "_pid_" + str(pid) + ".vtu"
 
 print(filepath)
@@ -34,7 +34,6 @@ nodes.points = data3[:, 1:4]
 nodes_labels = [f"{int(i)}" for i in data3[:, 0]]
 
 
-
 p = pv.Plotter()
 
 p.add_mesh(mesh, show_edges=True, line_width=1)
@@ -44,7 +43,7 @@ p.add_mesh(cellcenter, color="r", point_size=4.0,
 
 if showCellCenters:
     p.add_point_labels(cellcenter, labels=cellcenter_labels, shape_opacity=0,
-                    bold=False, render_points_as_spheres=True, point_color='r')
+                       bold=False, render_points_as_spheres=True, point_color='r')
 
 p.add_point_labels(nodes, labels=nodes_labels, shape_opacity=0,
                    bold=False, render_points_as_spheres=True, point_color='b')

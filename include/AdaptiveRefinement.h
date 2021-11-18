@@ -1,8 +1,6 @@
 #ifndef ADAPTIVE_REFINEMENT_H
 #define ADAPTIVE_REFINEMENT_H
 
-#include "GridRefinement.h"
-
 #include <deal.II/base/conditional_ostream.h>
 #include <deal.II/dofs/dof_handler.h>
 #include <deal.II/fe/fe.h>
@@ -25,11 +23,7 @@ public:
   {}
 
   void
-  refine(unsigned int                                 np,
-         unsigned int                                 pid,
-         const dealii::Mapping<2,3>& mapping,
-         const std::vector<dealii::types::global_dof_index>& original_to_sub_wise,
-         const std::vector<dealii::types::global_dof_index>& sub_wise_to_original,
+  refine(unsigned int                                 pid,
          const dealii::FiniteElement<2, 3> &          fe,
          const dealii::FiniteElement<2, 3> &          gradient_fe,
          dealii::DoFHandler<2, 3> &                   dh,
@@ -51,6 +45,7 @@ private:
   double                     _aspectRatioMax    = 0.0;
 
   dealii::Vector<double> _error_estimator_potential;
+  dealii::Vector<double> _error_estimator_velocity;
 
   void
   _assignRefinement(const dealii::Vector<double> &error_estimator, dealii::DoFHandler<2, 3> &dh);

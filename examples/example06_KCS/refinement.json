@@ -11,6 +11,6 @@
 "distanceRatioRefinement": {
     "distance_ratio_max"      : 1.0,
     "manifold_id"       : 3,
-    "refinement_levels" : 1000
+    "refinement_levels" : 10000
 }
 }
