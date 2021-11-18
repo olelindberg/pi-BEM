@@ -42,42 +42,35 @@ FrL = U/np.sqrt(g*Lpp_model)
 print(Frh)
 print(FrL)
 
+heaveforceAll = []
+pitchmomentAll = []
+for meshId in range(1, 9):
 
-sinkage = []
-pitch = []
-pitchmoment = []
-for testId in testIds:
-    filename = testId + "/output/force.csv"
-    print(filename)
-    data = np.genfromtxt(filename, delimiter=",")
+    heaveforce = []
+    pitchmoment = []
+    for testId in testIds[0:1]:
 
-    heaveforce = data[0][2]
-    sinkage.append(heaveforce/(g*density*A))
+        filename = "mesh0" + str(meshId) + "/" + testId + "/output/force.csv"
+        print(filename)
+        data = np.genfromtxt(filename, delimiter=",")
 
-    pm = data[0][4]
-    pitch.append(pm/((g*density*V0*(zB-zG+Sxx/V0))))
-    pitchmoment.append(pm)
+        heaveforce.append(data[0][2])
+        pitchmoment.append(data[0][4])
 
-sinkage = np.array(sinkage)
-pitch = np.array(pitch)
-pitchmoment = np.array(pitchmoment)
+    heaveforceAll.append(heaveforce)
+    pitchmomentAll.append(pitchmoment)
 
-VK = 1.94*U_fullscale
-S = 0.1
-K = 5.74*S**0.76
-sinkage_barrass_unrestricted = 1/100*K*CB*VK**2
+heaveforceAll = np.array(heaveforceAll)
+pitchmomentAll = np.array(pitchmomentAll)
 
-S = 0.25
-K = 5.74*S**0.76
-sinkage_barrass_restricted = 1/100*K*CB*VK**2
+print(heaveforceAll)
 
-
-perm = np.argsort(Frh)
 
 if False:
     plt.figure()
     plt.plot(Frh[perm], 0.001*sink_m[perm]/Tm_model, 'bo-', label="EFD")
-    plt.plot(Frh[perm], -np.array(sinkage[perm])/Tm_full, 'ro-', label="BEM")
+    plt.plot(Frh[perm], -np.array(sinkage[perm]) /
+             Tm_full, 'ro-', label="BEM")
     plt.plot(Frh[perm], np.array(sinkage_barrass_restricted[perm]) /
              Tm_full, 'go-', label="Barrass, restricted, S=0.25")
     plt.plot(Frh[perm], np.array(sinkage_barrass_unrestricted[perm]) /
@@ -87,13 +80,22 @@ if False:
     plt.grid(True)
     plt.legend()
 
-
-plt.figure()
-#plt.plot(Frh[perm], 0.001*trim[perm], 'bo-', label="EFD")
-plt.plot(Frh, np.array(pitchmoment), 'ro-', label="BEM")
-plt.xlabel(r"$Fr_h []$")
-plt.ylabel(r"$trim [mm/m]$")
+plt.figure(1)
+plt.plot(range(0, len(heaveforceAll[:, 0])),
+         heaveforceAll[:, 0], 'ro-', label="BEM")
+plt.xlabel(r"$x$")
+plt.ylabel(r"$y$")
 plt.grid(True)
 plt.legend()
+
+
+plt.figure(2)
+plt.plot(range(0, len(pitchmomentAll[:, 0])),
+         pitchmomentAll[:, 0], 'ro-', label="BEM")
+plt.xlabel(r"$x$")
+plt.ylabel(r"$y$")
+plt.grid(True)
+plt.legend()
+
 
 plt.show()

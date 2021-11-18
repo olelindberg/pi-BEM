@@ -25,5 +25,6 @@ private:
   unsigned int manifold_id       = 0;
   int          levels            = 0;
   double       _distanceRatioMax = 0.0;
+  double       _aspectRatioMax   = 2.0;
 };
 #endif // DISTANCE_REFINEMENT_H

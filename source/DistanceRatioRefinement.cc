@@ -1,5 +1,5 @@
 #include "../include/DistanceRatioRefinement.h"
-
+#include "../include/RefinementUtil.h"
 #include <BRepBndLib.hxx>
 #include <gp_Pnt.hxx>
 
@@ -45,11 +45,11 @@ DistanceRatioRefinement::refine(dealii::Triangulation<2, 3> &    tria,
 
         const auto dist = std::max(_box.Distance(boxx), _boxLengthMax);
 
-        double cellLength = std::min(cell->extent_in_direction(0), cell->extent_in_direction(1));
+        double cellLength = std::max(cell->extent_in_direction(0), cell->extent_in_direction(1));
         auto   distRatio  = cellLength / dist;
 
         if (distRatio > _distanceRatioMax)
-          cell->set_refine_flag();
+          RefinementUtil::aspectRatioRefinement(_aspectRatioMax, cell);
       }
     }
     tria.prepare_coarsening_and_refinement();
