@@ -13,8 +13,8 @@ Lpp_model = 1/scale*Lpp_full
 CB = 0.651
 zB = 5.91163
 zG = 11.4
-Sxx = 467132
-Syy = 1.96861e+07
+Sxx = 21035630.3 
+#Syy = 1.96861e+07
 A = 6227.87
 V0 = 52030
 
@@ -110,7 +110,7 @@ for meshId in range(1, numMeshes+1):
     plt.legend()
 
     plt.figure(4)
-    plt.plot(Frh[perm],-np.tan(pitch[meshId-1,perm]), 'o-', label="BEM")
+    plt.plot(Frh[perm],-1000*pitch[meshId-1,perm], 'o-', label="BEM")
     plt.xlabel(r"$Fr_h [ ]$")
     plt.ylabel(r"$pitch [m/m]$")
     plt.grid(True)
