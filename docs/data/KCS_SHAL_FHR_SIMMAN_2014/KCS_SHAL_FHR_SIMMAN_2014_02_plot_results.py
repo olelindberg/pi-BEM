@@ -13,7 +13,8 @@ Lpp_model = 1/scale*Lpp_full
 CB = 0.651
 zB = 5.91163
 zG = 11.4
-Sxx = 21035630.3 
+Sxx = 21035630.3
+GM = 0.6
 #Syy = 1.96861e+07
 A = 6227.87
 V0 = 52030
@@ -67,7 +68,10 @@ heaveforceAll = np.array(heaveforceAll)
 pitchmomentAll = np.array(pitchmomentAll)
 
 sinkage = heaveforceAll/(g*density*A)
-pitch   = pitchmomentAll/((g*density*V0*(zB-zG+Sxx/V0)))
+metaCenter = zB+Sxx/V0
+GML = metaCenter-zG
+pitch = pitchmomentAll/((g*density*V0*GML))
+#pitch = pitchmomentAll/((g*density*V0*GM))
 
 if False:
     plt.figure()
@@ -84,33 +88,38 @@ if False:
     plt.legend()
 
 perm = argsort(Frh)
+print(Frh)
+print(perm)
 
 
+for ti in testIds[perm]:
+    print(ti)
 
-for meshId in range(1, numMeshes+1):
+for meshId in range(4, numMeshes+1):
     plt.figure(1)
-    plt.plot(Frh[perm],heaveforceAll[meshId-1,perm], 'o-', label="BEM")
+    plt.plot(Frh[perm], heaveforceAll[meshId-1, perm], 'o-', label="BEM")
     plt.xlabel(r"$Fr_h$")
     plt.ylabel(r"$F_z [N]$")
     plt.grid(True)
     plt.legend()
 
     plt.figure(2)
-    plt.plot(Frh[perm],-100*sinkage[meshId-1,perm]/Tm_full, 'o-', label="BEM")
+    plt.plot(Frh[perm], -100*sinkage[meshId-1, perm] /
+             Tm_full, 'o-', label="BEM")
     plt.xlabel(r"$Fr_h$")
     plt.ylabel(r"$sinkage [\%]$")
     plt.grid(True)
     plt.legend()
 
     plt.figure(3)
-    plt.plot(Frh[perm],pitchmomentAll[meshId-1,perm], 'o-', label="BEM")
+    plt.plot(Frh[perm], pitchmomentAll[meshId-1, perm], 'o-', label="BEM")
     plt.xlabel(r"$Fr_h [ ]$")
     plt.ylabel(r"$M_y [Nm]$")
     plt.grid(True)
     plt.legend()
 
     plt.figure(4)
-    plt.plot(Frh[perm],-1000*pitch[meshId-1,perm], 'o-', label="BEM")
+    plt.plot(Frh[perm], -1000*pitch[meshId-1, perm], 'o-', label="BEM")
     plt.xlabel(r"$Fr_h [ ]$")
     plt.ylabel(r"$pitch [m/m]$")
     plt.grid(True)
@@ -118,9 +127,9 @@ for meshId in range(1, numMeshes+1):
 
 
 plt.figure(2)
-plt.plot(Frh[perm],0.1*sink_m[perm]/Tm_model, 'ko-', label="EFD")
+plt.plot(Frh[perm], 0.1*sink_m[perm]/Tm_model, 'ko-', label="EFD")
 
 plt.figure(4)
-plt.plot(Frh[perm],trim[perm], 'ko-', label="EFD")
+plt.plot(Frh[perm], trim[perm], 'ko-', label="EFD")
 
 plt.show()
