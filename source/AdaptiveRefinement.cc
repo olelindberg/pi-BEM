@@ -1,6 +1,5 @@
 #include "../include/AdaptiveRefinement.h"
 #include "../include/AdaptiveRefinementUtil.h"
-#include "../include/RefinementUtil.h"
 #include <deal.II/dofs/dof_accessor.h>
 #include <deal.II/dofs/dof_tools.h>
 
