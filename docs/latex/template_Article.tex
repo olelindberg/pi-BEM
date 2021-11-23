@@ -56,8 +56,10 @@ where $\V{r}$ is the direction vector from COG to the surface point. In the forc
 
 Two coordinate systems are applied, the earth fixed coordinates $\V{x}$ and the body fixed coordinates $\V{x}'$ and the transformation between these coordinate system is
 \begin{equation}
-	\V{x} = \V{x}' + \V{x}_T +  \V{x}_R \times \V{x}'.
+	\V{x} = \V{x}' + \V{x}_T +  \V{x}_R \times \V{x}',
 \end{equation}
+where $\V{x}_T \in \mathbb{R}^3$ is the translational degrees of freedom, in the earth fixed coordinate system, in the $x$-, $y$- and $z$-directions respectively. The rotation vector is $\V{x}_R$ \in \mathbb{R}^3$, with rotations around the $x$-, $y$-, and $z$-axes respectively.
+
 The hydrostatic force and moment on the ship hull surface $S_B$ are
 \begin{align}
 \V{F}_{HS} &=- \rho g \int_{S_B}  z ~\V{n} dS,  \\
