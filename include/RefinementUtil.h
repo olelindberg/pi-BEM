@@ -14,7 +14,7 @@ public:
   template <typename cell_type>
   static void
   aspectRatioRefinement(double                                             aspectRatioMax,
-                        dealii::Triangulation<2, 3>::active_cell_iterator &cell)
+                        cell_type &cell)
   {
     unsigned int max_extent_dim = 0;
     unsigned int min_extent_dim = 1;
