@@ -10,6 +10,8 @@ density = 1000
 scale = 52.667
 Lpp_full = 230
 Lpp_model = 1/scale*Lpp_full
+tank_B_modelscale = 7
+tank_B_fullscale = scale*tank_B_modelscale
 CB = 0.651
 zB = 5.91163
 zG = 11.4
@@ -23,6 +25,8 @@ Tm_model = 0.2050
 Tm_full = 10.8
 df = pd.read_csv('pmm_app_shal_fhr_App01_pure_surge.csv')
 df_fs = pd.read_csv('pmm_app_shal_fhr_App01_pure_surge_full_scale.csv')
+
+print(zG+Tm_full)
 
 U_fullscale = df_fs['surge velocity [m/s]'].values
 h_fullscale = df_fs['depth [m]'].values
@@ -121,7 +125,7 @@ for meshId in range(4, numMeshes+1):
     plt.figure(4)
     plt.plot(Frh[perm], -1000*pitch[meshId-1, perm], 'o-', label="BEM")
     plt.xlabel(r"$Fr_h [ ]$")
-    plt.ylabel(r"$pitch [m/m]$")
+    plt.ylabel(r"$pitch [mm/m]$")
     plt.grid(True)
     plt.legend()
 

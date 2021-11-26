@@ -1,16 +1,15 @@
 {
-    "name": "KCS",
+    "name": "ContainerShip",
     "materialIndices": [
         1,
         2
     ],
     "waterlineIndices": [
-        11,
-        12
+        11
     ],
     "draft": 10.8,
     "centerOfGravity": [
-        109.0,
+        111.8,
         0.0,
         11.4
     ]
