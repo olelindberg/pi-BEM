@@ -9,7 +9,10 @@
 #include "../include/AdaptiveRefinement.h"
 #include "../include/Writer.h"
 #include "../include/surface_integral_util.h"
-#include "JSON_BodyReader.h"
+
+#include "BodySettingsReaderJSON.h"
+#include "PiBEMSettingsReaderJSON.h"
+
 #include "Teuchos_TimeMonitor.hpp"
 
 #include "../include/WireUtil.h"
@@ -65,15 +68,19 @@ Driver<dim>::run(std::string input_path, std::string output_path)
   //-------------------------------------------------------------------------
   // Pre steps:
   //-------------------------------------------------------------------------
-
-  // Constant parameters:
-  const double gravity = 9.80665;
-  const double density = 1000;
+  std::string   pibemFilename = boost::filesystem::path(input_path).append("pibem.json").string();
+  PiBEMSettings pibemSettings;
+  if (!PiBEMSettingsReaderJSON::read(pibemFilename, pibemSettings))
+  {
+    std::cout << "Reading json pibem settings file failed ..." << std::endl;
+    return;
+  }
+  pibemSettings.print();
 
   // Read and create body/ship:
   std::string bodyfilename = boost::filesystem::path(input_path).append("body.json").string();
   Body        body;
-  if (!JSON_BodyReader::read(bodyfilename, body))
+  if (!BodySettingsReaderJSON::read(bodyfilename, body))
   {
     std::cout << "Reading json body file failed ..." << std::endl;
     return;
@@ -100,16 +107,15 @@ Driver<dim>::run(std::string input_path, std::string output_path)
     bem_problem.reinit();
     boundary_conditions.solve_problem(body);
 
-    for (unsigned int i = 0; i < computational_domain.n_cycles; ++i)
+    for (int i = 0; i < pibemSettings.adaptiveRefinementLevels; ++i)
     {
       pcout << "Refinement level " << i << " ...\n";
 
-      double             errorEstimatorMax = 1.5;
-      double             aspectRatioMax    = 2.5;
       AdaptiveRefinement adaptiveRefinement(pcout,
                                             mpi_communicator,
-                                            errorEstimatorMax,
-                                            aspectRatioMax);
+                                            pibemSettings.potentialErrorEstimatorMax,
+                                            pibemSettings.velocityErrorEstimatorMax,
+                                            pibemSettings.aspectRatioMax);
 
 
 
@@ -121,6 +127,40 @@ Driver<dim>::run(std::string input_path, std::string output_path)
                                 boundary_conditions.get_phi(),
                                 bem_problem.vector_gradients_solution,
                                 computational_domain.tria);
+
+      if (this_mpi_process == 0)
+      {
+        std::fstream file;
+        std::string  filename =
+          boost::filesystem::path(output_path)
+            .append(
+              std::string("potentialErrorEstimatorLevel").append(std::to_string(i)).append(".csv"))
+            .string();
+        file.open(filename, std::fstream::out);
+        if (file.is_open())
+        {
+          for (auto &val : adaptiveRefinement.get_error_estimator_potential())
+            file << val << "\n";
+          file.close();
+        }
+      }
+
+      if (this_mpi_process == 0)
+      {
+        std::fstream file;
+        std::string  filename =
+          boost::filesystem::path(output_path)
+            .append(
+              std::string("velocityErrorEstimatorLevel").append(std::to_string(i)).append(".csv"))
+            .string();
+        file.open(filename, std::fstream::out);
+        if (file.is_open())
+        {
+          for (auto &val : adaptiveRefinement.get_error_estimator_velocity())
+            file << val << "\n";
+          file.close();
+        }
+      }
 
       computational_domain.update_triangulation();
 
@@ -147,12 +187,12 @@ Driver<dim>::run(std::string input_path, std::string output_path)
     //-------------------------------------------------------------------------
     // Hydrostatic and hydrodynamic pressures:
     //-------------------------------------------------------------------------
-    bem_problem.hydrostatic_pressure(gravity,
-                                     density,
+    bem_problem.hydrostatic_pressure(pibemSettings.gravity,
+                                     pibemSettings.density,
                                      body.getDraft(),
                                      boundary_conditions.get_hydrostatic_pressure());
 
-    bem_problem.hydrodynamic_pressure(density,
+    bem_problem.hydrodynamic_pressure(pibemSettings.density,
                                       boundary_conditions.get_wind(),
                                       boundary_conditions.get_hydrodynamic_pressure());
 
@@ -230,8 +270,11 @@ Driver<dim>::run(std::string input_path, std::string output_path)
 
 
     std::vector<Point<dim>> elevation;
-    bem_problem.free_surface_elevation(
-      gravity, density, body, boundary_conditions.get_hydrodynamic_pressure(), elevation);
+    bem_problem.free_surface_elevation(pibemSettings.gravity,
+                                       pibemSettings.density,
+                                       body,
+                                       boundary_conditions.get_hydrodynamic_pressure(),
+                                       elevation);
 
     //-------------------------------------------------------------------------
     // Save forces:

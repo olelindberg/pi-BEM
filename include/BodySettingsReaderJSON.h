@@ -1,5 +1,5 @@
-#ifndef JSON_BODYREADER_H
-#define JSON_BODYREADER_H
+#ifndef BODY_SETTINGS_READER_JSON_H
+#define BODY_SETTINGS_READER_JSON_H
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/property_tree/ptree.hpp>
 
@@ -11,7 +11,7 @@
 
 
 
-class JSON_BodyReader
+class BodySettingsReaderJSON
 {
 public:
   static bool
@@ -61,4 +61,4 @@ public:
 private:
 };
 
-#endif // JSON_BODYREADER_H
+#endif // BODY_SETTINGS_READER_JSON_H

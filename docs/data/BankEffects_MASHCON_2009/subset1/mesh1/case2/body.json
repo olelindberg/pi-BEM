@@ -1,0 +1,16 @@
+{
+    "name": "ContainerShip",
+    "materialIndices": [
+        1,
+        2
+    ],
+    "waterlineIndices": [
+        11
+    ],
+    "draft": 10.8,
+    "centerOfGravity": [
+        111.8,
+        0.0,
+        11.4
+    ]
+}

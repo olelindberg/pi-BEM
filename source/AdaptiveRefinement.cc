@@ -5,11 +5,13 @@
 
 AdaptiveRefinement::AdaptiveRefinement(dealii::ConditionalOStream pcout,
                                        MPI_Comm                   mpi_comm,
-                                       double                     errorEstimatorMax,
+                                       double                     potentialErrorEstimatorMax,
+                                       double                     velocityErrorEstimatorMax,
                                        double                     aspectRatioMax)
   : _pcout(pcout)
   , _mpi_comm(mpi_comm)
-  , _errorEstimatorMax(errorEstimatorMax)
+  , _potentialErrorEstimatorMax(potentialErrorEstimatorMax)
+  , _velocityErrorEstimatorMax(velocityErrorEstimatorMax)
   , _aspectRatioMax(aspectRatioMax)
 {}
 
@@ -73,16 +75,18 @@ AdaptiveRefinement::refine(unsigned int                                 pid,
   //---------------------------------------------------------------------------
   // Assing refinement to cells via the dof handler:
   //---------------------------------------------------------------------------
-  AdaptiveRefinementUtil::assignRefinement(_errorEstimatorMax,
+  AdaptiveRefinementUtil::assignRefinement(_potentialErrorEstimatorMax,
                                            _aspectRatioMax,
                                            _error_estimator_potential,
                                            dh);
 
-  AdaptiveRefinementUtil::assignRefinement(_errorEstimatorMax,
+  AdaptiveRefinementUtil::assignRefinement(_velocityErrorEstimatorMax,
                                            _aspectRatioMax,
                                            _error_estimator_velocity,
                                            dh);
 
   tria.prepare_coarsening_and_refinement();
   tria.execute_coarsening_and_refinement();
+
+  std::cout << "Number of cells: " << tria.n_active_cells() << std::endl;
 }

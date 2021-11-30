@@ -53,11 +53,16 @@ public:
                    const dealii::Vector<double> &error_estimator,
                    dealii::DoFHandler<2, 3> &    dh)
   {
+    int cnt = 0;
     for (cell_it cell = dh.begin_active(); cell != dh.end(); ++cell)
     {
       if (error_estimator[cell->active_cell_index()] > errorEstimatorMax)
+      {
         RefinementUtil::aspectRatioRefinement(aspectRatioMax, cell);
+        ++cnt;
+      }
     } // for cell in active cells
+    std::cout << "Number of cells assigned for refinement: " << cnt << std::endl;
   }
 };
 

@@ -16,7 +16,8 @@ public:
 
   AdaptiveRefinement(dealii::ConditionalOStream pcout,
                      MPI_Comm                   mpi_comm,
-                     double                     errorEstimatorMax,
+                     double                     potentialErrorEstimatorMax,
+                     double                     velocityErrorEstimatorMax,
                      double                     aspectRatioMax);
 
   virtual ~AdaptiveRefinement()
@@ -38,11 +39,18 @@ public:
     return _error_estimator_potential;
   }
 
+  const dealii::Vector<double> &
+  get_error_estimator_velocity()
+  {
+    return _error_estimator_velocity;
+  }
+
 private:
   dealii::ConditionalOStream _pcout;
   MPI_Comm                   _mpi_comm;
-  double                     _errorEstimatorMax = 0.0;
-  double                     _aspectRatioMax    = 0.0;
+  double                     _potentialErrorEstimatorMax = 0.0;
+  double                     _velocityErrorEstimatorMax  = 0.0;
+  double                     _aspectRatioMax             = 0.0;
 
   dealii::Vector<double> _error_estimator_potential;
   dealii::Vector<double> _error_estimator_velocity;

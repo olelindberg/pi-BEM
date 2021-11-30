@@ -1,0 +1,127 @@
+{
+    "shipmesh": {
+        "Lpp": "320.0",
+        "Tm": "0",
+        "mergeVertices": "true",
+        "splitVertices": "false",
+        "vertexTol": "1e-6",
+        "vertexSize": "0.05",
+        "addMissingEdges": "true",
+        "assignDomainIds": "true",
+        "showVertices": "true",
+        "showEdges": "true",
+        "showFaces": "false",
+        "showCADModel": "true",
+        "showVertexIndices": "false",
+        "showEdgeIndices": "false",
+        "showFaceIndices": "false",
+        "showDomainIndices": "true",
+        "cad": {
+            "Color_1": {
+                "filename": "/home/ole/dev/projects/ShipMesh/data/MASHCON_2009_BankEffects/Tm0149/hull_prt.igs",
+                "translate": [
+                    15.0,
+                    0.565,
+                    -0.149
+                ],
+                "rotate": [
+                    0,
+                    0,
+                    0
+                ]
+            },
+            "Color_2": {
+                "filename": "/home/ole/dev/projects/ShipMesh/data/MASHCON_2009_BankEffects/Tm0149/hull_stb.igs",
+                "translate": [
+                    15.0,
+                    0.565,
+                    -0.149
+                ],
+                "rotate": [
+                    0,
+                    0,
+                    0
+                ]
+            },
+            "Curve_1": {
+                "filename": "/home/ole/dev/projects/ShipMesh/data/MASHCON_2009_BankEffects/Tm0149/waterline.igs",
+                "translate": [
+                    15.0,
+                    0.565,
+                    -0.149
+                ],
+                "rotate": [
+                    0,
+                    0,
+                    -0.149
+                ]
+            },
+            "Curve_2": {
+                "filename": "/home/ole/dev/projects/ShipMesh/data/MASHCON_2009_BankEffects/Tm0149/centerline.igs",
+                "translate": [
+                    15.0,
+                    0.565,
+                    -0.149
+                ],
+                "rotate": [
+                    0,
+                    0,
+                    0
+                ]
+            },
+            "Curve_3": {
+                "filename": "/home/ole/dev/projects/ShipMesh/data/MASHCON_2009_BankEffects/Tm0149/centersection.igs",
+                "translate": [
+                    15.0,
+                    0.565,
+                    -0.149
+                ],
+                "rotate": [
+                    0,
+                    0,
+                    0
+                ]
+            }
+        },
+        "domainIds": [
+            1,
+            2,
+            11,
+            12,
+            13
+        ],
+        "mesh": {
+            "ship": {
+                "filename": "/home/ole/dev/projects/ShipMesh/data/MASHCON_2009_BankEffects/Tm0149/mesh.inp",
+                "translate": [
+                    15.0,
+                    0.565,
+                    -0.149
+                ],
+                "rotate": [
+                    0,
+                    0,
+                    0
+                ]
+            },
+            "bank": {
+                "filename": "/home/ole/dev/projects/ShipMesh/data/MASHCON_2009_BankEffects/banks/subset2_testI_bank6.inp",
+                "translate": [
+                    0,
+                    0,
+                    0
+                ],
+                "rotate": [
+                    0,
+                    0,
+                    0
+                ]
+            }
+        },
+        "filename_msh_new": "/home/ole/dev/projects/ShipMesh/data/MASHCON_2009_BankEffects/subset2/I/mesh.inp",
+        "start_index": "1",
+        "font_size": "0.05",
+        "saveInpMesh": "true",
+        "saveIges": "true"
+    }
+}
