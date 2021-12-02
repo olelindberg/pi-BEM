@@ -10,6 +10,7 @@ class DistanceRatioRefinement : public GridRefinement
 public:
   DistanceRatioRefinement(dealii::ConditionalOStream pcout,
                           const Bnd_Box &            box,
+                          double aspectRatioMax,
                           unsigned int               manifold_id_,
                           int                        levels_,
                           double                     distanceRatioMax);
@@ -22,9 +23,9 @@ private:
   Bnd_Box _box;
   double  _boxLengthMax = 0.0;
 
+  double       _aspectRatioMax   = 0.0;
   unsigned int manifold_id       = 0;
   int          levels            = 0;
   double       _distanceRatioMax = 0.0;
-  double       _aspectRatioMax   = 2.0;
 };
 #endif // DISTANCE_REFINEMENT_H

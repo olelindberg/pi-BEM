@@ -11,6 +11,7 @@ public:
   double potentialErrorEstimatorMax = 1.25;
   double velocityErrorEstimatorMax  = 1.25;
   double aspectRatioMax             = 2.5;
+  double cellSizeMin                = 0.0;
   int    adaptiveRefinementLevels   = 0;
 
   void
@@ -22,6 +23,7 @@ public:
     std::cout << "potentialErrorEstimatorMax  = " << potentialErrorEstimatorMax << std::endl;
     std::cout << "velocityErrorEstimatorMax   = " << velocityErrorEstimatorMax << std::endl;
     std::cout << "aspectRatioMax              = " << aspectRatioMax << std::endl;
+    std::cout << "cellSizeMin                 = " << cellSizeMin << std::endl;
     std::cout << "adaptiveRefinementLevels    = " << adaptiveRefinementLevels << std::endl;
   }
 };

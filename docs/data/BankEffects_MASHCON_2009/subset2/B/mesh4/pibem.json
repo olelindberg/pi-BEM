@@ -1,8 +1,9 @@
 {
     "gravity": 9.80665,
     "density": 1000,
-    "potentialErrorEstimatorMax": 1.0,
+    "potentialErrorEstimatorMax": 1.6,
     "velocityErrorEstimatorMax": 1.0,
     "aspectRatioMax": 2.0,
-    "adaptiveRefinementLevels": 0
+    "cellSizeMin": 0.025,
+    "adaptiveRefinementLevels": 2
 }

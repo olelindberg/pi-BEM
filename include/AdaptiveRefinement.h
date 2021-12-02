@@ -18,17 +18,20 @@ public:
                      MPI_Comm                   mpi_comm,
                      double                     potentialErrorEstimatorMax,
                      double                     velocityErrorEstimatorMax,
-                     double                     aspectRatioMax);
+                     double                     aspectRatioMax,
+                     double cellSizeMin);
 
   virtual ~AdaptiveRefinement()
   {}
 
-  void
-  refine(unsigned int                                 pid,
+  bool
+  refine(
+                          unsigned int                                  np,
+    unsigned int                                 pid,
          const dealii::FiniteElement<2, 3> &          fe,
          const dealii::FiniteElement<2, 3> &          gradient_fe,
          dealii::DoFHandler<2, 3> &                   dh,
-         const dealii::DoFHandler<2, 3> &             gradient_dh,
+         dealii::DoFHandler<2, 3> &             gradient_dh,
          const dealii::TrilinosWrappers::MPI::Vector &error_vector,
          const dealii::TrilinosWrappers::MPI::Vector &vector_gradients_solution,
          dealii::Triangulation<2, 3> &                tria);
@@ -51,6 +54,7 @@ private:
   double                     _potentialErrorEstimatorMax = 0.0;
   double                     _velocityErrorEstimatorMax  = 0.0;
   double                     _aspectRatioMax             = 0.0;
+  double                     _cellSizeMin             = 0.0;
 
   dealii::Vector<double> _error_estimator_potential;
   dealii::Vector<double> _error_estimator_velocity;

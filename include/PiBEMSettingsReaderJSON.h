@@ -27,6 +27,7 @@ public:
       pibemSettings.gravity                    = root.get<double>("gravity");
       pibemSettings.density                    = root.get<double>("density");
       pibemSettings.aspectRatioMax             = root.get<double>("aspectRatioMax");
+      pibemSettings.cellSizeMin                = root.get<double>("cellSizeMin");
       pibemSettings.potentialErrorEstimatorMax = root.get<double>("potentialErrorEstimatorMax");
       pibemSettings.velocityErrorEstimatorMax  = root.get<double>("velocityErrorEstimatorMax");
       pibemSettings.adaptiveRefinementLevels   = root.get<double>("adaptiveRefinementLevels");

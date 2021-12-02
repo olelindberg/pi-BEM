@@ -2,39 +2,36 @@
 #include "../include/AdaptiveRefinementUtil.h"
 #include <deal.II/dofs/dof_accessor.h>
 #include <deal.II/dofs/dof_tools.h>
+#include <deal.II/dofs/dof_renumbering.h>
+#include <deal.II/numerics/solution_transfer.h>
+#include <deal.II/grid/grid_tools.h>
 
 AdaptiveRefinement::AdaptiveRefinement(dealii::ConditionalOStream pcout,
                                        MPI_Comm                   mpi_comm,
                                        double                     potentialErrorEstimatorMax,
                                        double                     velocityErrorEstimatorMax,
-                                       double                     aspectRatioMax)
+                                       double                     aspectRatioMax,
+                                       double                     cellSizeMin)
   : _pcout(pcout)
   , _mpi_comm(mpi_comm)
   , _potentialErrorEstimatorMax(potentialErrorEstimatorMax)
   , _velocityErrorEstimatorMax(velocityErrorEstimatorMax)
   , _aspectRatioMax(aspectRatioMax)
+  , _cellSizeMin(cellSizeMin)
 {}
 
-void
-AdaptiveRefinement::refine(unsigned int                                 pid,
+bool
+AdaptiveRefinement::refine(
+                          unsigned int                                  np,
+  unsigned int                                 pid,
                            const dealii::FiniteElement<2, 3> &          fe,
                            const dealii::FiniteElement<2, 3> &          gradient_fe,
                            dealii::DoFHandler<2, 3> &                   dh,
-                           const dealii::DoFHandler<2, 3> &             gradient_dh,
+                           dealii::DoFHandler<2, 3> &                   gradient_dh,
                            const dealii::TrilinosWrappers::MPI::Vector &potential,
                            const dealii::TrilinosWrappers::MPI::Vector &velocity,
                            dealii::Triangulation<2, 3> &                tria)
 {
-  //---------------------------------------------------------------------------
-  // Adaptation to velocity potential:
-  //---------------------------------------------------------------------------
-  const dealii::Vector<double> potential_local(potential);
-  _error_estimator_potential.reinit(tria.n_active_cells());
-  AdaptiveRefinementUtil::scalarFieldRanges(fe.dofs_per_cell,
-                                            dh,
-                                            potential_local,
-                                            _error_estimator_potential);
-  AdaptiveRefinementUtil::normalizeRanges(_error_estimator_potential);
 
   //---------------------------------------------------------------------------
   // Parallel calculation of velocity magnitude:
@@ -61,10 +58,27 @@ AdaptiveRefinement::refine(unsigned int                                 pid,
     ++cell_v;
   } // for cell in active cells
 
+  dealii::Vector<double> potential_local(potential);
+  dealii::Vector<double> velocity_magnitude_local(velocity_magnitude);
+
+
+int itermax = 4;
+for (int iter=0;iter<itermax;++iter)
+{
+
+  //---------------------------------------------------------------------------
+  // Adaptation to velocity potential:
+  //---------------------------------------------------------------------------
+  _error_estimator_potential.reinit(tria.n_active_cells());
+  AdaptiveRefinementUtil::scalarFieldRanges(fe.dofs_per_cell,
+                                            dh,
+                                            potential_local,
+                                            _error_estimator_potential);
+  AdaptiveRefinementUtil::normalizeRanges(_error_estimator_potential);
+
   //---------------------------------------------------------------------------
   // Adaptation to velocity gradient magnitude:
   //---------------------------------------------------------------------------
-  const dealii::Vector<double> velocity_magnitude_local(velocity_magnitude);
   _error_estimator_velocity.reinit(tria.n_active_cells());
   AdaptiveRefinementUtil::scalarFieldRanges(fe.dofs_per_cell,
                                             dh,
@@ -75,18 +89,54 @@ AdaptiveRefinement::refine(unsigned int                                 pid,
   //---------------------------------------------------------------------------
   // Assing refinement to cells via the dof handler:
   //---------------------------------------------------------------------------
-  AdaptiveRefinementUtil::assignRefinement(_potentialErrorEstimatorMax,
+  int numCellsPot = AdaptiveRefinementUtil::assignRefinement(_potentialErrorEstimatorMax,
                                            _aspectRatioMax,
+                                           _cellSizeMin,
                                            _error_estimator_potential,
                                            dh);
+  _pcout << "Number of cells refinement by potential error estimator: " << numCellsPot  << std::endl;
 
-  AdaptiveRefinementUtil::assignRefinement(_velocityErrorEstimatorMax,
+  int numCellsVel = AdaptiveRefinementUtil::assignRefinement(_velocityErrorEstimatorMax,
                                            _aspectRatioMax,
+                                           _cellSizeMin,
                                            _error_estimator_velocity,
                                            dh);
+  _pcout << "Number of cells refinement by velocity error estimator: " << numCellsVel  << std::endl;
 
-  tria.prepare_coarsening_and_refinement();
-  tria.execute_coarsening_and_refinement();
+//  if (!(numCellsPot==0 && numCellsVel==0))
+//  {
 
-  std::cout << "Number of cells: " << tria.n_active_cells() << std::endl;
+    dealii::SolutionTransfer<2,dealii::Vector<double>,dealii::DoFHandler<2,3>> scalarInterp(dh);
+
+    tria.prepare_coarsening_and_refinement();
+
+    scalarInterp.prepare_for_pure_refinement();
+
+    tria.execute_coarsening_and_refinement();
+
+  dealii::GridTools::partition_triangulation(np, tria);
+  dh.distribute_dofs (fe);
+  dealii::DoFRenumbering::component_wise(dh);
+  dealii::DoFRenumbering::subdomain_wise(dh);
+
+  dealii::Vector<double> potential_old(potential_local);
+  potential_local.reinit(dh.n_dofs());
+  scalarInterp.refine_interpolate(potential_old, potential_local);
+
+  dealii::Vector<double> vel_mag_old(velocity_magnitude_local);
+  velocity_magnitude_local.reinit(dh.n_dofs());
+  scalarInterp.refine_interpolate(vel_mag_old, velocity_magnitude_local);
+
+
+
+    _pcout << "Number of cells after adaptive refinement: " << tria.n_active_cells() << std::endl;
+}
+
+return true;
+  // }
+  // else
+  // {
+  //   return false;
+  // }
+
 }

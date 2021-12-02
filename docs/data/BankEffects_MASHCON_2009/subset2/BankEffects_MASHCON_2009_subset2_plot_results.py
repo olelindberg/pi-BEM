@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import pandas as pd
 from pandas.core.frame import DataFrame
+import os,glob
 
 g = 9.80665
 density = 1000
@@ -37,14 +38,19 @@ print('Froude number h')
 print(Frh)
 meshIds = [1]
 
-for testId in testIds[7]:
+for testId in testIds[1]:
 
     swayforce = []
     heaveforce = []
+    testdir = testId
+    dirs = glob.glob(testId +"/*/")
+    dirs = sorted(dirs)
+    print(dirs)
 
-    for meshId in meshIds:
 
-        filename = testId + "/mesh" + str(meshId) + "/output/force.csv"
+    for dir in dirs:
+
+        filename = dir + "output/force.csv"
         print(filename)
         data = np.genfromtxt(filename, delimiter=",")
         swayforce.append(data[0][1])

@@ -47,9 +47,10 @@ public:
     ranges /= (ranges.l2_norm() * std::sqrt(1.0 / ranges.size()));
   }
 
-  static void
+  static int
   assignRefinement(double                        errorEstimatorMax,
                    double                        aspectRatioMax,
+                  double                         cellSizeMin,
                    const dealii::Vector<double> &error_estimator,
                    dealii::DoFHandler<2, 3> &    dh)
   {
@@ -58,11 +59,18 @@ public:
     {
       if (error_estimator[cell->active_cell_index()] > errorEstimatorMax)
       {
+        double l1 = cell->extent_in_direction(0);
+        double l2 = cell->extent_in_direction(1);
+        double lmin = std::min(l1,l2);
+        if (lmin>cellSizeMin)
+{
+
         RefinementUtil::aspectRatioRefinement(aspectRatioMax, cell);
         ++cnt;
+}
       }
     } // for cell in active cells
-    std::cout << "Number of cells assigned for refinement: " << cnt << std::endl;
+    return cnt;
   }
 };
 

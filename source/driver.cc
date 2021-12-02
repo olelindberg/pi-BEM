@@ -18,6 +18,7 @@
 #include "../include/WireUtil.h"
 #include <BRepBuilderAPI_MakeWire.hxx>
 
+
 using Teuchos::RCP;
 using Teuchos::Time;
 using Teuchos::TimeMonitor;
@@ -115,18 +116,25 @@ Driver<dim>::run(std::string input_path, std::string output_path)
                                             mpi_communicator,
                                             pibemSettings.potentialErrorEstimatorMax,
                                             pibemSettings.velocityErrorEstimatorMax,
-                                            pibemSettings.aspectRatioMax);
+                                            pibemSettings.aspectRatioMax,
+                                            pibemSettings.cellSizeMin);
 
 
 
-      adaptiveRefinement.refine(bem_problem.this_mpi_process,
+
+      if (!adaptiveRefinement.refine(n_mpi_processes,
+                            bem_problem.this_mpi_process,
                                 *bem_problem.fe,
                                 *bem_problem.gradient_fe,
                                 bem_problem.dh,
                                 bem_problem.gradient_dh,
                                 boundary_conditions.get_phi(),
                                 bem_problem.vector_gradients_solution,
-                                computational_domain.tria);
+                                computational_domain.tria))
+                                {
+                                  break;
+                                }
+
 
       if (this_mpi_process == 0)
       {
@@ -165,6 +173,10 @@ Driver<dim>::run(std::string input_path, std::string output_path)
       computational_domain.update_triangulation();
 
       bem_problem.reinit();
+
+
+
+
       boundary_conditions.solve_problem(body);
     }
   }

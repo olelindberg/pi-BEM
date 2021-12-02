@@ -7,11 +7,13 @@
 
 DistanceRatioRefinement::DistanceRatioRefinement(dealii::ConditionalOStream pcout,
                                                  const Bnd_Box &            box,
+                          double aspectRatioMax,
                                                  unsigned int               manifold_id_,
                                                  int                        levels_,
                                                  double                     distanceRatioMax)
   : GridRefinement(pcout)
   , _box(box)
+    , _aspectRatioMax(aspectRatioMax)
   , manifold_id(manifold_id_)
   , levels(levels_)
   , _distanceRatioMax(distanceRatioMax)
