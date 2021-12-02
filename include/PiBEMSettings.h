@@ -13,6 +13,7 @@ public:
   double aspectRatioMax             = 2.5;
   double cellSizeMin                = 0.0;
   int    adaptiveRefinementLevels   = 0;
+  int    iterMax                    = 0;
 
   void
   print()
@@ -25,6 +26,7 @@ public:
     std::cout << "aspectRatioMax              = " << aspectRatioMax << std::endl;
     std::cout << "cellSizeMin                 = " << cellSizeMin << std::endl;
     std::cout << "adaptiveRefinementLevels    = " << adaptiveRefinementLevels << std::endl;
+    std::cout << "iterMax                     = " << iterMax << std::endl;
   }
 };
 

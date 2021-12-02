@@ -31,6 +31,7 @@ public:
       pibemSettings.potentialErrorEstimatorMax = root.get<double>("potentialErrorEstimatorMax");
       pibemSettings.velocityErrorEstimatorMax  = root.get<double>("velocityErrorEstimatorMax");
       pibemSettings.adaptiveRefinementLevels   = root.get<double>("adaptiveRefinementLevels");
+      pibemSettings.iterMax                    = root.get<double>("iterMax");
 
       return true;
     }

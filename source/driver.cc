@@ -117,23 +117,23 @@ Driver<dim>::run(std::string input_path, std::string output_path)
                                             pibemSettings.potentialErrorEstimatorMax,
                                             pibemSettings.velocityErrorEstimatorMax,
                                             pibemSettings.aspectRatioMax,
-                                            pibemSettings.cellSizeMin);
-
+                                            pibemSettings.cellSizeMin,
+                                            pibemSettings.iterMax);
 
 
 
       if (!adaptiveRefinement.refine(n_mpi_processes,
-                            bem_problem.this_mpi_process,
-                                *bem_problem.fe,
-                                *bem_problem.gradient_fe,
-                                bem_problem.dh,
-                                bem_problem.gradient_dh,
-                                boundary_conditions.get_phi(),
-                                bem_problem.vector_gradients_solution,
-                                computational_domain.tria))
-                                {
-                                  break;
-                                }
+                                     bem_problem.this_mpi_process,
+                                     *bem_problem.fe,
+                                     *bem_problem.gradient_fe,
+                                     bem_problem.dh,
+                                     bem_problem.gradient_dh,
+                                     boundary_conditions.get_phi(),
+                                     bem_problem.vector_gradients_solution,
+                                     computational_domain.tria))
+      {
+        break;
+      }
 
 
       if (this_mpi_process == 0)
@@ -173,8 +173,7 @@ Driver<dim>::run(std::string input_path, std::string output_path)
       computational_domain.update_triangulation();
 
       bem_problem.reinit();
-
-
+      pcout << "Degrees of Freedom: DOF = " << bem_problem.dh.n_dofs() << std::endl;
 
 
       boundary_conditions.solve_problem(body);
@@ -288,40 +287,44 @@ Driver<dim>::run(std::string input_path, std::string output_path)
                                        boundary_conditions.get_hydrodynamic_pressure(),
                                        elevation);
 
-    //-------------------------------------------------------------------------
-    // Save forces:
-    //-------------------------------------------------------------------------
-    std::fstream file;
-    std::string  force_filename = boost::filesystem::path(output_path).append("force.csv").string();
-    file.open(force_filename, std::fstream::out);
-    if (file.is_open())
+    if (this_mpi_process == 0)
     {
-      file << "# Fx [N], Fy [N], Fz [N], Mx [Nm], My [Nm], Mz [Nm]\n";
-      file << hydrodynamicForce[0] << ", " << hydrodynamicForce[1] << ", " << hydrodynamicForce[2]
-           << ", " << hydrodynamicMoment[0] << ", " << hydrodynamicMoment[1] << ", "
-           << hydrodynamicMoment[2] << "\n";
-      file << hydrostaticForce[0] << ", " << hydrostaticForce[1] << ", " << hydrostaticForce[2]
-           << ", " << hydrostaticMoment[0] << ", " << hydrostaticMoment[1] << ", "
-           << hydrostaticMoment[2] << "\n";
-      file.close();
-    }
-
-    //-------------------------------------------------------------------------
-    // Save wave elevation:
-    //-------------------------------------------------------------------------
-    {
+      //-------------------------------------------------------------------------
+      // Save forces:
+      //-------------------------------------------------------------------------
       std::fstream file;
-      std::string  filename = boost::filesystem::path(output_path).append("elevation.csv").string();
-      file.open(filename, std::fstream::out);
+      std::string  force_filename =
+        boost::filesystem::path(output_path).append("force.csv").string();
+      file.open(force_filename, std::fstream::out);
       if (file.is_open())
       {
-        file << "# x [m], y [m], z [m]\n";
-        for (auto &elev : elevation)
-          file << elev[0] << ", " << elev[1] << ", " << elev[2] << "\n";
+        file << "# Fx [N], Fy [N], Fz [N], Mx [Nm], My [Nm], Mz [Nm]\n";
+        file << hydrodynamicForce[0] << ", " << hydrodynamicForce[1] << ", " << hydrodynamicForce[2]
+             << ", " << hydrodynamicMoment[0] << ", " << hydrodynamicMoment[1] << ", "
+             << hydrodynamicMoment[2] << "\n";
+        file << hydrostaticForce[0] << ", " << hydrostaticForce[1] << ", " << hydrostaticForce[2]
+             << ", " << hydrostaticMoment[0] << ", " << hydrostaticMoment[1] << ", "
+             << hydrostaticMoment[2] << "\n";
         file.close();
       }
-    }
 
+      //-------------------------------------------------------------------------
+      // Save wave elevation:
+      //-------------------------------------------------------------------------
+      {
+        std::fstream file;
+        std::string  filename =
+          boost::filesystem::path(output_path).append("elevation.csv").string();
+        file.open(filename, std::fstream::out);
+        if (file.is_open())
+        {
+          file << "# x [m], y [m], z [m]\n";
+          for (auto &elev : elevation)
+            file << elev[0] << ", " << elev[1] << ", " << elev[2] << "\n";
+          file.close();
+        }
+      }
+    }
     std::string filename =
       boost::filesystem::path(output_path).append(boundary_conditions.output_file_name).string();
     boundary_conditions.output_results(filename); // \todo change to Writer in Writer.h

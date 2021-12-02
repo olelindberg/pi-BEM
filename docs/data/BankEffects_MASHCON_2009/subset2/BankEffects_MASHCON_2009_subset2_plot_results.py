@@ -3,7 +3,8 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import pandas as pd
 from pandas.core.frame import DataFrame
-import os,glob
+import os
+import glob
 
 g = 9.80665
 density = 1000
@@ -36,17 +37,16 @@ print('Froude number L')
 print(FrL)
 print('Froude number h')
 print(Frh)
-meshIds = [1]
+#meshIds = [1]
 
-for testId in testIds[1]:
+for testId in testIds[2]:
 
     swayforce = []
     heaveforce = []
     testdir = testId
-    dirs = glob.glob(testId +"/*/")
+    dirs = glob.glob(testId + "/*/")
     dirs = sorted(dirs)
     print(dirs)
-
 
     for dir in dirs:
 

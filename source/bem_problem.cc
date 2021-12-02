@@ -2468,6 +2468,8 @@ BEMProblem<dim>::free_surface_elevation(double                               gra
                                         const TrilinosWrappers::MPI::Vector &pressure,
                                         std::vector<Point<dim>> &            elevation)
 {
+  dealii::Vector<double> pressure_local(pressure);
+
   FEValues<dim - 1, dim> fe_v(*mapping,
                               dh.get_fe(),
                               *quadrature,
@@ -2485,9 +2487,11 @@ BEMProblem<dim>::free_surface_elevation(double                               gra
   DoFTools::map_dofs_to_support_points<dim - 1, dim>(*mapping, dh, support_points);
   std::vector<types::global_dof_index> local_dof_indices(fe->dofs_per_cell);
 
+  //  double force_y = 0.0;
+
   for (const auto &cell : dh.active_cell_iterators())
   {
-    if (cell->subdomain_id() == this_mpi_process && body.hasMaterial(cell->material_id()))
+    if (body.hasMaterial(cell->material_id()))
     {
       fe_v.reinit(cell);
       cell->get_dof_indices(local_dof_indices);
@@ -2498,14 +2502,19 @@ BEMProblem<dim>::free_surface_elevation(double                               gra
         if (line->at_boundary() && body.isWaterline(line->manifold_id()))
         {
           fe_face_values.reinit(cell, j);
+          const std::vector<Tensor<1, dim>> &q_normals = fe_face_values.get_normal_vectors();
 
           auto qpoints = fe_face_values.get_quadrature_points();
+
+          std::vector<double> q_pressure(qpoints.size());
+          fe_face_values.get_function_values(pressure_local, q_pressure);
+
           for (unsigned int q = 0; q < fe_face_values.n_quadrature_points; ++q)
           {
             // Interpolate from nodes to quadrature points:
             double p = 0.0;
             for (unsigned int i = 0; i < fe_face_values.dofs_per_cell; ++i)
-              p += pressure(local_dof_indices[i]) * fe_face_values.shape_value(i, q);
+              p += pressure_local(local_dof_indices[i]) * fe_face_values.shape_value(i, q);
 
             // Integration of submerged volume change:
             Point<dim> elev;
@@ -2513,13 +2522,41 @@ BEMProblem<dim>::free_surface_elevation(double                               gra
             elev[1] = qpoints[q][1];
             elev[2] = p / (density * gravity);
             elevation.push_back(elev);
+            // auto n = q_normals[q];
+
+            // n[2]       = 0.0;
+            // double lng = std::sqrt(n[0] * n[0] + n[1] * n[1]);
+            // n[0] /= lng;
+            // n[1] /= lng;
+
+            // std::cout << n[0] << ", " << n[1] << ", " << n[2] << std::endl;
+
+            // force_y += ((q_pressure[q] * n[1]) * fe_face_values.JxW(q));
+
+
 
           } // for q
         }   // if line at bnd
       }     // for j faces
     }       // if this cpu
   }         // for cell in active cells
+
+  //  std::cout << "Force in y direction " << force_y << std::endl;
   return;
 }
+
+
+
+// std::vector<double> q_pressure(q_points.size());
+// fe_v.get_function_values(pressure, q_pressure);
+
+// for (unsigned int q = 0; q < n_q_points; ++q)
+// {
+//   const auto n   = q_normals[q];
+//   const auto r   = body.getCenterOfGravity() - q_points[q];
+//   const auto rxn = cross_product_3d(r, n);
+
+//   force += ((q_pressure[q] * n) * fe_v.JxW(q));
+
 
 template class BEMProblem<3>;
