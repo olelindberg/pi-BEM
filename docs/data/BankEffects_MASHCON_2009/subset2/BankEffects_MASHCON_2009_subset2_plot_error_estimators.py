@@ -9,7 +9,7 @@ showVelocityErrorEstimators = False
 
 numBins = 128
 
-dir = '/home/ole/dev/projects/pi-BEM/docs/data/BankEffects_MASHCON_2009/subset2/B/mesh2/output/'
+dir = '/home/ole/dev/projects/pi-BEM/docs/data/BankEffects_JMST_2019/case3/mesh4/output/'
 
 
 for level in range(3):

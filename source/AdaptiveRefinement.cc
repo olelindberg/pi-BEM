@@ -89,13 +89,13 @@ AdaptiveRefinement::refine(unsigned int                                 np,
     //---------------------------------------------------------------------------
     int numCellsPot = AdaptiveRefinementUtil::assignRefinement(
       _potentialErrorEstimatorMax, _aspectRatioMax, _cellSizeMin, _error_estimator_potential, dh);
-
     int numCellsVel = AdaptiveRefinementUtil::assignRefinement(
       _velocityErrorEstimatorMax, _aspectRatioMax, _cellSizeMin, _error_estimator_velocity, dh);
 
     if (numCellsPot == 0 && numCellsVel == 0)
+    {
       break;
-
+    }
 
     dealii::SolutionTransfer<2, dealii::Vector<double>, dealii::DoFHandler<2, 3>> scalarInterp(dh);
 

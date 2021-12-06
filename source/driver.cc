@@ -121,19 +121,28 @@ Driver<dim>::run(std::string input_path, std::string output_path)
                                             pibemSettings.iterMax);
 
 
-
-      if (!adaptiveRefinement.refine(n_mpi_processes,
-                                     bem_problem.this_mpi_process,
-                                     *bem_problem.fe,
-                                     *bem_problem.gradient_fe,
-                                     bem_problem.dh,
-                                     bem_problem.gradient_dh,
-                                     boundary_conditions.get_phi(),
-                                     bem_problem.vector_gradients_solution,
-                                     computational_domain.tria))
+      try
       {
-        break;
+        if (!adaptiveRefinement.refine(n_mpi_processes,
+                                       bem_problem.this_mpi_process,
+                                       *bem_problem.fe,
+                                       *bem_problem.gradient_fe,
+                                       bem_problem.dh,
+                                       bem_problem.gradient_dh,
+                                       boundary_conditions.get_phi(),
+                                       bem_problem.vector_gradients_solution,
+                                       computational_domain.tria))
+        {
+          break;
+        }
       }
+      catch (const std::exception &e)
+      {
+        std::cout << "Helllooooooooooo" << std::endl;
+        std::cout << e.what() << std::endl;
+      }
+
+      pcout << "Degrees of Freedom: DOF = " << bem_problem.dh.n_dofs() << std::endl;
 
 
       if (this_mpi_process == 0)
@@ -152,6 +161,7 @@ Driver<dim>::run(std::string input_path, std::string output_path)
           file.close();
         }
       }
+      pcout << "Degrees of Freedom: DOF = " << bem_problem.dh.n_dofs() << std::endl;
 
       if (this_mpi_process == 0)
       {
@@ -169,8 +179,10 @@ Driver<dim>::run(std::string input_path, std::string output_path)
           file.close();
         }
       }
+      pcout << "Degrees of Freedom: DOF = " << bem_problem.dh.n_dofs() << std::endl;
 
       computational_domain.update_triangulation();
+      pcout << "Degrees of Freedom: DOF = " << bem_problem.dh.n_dofs() << std::endl;
 
       bem_problem.reinit();
       pcout << "Degrees of Freedom: DOF = " << bem_problem.dh.n_dofs() << std::endl;
@@ -179,7 +191,6 @@ Driver<dim>::run(std::string input_path, std::string output_path)
       boundary_conditions.solve_problem(body);
     }
   }
-
 
   //-------------------------------------------------------------------------
   // Main steps:
