@@ -5,11 +5,11 @@ import pandas as pd
 from pandas.core.frame import DataFrame
 
 showPotentialErrorEstimators = True
-showVelocityErrorEstimators = False
+showVelocityErrorEstimators = True
 
 numBins = 128
 
-dir = '/home/ole/dev/projects/pi-BEM/docs/data/BankEffects_JMST_2019/case3/mesh4/output/'
+dir = '/home/ole/dev/projects/pi-BEM/docs/data/BankEffects_JMST_2019/case3/mesh1/output/'
 
 
 for level in range(3):

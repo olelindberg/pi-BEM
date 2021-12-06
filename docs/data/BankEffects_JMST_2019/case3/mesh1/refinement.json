@@ -5,7 +5,7 @@
             1,
             2
         ],
-        "refinement_levels": 0
+        "refinement_levels": 1000
     },
     "heightRatioRefinement": {
         "height_ratio_max": 0.3,
@@ -27,6 +27,6 @@
         "ymax": 29,
         "zmin": -1000,
         "zmax": 1000,
-        "refinement_levels": 0
+        "refinement_levels": 1000
     }
 }
