@@ -1,5 +1,6 @@
 #include "../include/AdaptiveRefinement.h"
 #include "../include/AdaptiveRefinementUtil.h"
+#include "../include/Writer.h"
 #include <deal.II/dofs/dof_accessor.h>
 #include <deal.II/dofs/dof_renumbering.h>
 #include <deal.II/dofs/dof_tools.h>
@@ -24,15 +25,16 @@ AdaptiveRefinement::AdaptiveRefinement(dealii::ConditionalOStream pcout,
 {}
 
 bool
-AdaptiveRefinement::refine(unsigned int                                 np,
-                           unsigned int                                 pid,
-                           const dealii::FiniteElement<2, 3> &          fe,
-                           const dealii::FiniteElement<2, 3> &          gradient_fe,
-                           dealii::DoFHandler<2, 3> &                   dh,
-                           dealii::DoFHandler<2, 3> &                   gradient_dh,
-                           const dealii::TrilinosWrappers::MPI::Vector &potential,
-                           const dealii::TrilinosWrappers::MPI::Vector &velocity,
-                           dealii::Triangulation<2, 3> &                tria)
+AdaptiveRefinement::refine(unsigned int                                  np,
+                           unsigned int                                  pid,
+                           const dealii::FiniteElement<2, 3> &           fe,
+                           const dealii::FiniteElement<2, 3> &           gradient_fe,
+                           dealii::DoFHandler<2, 3> &                    dh,
+                           dealii::DoFHandler<2, 3> &                    gradient_dh,
+                           const std::shared_ptr<dealii::Mapping<2, 3>> &mapping,
+                           const dealii::TrilinosWrappers::MPI::Vector & potential,
+                           const dealii::TrilinosWrappers::MPI::Vector & velocity,
+                           dealii::Triangulation<2, 3> &                 tria)
 {
   double cellSizeMin = std::numeric_limits<double>::max();
   for (cell_it cell = dh.begin_active(); cell != dh.end(); ++cell)
@@ -131,6 +133,19 @@ AdaptiveRefinement::refine(unsigned int                                 np,
     velocity_magnitude_local.reinit(dh.n_dofs());
     scalarInterp.refine_interpolate(vel_mag_old, velocity_magnitude_local);
 
+    if (pid == 0)
+    {
+      Writer writer;
+      writer.addScalarField("pot", potential_local);
+      writer.addScalarField("vel", velocity_magnitude_local);
+      std::string filename =
+        std::string(
+          "/home/ole/dev/projects/pi-BEM/docs/data/BankEffects_JMST_2019/case1/mesh5_movie/output/amr")
+          .append(std::to_string(wcnt))
+          .append(".vtu");
+      writer.saveScalarFields(filename, dh, mapping, 1);
+      ++wcnt;
+    }
     _pcout << "Number of cells refinement by potential error estimator: " << numCellsPot
            << std::endl;
     _pcout << "Number of cells refinement by velocity error estimator: " << numCellsVel

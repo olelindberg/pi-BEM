@@ -108,17 +108,18 @@ Driver<dim>::run(std::string input_path, std::string output_path)
     bem_problem.reinit();
     boundary_conditions.solve_problem(body);
 
+    AdaptiveRefinement adaptiveRefinement(pcout,
+                                          mpi_communicator,
+                                          pibemSettings.potentialErrorEstimatorMax,
+                                          pibemSettings.velocityErrorEstimatorMax,
+                                          pibemSettings.aspectRatioMax,
+                                          pibemSettings.cellSizeMin,
+                                          pibemSettings.iterMax);
+
     for (int i = 0; i < pibemSettings.adaptiveRefinementLevels; ++i)
     {
       pcout << "Refinement level " << i << " ...\n";
 
-      AdaptiveRefinement adaptiveRefinement(pcout,
-                                            mpi_communicator,
-                                            pibemSettings.potentialErrorEstimatorMax,
-                                            pibemSettings.velocityErrorEstimatorMax,
-                                            pibemSettings.aspectRatioMax,
-                                            pibemSettings.cellSizeMin,
-                                            pibemSettings.iterMax);
 
 
       if (!adaptiveRefinement.refine(n_mpi_processes,
@@ -127,6 +128,7 @@ Driver<dim>::run(std::string input_path, std::string output_path)
                                      *bem_problem.gradient_fe,
                                      bem_problem.dh,
                                      bem_problem.gradient_dh,
+                                     bem_problem.mapping,
                                      boundary_conditions.get_phi(),
                                      bem_problem.vector_gradients_solution,
                                      computational_domain.tria))
