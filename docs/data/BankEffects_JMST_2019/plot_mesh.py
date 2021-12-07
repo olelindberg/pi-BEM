@@ -7,7 +7,7 @@ filepath = "/home/ole/dev/projects/pi-BEM/build"
 
 numProc = 4
 pid = 3
-filename = "/home/ole/dev/projects/pi-BEM/docs/data/BankEffects_JMST_2019/case3/mesh4/output/result_scalar_results.vtu"
+filename = "/home/ole/dev/projects/pi-BEM/docs/data/BankEffects_JMST_2019/case3/mesh5/output/result_scalar_results.vtu"
 
 mesh = pv.read(filename)
 

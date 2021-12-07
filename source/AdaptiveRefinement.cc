@@ -5,6 +5,7 @@
 #include <deal.II/dofs/dof_tools.h>
 #include <deal.II/grid/grid_tools.h>
 #include <deal.II/numerics/solution_transfer.h>
+#include <limits>
 
 AdaptiveRefinement::AdaptiveRefinement(dealii::ConditionalOStream pcout,
                                        MPI_Comm                   mpi_comm,
@@ -33,6 +34,18 @@ AdaptiveRefinement::refine(unsigned int                                 np,
                            const dealii::TrilinosWrappers::MPI::Vector &velocity,
                            dealii::Triangulation<2, 3> &                tria)
 {
+  double cellSizeMin = std::numeric_limits<double>::max();
+  for (cell_it cell = dh.begin_active(); cell != dh.end(); ++cell)
+  {
+    double lmin = std::min(cell->extent_in_direction(0), cell->extent_in_direction(1));
+    if (lmin < cellSizeMin)
+      cellSizeMin = lmin;
+  }
+  std::cout << "Cell size min " << cellSizeMin << std::endl;
+  cellSizeMin = std::max(_cellSizeMin, cellSizeMin);
+  std::cout << "Cell size min " << cellSizeMin << std::endl;
+
+
   //---------------------------------------------------------------------------
   // Parallel calculation of velocity magnitude:
   //---------------------------------------------------------------------------
@@ -88,9 +101,9 @@ AdaptiveRefinement::refine(unsigned int                                 np,
     // Assing refinement to cells via the dof handler:
     //---------------------------------------------------------------------------
     int numCellsPot = AdaptiveRefinementUtil::assignRefinement(
-      _potentialErrorEstimatorMax, _aspectRatioMax, _cellSizeMin, _error_estimator_potential, dh);
+      _potentialErrorEstimatorMax, _aspectRatioMax, cellSizeMin, _error_estimator_potential, dh);
     int numCellsVel = AdaptiveRefinementUtil::assignRefinement(
-      _velocityErrorEstimatorMax, _aspectRatioMax, _cellSizeMin, _error_estimator_velocity, dh);
+      _velocityErrorEstimatorMax, _aspectRatioMax, cellSizeMin, _error_estimator_velocity, dh);
 
     if (numCellsPot == 0 && numCellsVel == 0)
     {

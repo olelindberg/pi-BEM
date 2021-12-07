@@ -4,15 +4,15 @@ from mpl_toolkits.mplot3d import Axes3D
 import pandas as pd
 from pandas.core.frame import DataFrame
 
-showPotentialErrorEstimators = True
+showPotentialErrorEstimators = False
 showVelocityErrorEstimators = True
 
 numBins = 128
 
-dir = '/home/ole/dev/projects/pi-BEM/docs/data/BankEffects_JMST_2019/case3/mesh1/output/'
+dir = '/home/ole/dev/projects/pi-BEM/docs/data/BankEffects_JMST_2019/case3/mesh5/output/'
 
 
-for level in range(3):
+for level in range(6):
 
     filename = dir + "potentialErrorEstimatorLevel" + \
         str(level) + ".csv"

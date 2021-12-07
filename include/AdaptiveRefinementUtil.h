@@ -62,7 +62,7 @@ public:
         double l1   = cell->extent_in_direction(0);
         double l2   = cell->extent_in_direction(1);
         double lmin = std::min(l1, l2);
-        if (lmin > cellSizeMin)
+        if (lmin >= cellSizeMin)
         {
           RefinementUtil::aspectRatioRefinement(aspectRatioMax, cell);
           ++cnt;
