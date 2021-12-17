@@ -87,23 +87,6 @@ BEMProblem<3>::BEMProblem(ComputationalDomain<3> &comp_dom,
   // Only output on first processor.
   pcout.set_condition(this_mpi_process == 0);
 }
-// template <>
-// BEMProblem<2>::BEMProblem(ComputationalDomain<2> &comp_dom,
-//                           // const unsigned int fe_degree,
-//                           MPI_Comm comm)
-//   : pcout(std::cout)
-//   , comp_dom(comp_dom)
-//   , parsed_fe("Scalar FE", "FE_Q(1)")
-//   , parsed_gradient_fe("Vector FE", "FESystem[FE_Q(1)^2]", "u,u", 2)
-//   , dh(comp_dom.tria)
-//   , gradient_dh(comp_dom.tria)
-//   , mpi_communicator(comm)
-//   , n_mpi_processes(Utilities::MPI::n_mpi_processes(mpi_communicator))
-//   , this_mpi_process(Utilities::MPI::this_mpi_process(mpi_communicator))
-// {
-//   // Only output on first processor.
-//   pcout.set_condition(this_mpi_process == 0);
-// }
 
 template <int dim>
 void
@@ -114,12 +97,6 @@ BEMProblem<dim>::reinit()
 
   fe          = parsed_fe();
   gradient_fe = parsed_gradient_fe();
-  // fe = new FE_DGQArbitraryNodes<dim-1, dim>(QGauss<1> (2));
-  // gradient_fe = new
-  // FESystem<dim-1,dim>(FE_DGQArbitraryNodes<dim-1,dim>(QGauss<1> (2)),dim);
-  // // auto hhh = new FE_DGQArbitraryNodes<dim-1, dim>(QGauss<1> (2));
-  // FiniteElement<dim-1,dim> * pippo = FETools::get_fe_by_name<dim-1,
-  // dim>(foo); std::cout<<pippo->get_name()<<std::endl;
 
   dh.distribute_dofs(*fe);
   gradient_dh.distribute_dofs(*gradient_fe);
@@ -140,49 +117,19 @@ BEMProblem<dim>::reinit()
   DoFTools::make_hanging_node_constraints(gradient_dh, vector_constraints);
   vector_constraints.close();
 
-  if (mapping_type == "FE")
-  {
-    map_vector.reinit(gradient_dh.n_dofs());
-    // Fills the euler vector with information from the Triangulation
-    VectorTools::get_position_vector(gradient_dh, map_vector);
-    vector_constraints.distribute(map_vector);
-  }
-  // mapping_degree = fe->get_degree();
-  if (!mapping)
-  {
-    pcout << "Creating mapping ..." << std::endl;
-    pcout << mapping_type << std::endl;
-    if (comp_dom.spheroid_bool && comp_dom.used_spherical_manifold)
-    {
-      for (types::global_dof_index ii = 0; ii < gradient_dh.n_dofs() / dim; ++ii)
-      {
-        map_vector[vec_original_to_sub_wise[ii]] *= comp_dom.spheroid_x_axis;
-        map_vector[vec_original_to_sub_wise[ii + gradient_dh.n_dofs() / dim]] *=
-          comp_dom.spheroid_y_axis;
-        if (dim == 3)
-          map_vector[vec_original_to_sub_wise[ii + gradient_dh.n_dofs() / dim]] *=
-            comp_dom.spheroid_z_axis;
-      }
-    }
+  map_vector.reinit(gradient_dh.n_dofs());
+  VectorTools::get_position_vector(gradient_dh, map_vector);
+  vector_constraints.distribute(map_vector);
+  mapping = std::make_shared<MappingFEField<dim - 1, dim>>(gradient_dh, map_vector);
 
-    if (mapping_type == "FE")
-      mapping = std::make_shared<MappingFEField<dim - 1, dim>>(gradient_dh, map_vector);
-    else
-      mapping = std::make_shared<MappingQ<dim - 1, dim>>(mapping_degree);
-  }
-
-  const types::global_dof_index n_dofs = dh.n_dofs();
-
-  std::vector<types::subdomain_id> dofs_domain_association(n_dofs);
-
+  std::vector<types::subdomain_id> dofs_domain_association(dh.n_dofs());
   DoFTools::get_subdomain_association(dh, dofs_domain_association);
   std::vector<types::subdomain_id> vector_dofs_domain_association(gradient_dh.n_dofs());
-
   DoFTools::get_subdomain_association(gradient_dh, vector_dofs_domain_association);
 
   this_cpu_set.clear();
   vector_this_cpu_set.clear();
-  this_cpu_set.set_size(n_dofs);
+  this_cpu_set.set_size(dh.n_dofs());
   vector_this_cpu_set.set_size(gradient_dh.n_dofs());
 
   // We compute this two vector in order to use an eventual
@@ -191,10 +138,9 @@ BEMProblem<dim>::reinit()
 
   // We need to enforce consistency between the non-ghosted IndexSets.
   // To be changed accordingly with the DoFRenumbering strategy.
-  pcout << "you are using " << sizeof(dh.n_dofs()) << " bytes indices" << std::endl;
-  pcout << "setting cpu_sets" << std::endl;
 
-  for (types::global_dof_index i = 0; i < n_dofs; ++i)
+  for (types::global_dof_index i = 0; i < dh.n_dofs(); ++i)
+  {
     if (dofs_domain_association[i] == this_mpi_process)
     {
       this_cpu_set.add_index(i);
@@ -205,50 +151,10 @@ BEMProblem<dim>::reinit()
           vec_original_to_sub_wise[gradient_dh.n_dofs() / dim * idim + dummy]);
       }
     }
-
-  // for (unsigned int i=0; i<gradient_dh.n_dofs(); ++i)
-  //   if (vector_dofs_domain_association[i] == this_mpi_process)
-  //     {
-  //       vector_this_cpu_set.add_index(i);
-  //       // for(unsigned int idim=0; idim<dim; ++idim)
-  //       // {
-  //       //   vector_this_cpu_set.add_index(i*dim+idim);
-  //       // }
-  //     }
+  }
 
   this_cpu_set.compress();
   vector_this_cpu_set.compress();
-  // std::cout<<"set the cpu sets"<<std::endl;
-  // std::vector<types::global_dof_index> localized_ndfos(n_mpi_processes);
-  // std::vector<types::global_dof_index>
-  // localized_vector_ndfos(n_mpi_processes); start_per_process.resize
-  // (n_mpi_processes); vector_start_per_process.resize (n_mpi_processes);
-  //
-  // localized_ndfos[this_mpi_process] = this_cpu_set.n_elements();
-  // localized_vector_ndfos[this_mpi_process] =
-  // vector_this_cpu_set.n_elements();
-  //
-  // Utilities::MPI::sum (localized_ndfos, mpi_communicator, start_per_process);
-  // Utilities::MPI::sum (localized_vector_ndfos, mpi_communicator,
-  // vector_start_per_process);
-  //
-  // for(unsigned int i=start_per_process.size()-1; i>0; --i)
-  // {
-  //   start_per_process[i] = start_per_process[i-1];
-  //   vector_start_per_process[i] = vector_start_per_process[i-1];
-  // }
-  // start_per_process[0] = 0;
-  // vector_start_per_process[0] = 0;
-  // for(unsigned int i=2; i<start_per_process.size(); ++i)
-  // {
-  //   start_per_process[i] += start_per_process[i-1];
-  //   vector_start_per_process[i] += vector_start_per_process[i-1];
-  // }
-  // start_per_process[0] = 0;
-  // vector_start_per_process[0] = 0;
-
-  // std::cout<<this_mpi_process<<" "<<start_per_process[this_mpi_process]<<"
-  // "<<vector_start_per_process[this_mpi_process]<<std::endl;
 
   // At this point we just need to create a ghosted IndexSet for the scalar
   // DoFHandler. This can be through the builtin dealii functivector_node_normals
@@ -256,7 +162,6 @@ BEMProblem<dim>::reinit()
   ghosted_set.set_size(dh.n_dofs());
   ghosted_set = DoFTools::dof_indices_with_subdomain_association(dh, this_mpi_process);
   ghosted_set.compress();
-  // std::cout<<"set ghosted set"<<std::endl;
 
   // standard TrilinosWrappers::MPI::Vector reinitialization.
   system_rhs.reinit(this_cpu_set, mpi_communicator);
@@ -295,35 +200,14 @@ BEMProblem<dim>::reinit()
   compute_dirichlet_and_neumann_dofs_vectors();
   compute_double_nodes_set();
 
-  pcout << "Initialising FMA ...\n";
-  fma.init_fma(
-    dh, double_nodes_set, dirichlet_nodes, *mapping, quadrature_order, singular_quadrature_order);
-  pcout << "Initialization of FMA done ...\n";
+  // pcout << "Initialising FMA ...\n";
+  // fma.init_fma(
+  //   dh, double_nodes_set, dirichlet_nodes, *mapping, quadrature_order,
+  //   singular_quadrature_order);
+  // pcout << "Initialization of FMA done ...\n";
 
   // We need a TrilinosWrappers::MPI::Vector to reinit the SparsityPattern for
   // the parallel mass matrices.
-  TrilinosWrappers::MPI::Vector helper(vector_this_cpu_set, mpi_communicator);
-  // These are just for test
-  // IndexSet vector_active_dofs;
-  // IndexSet vector_relevant_dofs;
-  IndexSet trial_index_set;
-  // vector_active_dofs.clear();
-  // vector_relevant_dofs.clear();
-  trial_index_set.clear();
-  // DoFTools::extract_locally_active_dofs(gradient_dh, vector_active_dofs);//,
-  // vector_active_dofs);
-  trial_index_set = DoFTools::dof_indices_with_subdomain_association(gradient_dh, this_mpi_process);
-  // Assert(trial_index_set == vector_this_cpu_set, ExcNotImplemented());
-  // // The following functions returns the entire dof set.
-  // DoFTools::extract_locally_relevant_dofs(gradient_dh, vector_relevant_dofs);
-  // pcout<<vector_active_dofs.n_elements()<<"
-  // "<<vector_relevant_dofs.n_elements()<<"
-  // "<<vector_this_cpu_set.n_elements()<<std::endl;
-
-  // This is the only way we could create the SparsityPattern, through the
-  // Epetramap of an existing vector.
-  // vector_sparsity_pattern.reinit(helper.vector_partitioner(),
-  // helper.vector_partitioner());
   vector_sparsity_pattern.reinit(vector_this_cpu_set, vector_this_cpu_set, mpi_communicator);
   DoFTools::make_sparsity_pattern(
     gradient_dh, vector_sparsity_pattern, vector_constraints, true, this_mpi_process);
@@ -1288,8 +1172,8 @@ BEMProblem<dim>::compute_alpha()
   {
     AssertThrow(dim == 3, ExcMessage("FMA only works in 3D"));
 
-    fma.generate_multipole_expansions(ones, zeros);
-    fma.multipole_matr_vect_products(ones, zeros, alpha, dummy);
+    //    fma.generate_multipole_expansions(ones, zeros);
+    //    fma.multipole_matr_vect_products(ones, zeros, alpha, dummy);
   }
 }
 
@@ -1333,8 +1217,8 @@ BEMProblem<dim>::vmult(TrilinosWrappers::MPI::Vector &      dst,
   {
     AssertThrow(dim == 3, ExcMessage("FMA only works in 3D"));
 
-    fma.generate_multipole_expansions(serv_phi, serv_dphi_dn);
-    fma.multipole_matr_vect_products(serv_phi, serv_dphi_dn, matrVectProdN, matrVectProdD);
+    //    fma.generate_multipole_expansions(serv_phi, serv_dphi_dn);
+    //    fma.multipole_matr_vect_products(serv_phi, serv_dphi_dn, matrVectProdN, matrVectProdD);
     serv_phi.scale(alpha);
     dst += matrVectProdD;
     dst *= -1;
@@ -1383,8 +1267,8 @@ BEMProblem<dim>::compute_rhs(TrilinosWrappers::MPI::Vector &      dst,
   {
     AssertThrow(dim == 3, ExcMessage("FMA only works in 3D"));
 
-    fma.generate_multipole_expansions(serv_phi, serv_dphi_dn);
-    fma.multipole_matr_vect_products(serv_phi, serv_dphi_dn, matrVectProdN, matrVectProdD);
+    //    fma.generate_multipole_expansions(serv_phi, serv_dphi_dn);
+    //    fma.multipole_matr_vect_products(serv_phi, serv_dphi_dn, matrVectProdN, matrVectProdD);
     serv_phi.scale(alpha);
     dst += matrVectProdN;
     dst += serv_phi;
@@ -1434,9 +1318,9 @@ BEMProblem<dim>::solve_system(TrilinosWrappers::MPI::Vector &      phi,
   {
     AssertThrow(dim == 3, ExcMessage("FMA only works in 3D"));
 
-    TrilinosWrappers::PreconditionILU &fma_preconditioner =
-      fma.FMA_preconditioner(alpha, constraints);
-    solver.solve(cc, sol, system_rhs, fma_preconditioner);
+    //    TrilinosWrappers::PreconditionILU &fma_preconditioner =
+    //      fma.FMA_preconditioner(alpha, constraints);
+    //  solver.solve(cc, sol, system_rhs, fma_preconditioner);
     // solver.solve (cc, sol, system_rhs, PreconditionIdentity());
   }
 
@@ -1500,10 +1384,10 @@ BEMProblem<dim>::solve(TrilinosWrappers::MPI::Vector &      phi,
   {
     AssertThrow(dim == 3, ExcMessage("FMA only works in 3D"));
 
-    fma.generate_octree_blocking();
+    //    fma.generate_octree_blocking();
     // fma.compute_m2l_flags();
-    fma.direct_integrals();
-    fma.multipole_integrals();
+    //    fma.direct_integrals();
+    //    fma.multipole_integrals();
   }
 
   solve_system(phi, dphi_dn, tmp_rhs);

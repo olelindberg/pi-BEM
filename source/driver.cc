@@ -128,7 +128,6 @@ Driver<dim>::run(std::string input_path, std::string output_path)
                                      *bem_problem.gradient_fe,
                                      bem_problem.dh,
                                      bem_problem.gradient_dh,
-                                     bem_problem.mapping,
                                      boundary_conditions.get_phi(),
                                      bem_problem.vector_gradients_solution,
                                      computational_domain.tria))
@@ -136,6 +135,7 @@ Driver<dim>::run(std::string input_path, std::string output_path)
         break;
       }
       pcout << "Degrees of Freedom: DOF = " << bem_problem.dh.n_dofs() << std::endl;
+
 
 
       if (this_mpi_process == 0)
@@ -180,6 +180,12 @@ Driver<dim>::run(std::string input_path, std::string output_path)
       bem_problem.reinit();
       pcout << "Degrees of Freedom: DOF = " << bem_problem.dh.n_dofs() << std::endl;
 
+      Writer writer;
+      writer.addScalarField("error_estimator", adaptiveRefinement.get_error_estimator_potential());
+      writer.saveScalarFields(std::string(input_path).append("/scalars.vtu"),
+                              bem_problem.dh,
+                              bem_problem.mapping,
+                              bem_problem.mapping_degree);
 
       boundary_conditions.solve_problem(body);
     }

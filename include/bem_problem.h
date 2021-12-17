@@ -84,7 +84,7 @@
 // files that we will need:
 #include <deal2lkit/parameter_acceptor.h>
 #include <deal2lkit/parsed_finite_element.h>
-#include <deal2lkit/parsed_grid_refinement.h>
+//#include <deal2lkit/parsed_grid_refinement.h>
 #include <deal2lkit/utilities.h>
 #include <mpi.h>
 
@@ -324,11 +324,6 @@ public:
   DoFHandler<dim - 1, dim>                     dh;
   DoFHandler<dim - 1, dim>                     gradient_dh;
 
-  // FE_Q<dim-1,dim>                   fe;
-  // FESystem<dim-1,dim>      gradient_fe;
-
-  ParsedGridRefinement pgr;
-
   /// An Eulerian Mapping is created to deal
   /// with the free surface and boat mesh
   /// deformation
@@ -457,7 +452,7 @@ public:
 
   bool have_dirichlet_bc;
 
-  BEMFMA<dim> fma;
+  //  BEMFMA<dim> fma;
 
 
 

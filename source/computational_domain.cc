@@ -1,8 +1,8 @@
 
 
 #include "../include/computational_domain.h"
-
 #include "../include/GridRefinementCreator.h"
+#include "../include/Writer.h"
 
 #include <deal.II/grid/grid_reordering.h>
 #include <deal.II/grid/grid_tools.h>
@@ -419,9 +419,19 @@ ComputationalDomain<dim>::refine_and_resize(std::string input_path)
                                                       cad_to_projectors_tolerance_ratio * _max_tol,
                                                       cad_surfaces);
 
+  Writer writer;
+  writer.save("/home/ole/dev/temp/trimeshinit.vtu", tria);
+
   // Do the refinement:
+  int cnt = 0;
   for (const auto &refinement : gridrefinement)
+  {
     refinement->refine(tria, cad_surfaces);
+    writer.save(
+      std::string("/home/ole/dev/temp/trimeshrefine").append(std::to_string(cnt)).append(".vtu"),
+      tria);
+    ++cnt;
+  }
 }
 
 

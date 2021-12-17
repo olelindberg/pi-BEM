@@ -23,42 +23,30 @@ public:
                    const std::shared_ptr<dealii::Mapping<2, 3>> &mapping,
                    unsigned int                                  mapping_degree)
   {
-    std::cout << "hello1\n";
-    dealii::DataOut<2, dealii::DoFHandler<2, 3>> dataout_scalar;
-    std::cout << "hello2\n";
-    dataout_scalar.attach_dof_handler(dh);
-    std::cout << "hello3\n";
+    dealii::DataOut<2, dealii::DoFHandler<2, 3>> dataout;
+    dataout.attach_dof_handler(dh);
 
     auto nameIt = _scalarFieldNames.begin();
     for (auto &field : _scalarFields)
     {
-      std::cout << "hello4\n";
-      dataout_scalar.add_data_vector(field,
-                                     *nameIt,
-                                     dealii::DataOut<2, dealii::DoFHandler<2, 3>>::type_cell_data);
-      std::cout << "hello5\n";
+      dataout.add_data_vector(field,
+                              *nameIt,
+                              dealii::DataOut<2, dealii::DoFHandler<2, 3>>::type_cell_data);
       ++nameIt;
-      std::cout << "hello6\n";
     }
 
-    std::cout << "hello7\n";
+    dataout.build_patches(*mapping,
+                          mapping_degree,
+                          dealii::DataOut<2, dealii::DoFHandler<2, 3>>::curved_inner_cells);
 
-    dataout_scalar.build_patches(*mapping,
-                                 mapping_degree,
-                                 dealii::DataOut<2, dealii::DoFHandler<2, 3>>::curved_inner_cells);
-    std::cout << "hello8\n";
-
-    std::cout << "hello9\n";
     std::ofstream file(filename);
-    std::cout << "hello10\n";
     if (file.is_open())
-      dataout_scalar.write_vtu(file);
+      dataout.write_vtu(file);
     else
     {
       std::cout << "Error: Failed saving " << filename << std::endl;
       return false;
     }
-    std::cout << "hello11\n";
     return true;
   }
 
@@ -68,6 +56,23 @@ public:
   {
     _scalarFieldNames.push_back(name);
     _scalarFields.push_back(scalarField);
+  }
+
+  bool
+  save(std::string filename, const dealii::Triangulation<2, 3> &trimesh)
+  {
+    dealii::DataOut<2, dealii::DoFHandler<2, 3>> dataout;
+    dataout.attach_triangulation(trimesh);
+    dataout.build_patches();
+    std::ofstream file(filename);
+    if (file.is_open())
+      dataout.write_vtu(file);
+    else
+    {
+      std::cout << "Error: Failed saving " << filename << std::endl;
+      return false;
+    }
+    return true;
   }
 
 private:
