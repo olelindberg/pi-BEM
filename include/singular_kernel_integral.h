@@ -50,6 +50,14 @@
 // namespace for general use:
 using namespace dealii;
 
+///
+/// The singular kernel integral is implemented based on [1] and [2].
+///
+/// References:
+/// [1] M. Guiggiani, "Formulation and numerical treatment of boundary integral equations with hypersingular kernels", 1998.
+/// [2] V. Mantic and F. Paris, "Existence and evalution of the two free trems in the hypersingular boundary integral equation of potential theory", 
+///     Engineering analysis with Boundary Elements 16 (1995) 253-260.
+///
 template <int dim>
 class SingularKernelIntegral
 {
@@ -65,8 +73,9 @@ Tensor<1,dim> evaluate_Vk_integrals();
 
 std::vector<Tensor<1,dim> > evaluate_VkNj_integrals();
 
-
 std::vector<Tensor<1,dim> > evaluate_WkNj_integrals();
+
+Tensor<1,dim> evaluate_free_term_b();
 
 
 double evaluate_integral();

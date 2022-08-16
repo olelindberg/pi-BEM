@@ -1,0 +1,5 @@
+cd ../build
+make -j4
+cd -
+cp ../build/bem_fma_3d* .
+./bem_fma_3d

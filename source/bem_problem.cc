@@ -1360,8 +1360,9 @@ for (types::global_dof_index i = 0; i < dh.n_dofs(); ++i) //these must now be th
                  //cout<<p<<"  "<<sorter<<endl;
                  }
                else if (dim == 2)
-                 double sorter = average_normal*cross_product_2d(unique_ordered_normals[0]);
-
+               {
+                // double sorter = average_normal*cross_product_2d(unique_ordered_normals[0]);
+               }
                }
            //cout<<"Selected: "<<index<<"  "<<endl;
            unique_ordered_normals.push_back(unique_normals[index]);
@@ -2595,13 +2596,13 @@ BEMProblem<dim>::compute_gradients_hypersingular(
                                                 dphi_dn_local(local_dof_indices[j]) * D *
                                                 fe_v.shape_value(j, q) *
                                                 fe_v.JxW(q);
-                          Tensor<1,dim> a=-phi_local(local_dof_indices[j]) * 
-                                                (H * normals[q]) *
-                                                fe_v.shape_value(j, q) *
-                                                fe_v.JxW(q) +
-                                                dphi_dn_local(local_dof_indices[j]) * D *
-                                                fe_v.shape_value(j, q) *
-                                                fe_v.JxW(q);
+                          // Tensor<1,dim> a=-phi_local(local_dof_indices[j]) * 
+                          //                       (H * normals[q]) *
+                          //                       fe_v.shape_value(j, q) *
+                          //                       fe_v.JxW(q) +
+                          //                       dphi_dn_local(local_dof_indices[j]) * D *
+                          //                       fe_v.shape_value(j, q) *
+                          //                       fe_v.JxW(q);
 
 //                          if (true)//(abs(normals[q][2]+1.0)>1e-4)
 //                             {
@@ -2642,7 +2643,7 @@ BEMProblem<dim>::compute_gradients_hypersingular(
                   Tensor<1,dim> singular_cell_contribution_str;
                   for (unsigned int j = 0; j < fe->dofs_per_cell; ++j)
                       {
-                      const Tensor<1, dim> R = support_points[local_dof_indices[j]] - support_points[i];
+//                      const Tensor<1, dim> R = support_points[local_dof_indices[j]] - support_points[i];
                       //pcout<<"* "<<cell<<"  "<<R<<"   "<<support_points[local_dof_indices[j]]<<std::endl;
                   
                       singular_cell_contribution_hyp+= -phi_local(local_dof_indices[j])*Vk_integrals[j];
@@ -2662,6 +2663,33 @@ BEMProblem<dim>::compute_gradients_hypersingular(
             }
         }
     }
+
+  // Calculating second free term:
+  pcout << "Calculating second free term" << std::endl;
+  std::vector<Tensor<1,dim>> free_term_b_all(dh.n_dofs());
+  for (cell = dh.begin_active(); cell != endc; ++cell)
+  {
+    
+    fe_v.reinit(cell);
+    cell->get_dof_indices(local_dof_indices);
+
+    for (unsigned int local_id = 0; local_id < fe->dofs_per_cell; ++local_id)
+    { 
+
+      int global_id = local_dof_indices[local_id];
+      if (this_cpu_set.is_element(global_id))
+      {
+
+        Assert((*fe).has_support_points(),ExcMessage("The FE selected has no support points. This is not supported."));
+        Point<dim-1> P = (*fe).unit_support_point(local_id);
+
+        SingularKernelIntegral<dim> singular_kernel_integrator(cell, *fe, *mapping, P);
+        free_term_b_all[global_id] += singular_kernel_integrator.evaluate_free_term_b();
+      }
+      pcout << free_term_b_all[global_id][0] << " " <<  free_term_b_all[global_id][1] << " " <<  free_term_b_all[global_id][2] << std::endl;
+    }
+  }
+  pcout << "Calculating second free term - done" << std::endl;
 
   // The second part of the integral
   // operator is the term
@@ -2696,9 +2724,9 @@ BEMProblem<dim>::compute_gradients_hypersingular(
           //pcout<<i<<"->    Support point: "<<support_points[i]<<std::endl;
           Tensor<1,dim> hyp_gradient;
           Tensor<1,dim> rhs;
-          rhs[0] = vector_hyp_gradients_solution(i);
-          rhs[1] = vector_hyp_gradients_solution(i+dh.n_dofs());
-          rhs[2] = vector_hyp_gradients_solution(i+2*dh.n_dofs());
+          rhs[0] = vector_hyp_gradients_solution(i)               - free_term_b_all[i][0]*phi_local[i];
+          rhs[1] = vector_hyp_gradients_solution(i+dh.n_dofs())   - free_term_b_all[i][1]*phi_local[i];
+          rhs[2] = vector_hyp_gradients_solution(i+2*dh.n_dofs()) - free_term_b_all[i][2]*phi_local[i];
           FullMatrix<double> C(dim,dim);
           FullMatrix<double> Cinv(dim,dim);
           for (unsigned int di=0; di<dim; ++di)
@@ -2720,9 +2748,8 @@ BEMProblem<dim>::compute_gradients_hypersingular(
          }
       }
 
-vector_gradients_solution = vector_hyp_gradients_solution;
-pcout << "done computing gradients with hypersingular integrals" << std::endl;
-
+  vector_gradients_solution = vector_hyp_gradients_solution;
+  pcout << "done computing gradients with hypersingular integrals" << std::endl;
 
 }
 
