@@ -3,15 +3,16 @@
 
 // The most fundamental class in the library is the Triangulation class, which
 // is declared here:
-#include <deal.II/grid/tria.h>
 #include <deal.II/dofs/dof_handler.h>
+
+#include <deal.II/grid/tria.h>
 // And this is the file in which the functions are declared that create grids:
 #include <deal.II/grid/grid_generator.h>
 
 // This file contains the description of the Lagrange interpolation finite
 // element:
-#include <deal.II/fe/fe_q.h>
 #include <deal.II/fe/fe_dgq.h>
+#include <deal.II/fe/fe_q.h>
 
 
 // And this file is needed for the creation of sparsity patterns of sparse
@@ -20,24 +21,25 @@
 
 // The next two files are needed for assembling the matrix using quadrature on
 // each cell. The classes declared in them will be explained below:
-#include <deal.II/fe/fe_values.h>
-#include <deal.II/fe/fe_interface_values.h>
 #include <deal.II/base/quadrature_lib.h>
+
+#include <deal.II/fe/fe_interface_values.h>
+#include <deal.II/fe/fe_values.h>
 #include <deal.II/fe/mapping_manifold.h>
 // We need the following two includes for loops over cells and/or faces:
 #include <deal.II/grid/tria_accessor.h>
 #include <deal.II/grid/tria_iterator.h>
 // Here are some functions to generate standard grids:
 #include <deal.II/grid/grid_generator.h>
-#include <deal.II/grid/grid_tools.h>
 #include <deal.II/grid/grid_reordering.h>
+#include <deal.II/grid/grid_tools.h>
 
 // Output of grids in various graphics formats:
 #include <deal.II/grid/grid_out.h>
 
 // This is needed for C++ output:
-#include <iostream>
 #include <fstream>
+#include <iostream>
 // And this for the declarations of the `std::sqrt` and `std::fabs` functions:
 #include <cmath>
 
@@ -54,41 +56,47 @@ using namespace dealii;
 /// The singular kernel integral is implemented based on [1] and [2].
 ///
 /// References:
-/// [1] M. Guiggiani, "Formulation and numerical treatment of boundary integral equations with hypersingular kernels", 1998.
-/// [2] V. Mantic and F. Paris, "Existence and evalution of the two free trems in the hypersingular boundary integral equation of potential theory", 
+/// [1] M. Guiggiani, "Formulation and numerical treatment of boundary integral
+/// equations with hypersingular kernels", 1998. [2] V. Mantic and F. Paris,
+/// "Existence and evalution of the two free trems in the hypersingular boundary
+/// integral equation of potential theory",
 ///     Engineering analysis with Boundary Elements 16 (1995) 253-260.
 ///
 template <int dim>
 class SingularKernelIntegral
 {
 public:
+  SingularKernelIntegral(
+    typename DoFHandler<dim - 1, dim>::active_cell_iterator in_cell,
+    FiniteElement<dim - 1, dim> &                           in_fe,
+    Mapping<dim - 1, dim> &                                 in_mapping,
+    Point<dim - 1> &                                        in_eta);
 
-SingularKernelIntegral(typename DoFHandler<dim-1, dim>::active_cell_iterator in_cell,
-                       FiniteElement<dim-1, dim> &in_fe,
-                       Mapping<dim-1, dim> &in_mapping,
-                       Point<dim-1> &in_eta);
+  Tensor<1, dim>
+  evaluate_Vk_integrals();
 
-Tensor<1,dim> evaluate_Vk_integrals();
-
-
-std::vector<Tensor<1,dim> > evaluate_VkNj_integrals();
-
-std::vector<Tensor<1,dim> > evaluate_WkNj_integrals();
-
-Tensor<1,dim> evaluate_free_term_b();
+  Tensor<1, dim>
+  evaluate_free_term_b();
 
 
-double evaluate_integral();
+  std::vector<Tensor<1, dim>>
+  evaluate_VkNj_integrals();
+
+  std::vector<Tensor<1, dim>>
+  evaluate_WkNj_integrals();
+
+
+  double
+  evaluate_integral();
 
 private:
-const typename DoFHandler<dim-1, dim>::active_cell_iterator &cell;
-FiniteElement<dim-1, dim> &fe;
-Mapping<dim-1, dim> &mapping;
-Point<dim-1> &eta;
-// to be read from input file
-double rho_quadrature_order = 4;
-double theta_quadrature_order = 20;
-
+  const typename DoFHandler<dim - 1, dim>::active_cell_iterator &cell;
+  FiniteElement<dim - 1, dim> &                                  fe;
+  Mapping<dim - 1, dim> &                                        mapping;
+  Point<dim - 1> &                                               eta;
+  // to be read from input file
+  double rho_quadrature_order   = 4;
+  double theta_quadrature_order = 20;
 };
 
 #endif
