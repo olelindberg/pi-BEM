@@ -28,7 +28,7 @@ subsection BEMProblem<3>
   end
 
   subsection Quadrature rules
-    set Quadrature order          = 8
+    set Quadrature order          = 2
     set Quadrature type           = gauss
     set Singular quadrature order = 9
   end

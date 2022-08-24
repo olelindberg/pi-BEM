@@ -66,37 +66,31 @@ template <int dim>
 class SingularKernelIntegral
 {
 public:
-  SingularKernelIntegral(
-    typename DoFHandler<dim - 1, dim>::active_cell_iterator in_cell,
-    FiniteElement<dim - 1, dim> &                           in_fe,
-    Mapping<dim - 1, dim> &                                 in_mapping,
-    Point<dim - 1> &                                        in_eta);
+  SingularKernelIntegral(double                       in_rho_quadrature_order,
+                         double                       in_theta_quadrature_order,
+                         FiniteElement<dim - 1, dim> &in_fe,
+                         Mapping<dim - 1, dim> &      in_mapping);
 
   Tensor<1, dim>
-  evaluate_Vk_integrals();
-
-  Tensor<1, dim>
-  evaluate_free_term_b();
-
+  evaluate_free_term_b(
+    const typename DoFHandler<dim - 1, dim>::active_cell_iterator &cell,
+    const Point<dim - 1> &                                         eta);
 
   std::vector<Tensor<1, dim>>
-  evaluate_VkNj_integrals();
+  evaluate_VkNj_integrals(
+    const typename DoFHandler<dim - 1, dim>::active_cell_iterator &cell,
+    const Point<dim - 1> &                                         eta);
 
   std::vector<Tensor<1, dim>>
-  evaluate_WkNj_integrals();
-
-
-  double
-  evaluate_integral();
+  evaluate_WkNj_integrals(
+    const typename DoFHandler<dim - 1, dim>::active_cell_iterator &cell,
+    const Point<dim - 1> &                                         eta);
 
 private:
-  const typename DoFHandler<dim - 1, dim>::active_cell_iterator &cell;
-  FiniteElement<dim - 1, dim> &                                  fe;
-  Mapping<dim - 1, dim> &                                        mapping;
-  Point<dim - 1> &                                               eta;
-  // to be read from input file
-  double rho_quadrature_order   = 4;
-  double theta_quadrature_order = 20;
+  double                       rho_quadrature_order;
+  double                       theta_quadrature_order;
+  FiniteElement<dim - 1, dim> &fe;
+  Mapping<dim - 1, dim> &      mapping;
 };
 
 #endif
