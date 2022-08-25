@@ -110,7 +110,6 @@ if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/tests AND BEM_ENABLE_TESTING)
   ENABLE_TESTING()
 endif()
 
-
 # Doxygen
 if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in)
     find_package(Doxygen)

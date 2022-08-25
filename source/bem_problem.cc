@@ -2509,10 +2509,9 @@ BEMProblem<dim>::compute_gradients_hypersingular(
   const TrilinosWrappers::MPI::Vector &glob_dphi_dn)
 {
   Teuchos::TimeMonitor LocalTimer(*HBIEGradientTime);
-  pcout << "Computing gradients with hypersingular integrals" << std::endl;
 
-  int                         rho_quadrature_order   = 2;
-  int                         theta_quadrature_order = 4;
+  int                         rho_quadrature_order   = 4;
+  int                         theta_quadrature_order = 8;
   SingularKernelIntegral<dim> singular_kernel_integrator(rho_quadrature_order,
                                                          theta_quadrature_order,
                                                          *fe,
@@ -2558,7 +2557,6 @@ BEMProblem<dim>::compute_gradients_hypersingular(
   DoFTools::map_dofs_to_support_points<dim - 1, dim>(*mapping,
                                                      dh,
                                                      support_points);
-
 
   // After doing so, we can start the
   // integration loop over all cells,

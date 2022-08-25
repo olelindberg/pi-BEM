@@ -1,0 +1,6 @@
+
+ADD_EXECUTABLE(HBIE_convergence_test main.cpp)
+DEAL_II_SETUP_TARGET(HBIE_convergence_test RELEASE)
+TARGET_LINK_LIBRARIES(HBIE_convergence_test bem_fma-lib)
+target_compile_definitions(HBIE_convergence_test PUBLIC DEAL_II_DIMENSION=3)
+

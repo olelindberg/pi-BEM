@@ -8,6 +8,8 @@ RCP<Time> SKI1 = Teuchos::TimeMonitor::getNewTimer("SKI1");
 RCP<Time> SKI2 = Teuchos::TimeMonitor::getNewTimer("SKI2");
 RCP<Time> SKI3 = Teuchos::TimeMonitor::getNewTimer("SKI3");
 RCP<Time> SKI4 = Teuchos::TimeMonitor::getNewTimer("SKI4");
+RCP<Time> SKI41 = Teuchos::TimeMonitor::getNewTimer("SKI41");
+RCP<Time> SKI42 = Teuchos::TimeMonitor::getNewTimer("SKI42");
 RCP<Time> SKI5 = Teuchos::TimeMonitor::getNewTimer("SKI5");
 RCP<Time> SKI6 = Teuchos::TimeMonitor::getNewTimer("SKI6");
 RCP<Time> SKI7 = Teuchos::TimeMonitor::getNewTimer("SKI7");
@@ -507,35 +509,19 @@ SingularKernelIntegral<3>::evaluate_VkNj_integrals(
 
               // the taylor expansion coefficients F_1 and F_2 are finally
               // computed
-
-              double q_A1 = 1.0 / q_A[q];
-              double q_A2 = q_A1;
-              q_A2 *= q_A1;
-              double q_A3 = q_A2;
-              q_A3 *= q_A1;
-              double q_A4 = q_A3;
-              q_A4 *= q_A1;
-              double q_A5 = q_A4;
-              q_A5 *= q_A1;
-
-              double beta  = q_A1;
-              double beta2 = beta;
-              beta2 *= beta;
-              double gamma = -q_C[q] * q_A4;
-              for (unsigned int ii = 0; ii < fe.dofs_per_cell; ++ii)
-                {
-                  F_2[ii] = Jk0[q] * q_A3 * N0[q][ii];
-                  F_1[ii] = (-3 * q_C[q] * Jk0[q] * q_A5 -
-                             3 * A[q] * q_A5 * (Jk0[q] * B[q] + Jk1[q] * A[q]) +
-                             Jk1[q] * q_A3) *
-                              N0[q][ii] +
-                            Jk0[q] * q_A3 * N1[q][ii];
-                  I_2[ii] +=
-                    -F_2[ii] * (gamma / beta2 + 1 / q_rho[q]) * uv_q_weights[q];
-                  I_1[ii] +=
-                    F_1[ii] * log(fabs(q_rho[q] / beta)) * uv_q_weights[q];
-                  // I_1 += F_1*log(fabs(q_rho[q]))*uv_q_weights[q];
-                }
+              double beta = 1/q_A[q];
+              double gamma = -q_C[q]/pow(q_A[q],4);
+              std::vector<Tensor<1,3> > F_2(fe.dofs_per_cell,zero_tensor);
+              std::vector<Tensor<1,3> > F_1(fe.dofs_per_cell,zero_tensor);
+              for (unsigned int ii=0; ii<fe.dofs_per_cell; ++ii)
+                  {
+                  F_2[ii] = Jk0[q]/pow(q_A[q],3)*N0[q][ii];
+                  F_1[ii] = (-3*q_C[q]*Jk0[q]/pow(q_A[q],5)
+                               -3*A[q]/pow(q_A[q],5)*(Jk0[q]*B[q]+Jk1[q]*A[q])
+                               +Jk1[q]/pow(q_A[q],3))*N0[q][ii]+Jk0[q]/pow(q_A[q],3)*N1[q][ii];
+                  I_2[ii] += -F_2[ii]*(gamma/pow(beta,2)+1/q_rho[q])*uv_q_weights[q];
+                  I_1[ii] += F_1[ii]*log(fabs(q_rho[q]/beta))*uv_q_weights[q];
+                  }
 
               // we still miss the surface integral I_0
               // for this, we will need to also consider the
@@ -565,10 +551,12 @@ SingularKernelIntegral<3>::evaluate_VkNj_integrals(
                     rho * cos(theta_q_points[q](0)) + eta_q_points[0](0),
                     rho * sin(theta_q_points[q](0)) + eta_q_points[0](1));
                 }
-
+  
               // we can then create the quadrature and the FEValues
               Quadrature<2>  inner_uv_quadrature(inner_uv_q_points,
                                                 inner_uv_q_weights);
+{
+              Teuchos::TimeMonitor LocalTimer(*SKI42);
               FEValues<2, 3> inner_face_fe_values(fe,
                                                   inner_uv_quadrature,
                                                   update_values |
@@ -621,6 +609,7 @@ SingularKernelIntegral<3>::evaluate_VkNj_integrals(
                                  theta_fe_v.JxW(q);
                     }
                 }
+}//
             }
         }
     }

@@ -89,75 +89,9 @@ BoundaryConditions<dim>::parse_parameters(ParameterHandler &prm)
 }
 
 
-
-/*template <int dim>
-double* BoundaryConditions<dim>::initial_conditions() {
-
-  initial_wave_shape.set_time(initial_time);
-  initial_wave_potential.set_time(initial_time);
-  wind.set_time(initial_time);
-
-  Vector<double> instantWindValue(dim);
-  Point<dim> zero(0,0,0);
-  wind.vector_value(zero,instantWindValue);
-  bem.pcout<<std::endl<<"Simulation time= "<<initial_time<<"   Vinf= ";
-  instantWindValue.print(cout,4,false,true);
-  bem.pcout<<std::endl;
-
-  dofs_number = bem.dh.n_dofs()+bem.gradient_dh.n_dofs();
-
-  phi.reinit(bem.dh.n_dofs());
-  dphi_dn.reinit(bem.dh.n_dofs());
-  tmp_rhs.reinit(bem.dh.n_dofs());
-
-  DXDt_and_DphiDt_vector.resize(n_dofs());
-
-  std::vector<Point<dim> > support_points(bem.dh.n_dofs());
-  DoFTools::map_dofs_to_support_points<dim-1, dim>( bem.mapping, bem.dh,
-support_points); std::vector<Point<dim> >
-gradient_support_points(bem.gradient_dh.n_dofs());
-  DoFTools::map_dofs_to_support_points<dim-1, dim>( bem.mapping,
-bem.gradient_dh, gradient_support_points);
-
-
-  unsigned int j = dim-1;
-  for(unsigned int i=j; i<bem.gradient_dh.n_dofs(); i=i+dim)
-      {
-      DXDt_and_DphiDt_vector[i] =
-initial_wave_shape.value(gradient_support_points[i]);
-      //bem.pcout<<DXDt_and_DphiDt_vector[i]<<std::endl;
-      }
-
-   for (unsigned int i=0; i<bem.dh.n_dofs(); i++)
-      {
-      DXDt_and_DphiDt_vector[i+bem.gradient_dh.n_dofs()] =
-initial_wave_potential.value(gradient_support_points[i]);
-      //bem.pcout<<DXDt_and_DphiDt_vector[i+bem.gradient_dh.n_dofs()]<<std::endl;
-      }
-
-   max_y_coor_value = 0;
-   for (unsigned int i=0; i < bem.dh.n_dofs(); i++)
-       {
-       //for printout
-       //bem.pcout<<"Node "<<i<< "["<<support_points[i]<<"] "<<std::endl;
-       max_y_coor_value =
-std::max(max_y_coor_value,std::abs(support_points[i](1)));
-       }
-
-  std::string filename = ( output_file_name + "_" +
-         Utilities::int_to_string(0) +
-         ".vtk" );
-
-  output_results(filename);
-
-  return &DXDt_and_DphiDt_vector[0];
-} //*/
-
-
-
 template <int dim>
 void
-BoundaryConditions<dim>::solve_problem()
+BoundaryConditions<dim>::initialize()
 {
   potential.set_time(0);
   wind.set_time(0);
@@ -169,20 +103,25 @@ BoundaryConditions<dim>::solve_problem()
   this_cpu_set = bem.this_cpu_set;
   this_cpu_set.compress();
 
-
-
   phi.reinit(this_cpu_set, mpi_communicator);
   dphi_dn.reinit(this_cpu_set, mpi_communicator);
   tmp_rhs.reinit(this_cpu_set, mpi_communicator);
   pcout << "Computing normal vector" << std::endl;
   bem.compute_normals();
   prepare_bem_vectors();
+}
 
+template <int dim>
+void
+BoundaryConditions<dim>::solve_problem()
+{
+  this->initialize();
 
   bem.solve(phi, dphi_dn, tmp_rhs);
   have_dirichlet_bc = bem.have_dirichlet_bc;
   if (!have_dirichlet_bc)
     {
+    const types::global_dof_index    n_dofs = bem.dh.n_dofs();
       std::vector<Point<dim>> support_points(n_dofs);
       DoFTools::map_dofs_to_support_points<dim - 1, dim>(*bem.mapping,
                                                          bem.dh,
@@ -194,8 +133,6 @@ BoundaryConditions<dim>::solve_problem()
       MPI_Bcast(&shift, 1, MPI_DOUBLE, 0, mpi_communicator);
       vector_shift(phi, shift);
     }
-
-  // bem.compute_gradients(phi, dphi_dn);
 }
 
 template <int dim>
@@ -210,6 +147,116 @@ const TrilinosWrappers::MPI::Vector &
 BoundaryConditions<dim>::get_dphi_dn()
 {
   return dphi_dn;
+}
+
+
+template <int dim>
+void
+BoundaryConditions<dim>::assign_potential_normal_derivative()
+{
+  const types::global_dof_index n_dofs = bem.dh.n_dofs();
+
+  dphi_dn.reinit(this_cpu_set, mpi_communicator);
+
+  std::vector<Point<dim>> support_points(n_dofs);
+  DoFTools::map_dofs_to_support_points<dim - 1, dim>(*bem.mapping,
+                                                     bem.dh,
+                                                     support_points);
+
+  std::vector<Point<dim>> vec_support_points(bem.gradient_dh.n_dofs());
+  DoFTools::map_dofs_to_support_points<dim - 1, dim>(*bem.mapping,
+                                                     bem.gradient_dh,
+                                                     vec_support_points);
+
+  cell_it cell = bem.dh.begin_active(), endc = bem.dh.end();
+
+  const unsigned int                   dofs_per_cell = bem.fe->dofs_per_cell;
+  std::vector<types::global_dof_index> local_dof_indices(dofs_per_cell);
+  FEValues<dim - 1, dim>               fe_v(*bem.mapping,
+                              *bem.fe,
+                              *bem.quadrature,
+                              update_values | update_normal_vectors |
+                                update_quadrature_points | update_JxW_values);
+
+
+  for (cell = bem.dh.begin_active(); cell != endc; ++cell)
+    {
+      fe_v.reinit(cell);
+      cell->get_dof_indices(local_dof_indices);
+
+      for (unsigned int j = 0; j < bem.fe->dofs_per_cell; ++j)
+        if (this_cpu_set.is_element(local_dof_indices[j]))
+          {
+            Vector<double> imposed_pot_grad(dim);
+            wind.vector_value(support_points[local_dof_indices[j]],
+                              imposed_pot_grad);
+
+            double tmp_dphi_dn = 0;
+            for (unsigned int d = 0; d < dim; ++d)
+              {
+                types::global_dof_index dummy =
+                  bem.sub_wise_to_original[local_dof_indices[j]];
+                types::global_dof_index vec_index =
+                  bem.vec_original_to_sub_wise
+                    [bem.gradient_dh.n_dofs() / dim * d +
+                      dummy];
+                Assert(
+                  bem.vector_this_cpu_set.is_element(vec_index),
+                  ExcMessage(
+                    "vector cpu set and cpu set are inconsistent"));
+
+                tmp_dphi_dn += imposed_pot_grad[d] *
+                                bem.vector_normals_solution[vec_index];
+              }
+          
+            dphi_dn(local_dof_indices[j]) = tmp_dphi_dn;
+          }
+    }
+}
+
+
+template <int dim>
+void
+BoundaryConditions<dim>::assign_potential()
+{
+   const types::global_dof_index n_dofs = bem.dh.n_dofs();
+
+  phi.reinit(this_cpu_set, mpi_communicator);
+
+   std::vector<Point<dim>> support_points(n_dofs);
+   DoFTools::map_dofs_to_support_points<dim - 1, dim>(*bem.mapping,
+                                                      bem.dh,
+                                                      support_points);
+
+  std::vector<Point<dim>> vec_support_points(bem.gradient_dh.n_dofs());
+  DoFTools::map_dofs_to_support_points<dim - 1, dim>(*bem.mapping,
+                                                      bem.gradient_dh,
+                                                      vec_support_points);
+
+  cell_it cell = bem.dh.begin_active(), endc = bem.dh.end();
+
+   const unsigned int                   dofs_per_cell = bem.fe->dofs_per_cell;
+   std::vector<types::global_dof_index> local_dof_indices(dofs_per_cell);
+  // FEValues<dim - 1, dim>               fe_v(*bem.mapping,
+  //                             *bem.fe,
+  //                             *bem.quadrature,
+  //                             update_values | update_normal_vectors |
+  //                               update_quadrature_points | update_JxW_values);
+
+
+  for (cell = bem.dh.begin_active(); cell != endc; ++cell)
+    {
+  //    fe_v.reinit(cell);
+      cell->get_dof_indices(local_dof_indices);
+      for (unsigned int j = 0; j < bem.fe->dofs_per_cell; ++j)
+      {
+        if (this_cpu_set.is_element(local_dof_indices[j]))
+          {
+                phi(local_dof_indices[j]) =
+                  potential.value(support_points[local_dof_indices[j]]);
+          }
+      }
+    }
 }
 
 

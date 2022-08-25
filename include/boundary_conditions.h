@@ -102,6 +102,10 @@ public:
   void
   prepare_bem_vectors();
 
+  void assign_potential();
+  void assign_potential_normal_derivative();
+  void initialize();
+
   void
   solve_problem();
 

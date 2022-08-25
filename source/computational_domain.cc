@@ -4,7 +4,7 @@
 
 #include <deal.II/grid/grid_reordering.h>
 #include <deal.II/grid/grid_tools.h>
-
+#include <boost/algorithm/string.hpp>
 
 // @sect4{ComputationalDomain::ComputationalDomain and
 // ComputationalDomain::read_parameters}
@@ -255,11 +255,15 @@ ComputationalDomain<dim>::read_domain()
   else
     Assert(false, ExcNotImplemented());
 
-  // GridTools::copy_material_to_manifold_id(tria);
+  std::cout << input_grid_name << std::endl;
+  std::vector<std::string> input_grid_name_split;
+  boost::split(input_grid_name_split, input_grid_name, boost::is_any_of("/"));
+    for (int i = 0; i < input_grid_name_split.size(); i++)
+      cout << input_grid_name_split[i] << endl;
 
-  if (input_grid_name == "../grids/coarse_sphere" ||
-      input_grid_name == "../grids/coarse_sphere_double_nodes" ||
-      input_grid_name == "../grids/circle")
+  if (input_grid_name_split.back() == "coarse_sphere" ||
+      input_grid_name_split.back() == "coarse_sphere_double_nodes" ||
+      input_grid_name_split.back() == "circle")
     {
       manifold = new SphericalManifold<dim - 1, dim>;
       tria.set_all_manifold_ids(0);
