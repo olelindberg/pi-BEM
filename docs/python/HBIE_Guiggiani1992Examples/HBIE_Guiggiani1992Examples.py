@@ -41,7 +41,11 @@ class MeshGen41():
         for i in range(4):
             A[i,:] = PolynomialBasis2d(xipoints[0,i],xipoints[1,i])
         coeffs= np.linalg.solve(A,np.transpose(ypoints))
-        return np.transpose(coeffs)@PolynomialBasis2d(xi1,xi2)
+        eval = np.transpose(coeffs)@PolynomialBasis2d(xi1,xi2)
+
+        pos = np.array([eval[0],eval[1],0])
+
+        return pos
 
 N = 3
 n = 8
@@ -50,14 +54,17 @@ example = 41
 if example==41:
     mesh = MeshGen41()
     eta  = np.array([0,0])
+
 #if example==42:
+
+y = mesh.position(eta[0],eta[1])
 
 xi1d      = np.linspace(-1,1,N)
 xi1,xi2 = np.meshgrid(xi1d,xi1d)
 xi = np.array([xi1.flatten(),xi2.flatten()])
 x = np.zeros((3,9))
 for i in range(9):
-    x[:2,i] = mesh.position(xi1.flatten()[i],xi2.flatten()[i])
+    x[:,i] = mesh.position(xi1.flatten()[i],xi2.flatten()[i])
 
 edgeloop = [0,1,2,5,8,7,6,3]
 
@@ -103,7 +110,9 @@ gaussx,gaussw = np.polynomial.legendre.leggauss(n)
 
 xx = []
 yy = []
-I = 0
+I0 = 0
+Im1 = 0
+Im2 = 0
 for i in range(len(edgeloop)):
 
     i1 = edgeloop[i]
@@ -129,11 +138,12 @@ for i in range(len(edgeloop)):
 
 
         Ai = x_xi1_eta*np.cos(theta) + x_xi2_eta*np.sin(theta)
-        Bi = 1/2*x_xi1xi1_eta*np.cos(theta)**2 + x_xi2xi1_eta*np.cos(theta)*np.sin(theta) + x_xi2xi2_eta*np.sin(theta)**2
+        Bi = 1/2*x_xi1xi1_eta*np.cos(theta)**2 + x_xi2xi1_eta*np.cos(theta)*np.sin(theta) + 1/2*x_xi2xi2_eta*np.sin(theta)**2
         Ai = Ai.flatten()
         Bi = Bi.flatten()
         A = np.linalg.norm(Ai)
         B = np.linalg.norm(Bi)
+        C = np.inner(Ai,Bi)
 
         Ji0 = jac_eta
         Ji1 = jac_xi1_eta*np.cos(theta) + jac_xi2_eta*np.sin(theta)        
@@ -142,7 +152,7 @@ for i in range(len(edgeloop)):
         Na1 = Na_xi1_eta*np.cos(theta) + Na_xi2_eta*np.sin(theta)
 
         beta = 1/A
-        gamma = -Ai@Bi/A**4
+        gamma = -np.inner(Ai,Bi)/A**4
 
         gi1 = Ai/A**2*(Bi@Ji0 + Ai@Ji1)
 
@@ -157,34 +167,58 @@ for i in range(len(edgeloop)):
 
         Fm2 = -1/(4*np.pi)*Sm3*ai0
         Fm1 = -1/(4*np.pi)*(Sm2*ai0+Sm3*ai1)
+        Fm2 = 1/(4*np.pi)*Ji0/A**3
+        #Fm1 = -1/(4*np.pi)*((- 3*np.inner(Ai,Bi)/A**5)*np.outer(bi0,Na0)+1/A**3*ai1)
+        Fm1 = 1/(4*np.pi)*(-3*C*Ji0/A**5 - 3*Ai/A**5*(np.inner(Ji0,Bi) + np.inner(Ji1,Ai)) + Ji1 / A**3)
 
         dtheta = 2*np.pi/2*theta_gw
-        Im2 = - Fm2*(gamma/beta**2+1/rho_hat)*dtheta
-        Im1 = Fm1*np.log(rho_hat/beta)*dtheta
+        Im2 += - Fm2*(gamma/beta**2+1/rho_hat)*dtheta
+        Im1 += Fm1*np.log(rho_hat/beta)*dtheta
+
 
         for rho_gx,rho_gw in zip(gaussx,gaussw):
 
             s   = 0.5*(rho_gx+1)
             rho = s*rho_hat
 
+            xi1 = eta[0] + rho*np.cos(theta)
+            xi2 = eta[1] + rho*np.sin(theta)
+            xxx = mesh.position(xi1,xi2)
+
+            rvec = xxx-y
+            r = np.linalg.norm(rvec)
+            ri = rvec/r
+            ni = jac_eta/np.linalg.norm(jac_eta)
+            Na = Lagrange2DInterpMatrix(xi1d,xi1d,xi1,xi2).flatten()
+            J  = np.linalg.norm(Na@jac)
+#            F = - 1/(4*np.pi*r**3)*np.outer((3*ri*np.inner(ri,ni) - ni),Na)*J*rho
+            F = - 1/(4*np.pi*r**3)*(3*ri*np.inner(ri,ni) - ni)*J*rho
+
             tmp = ai0 + rho*ai1
             r3_inv = Sm3/rho**3 + Sm2/rho**2 
-
-            F = - 1/(4*np.pi)*r3_inv*tmp*rho
+            Ftmp = - 1/(4*np.pi)*r3_inv*tmp*rho
 
             drho = rho_hat/2*rho_gw
-            I0 = (F - (Fm2/rho**2 + Fm1/rho))*drho
-
-            I += I0+Im1+Im2
-
-            xx.append(eta[0]+rho*np.cos(theta))
-            yy.append(eta[1]+rho*np.sin(theta))
+            I0 += (F - (Fm2/rho**2 + Fm1/rho))*drho*dtheta
 
 
+            xx.append(xi1)
+            yy.append(xi2)
 
+
+I = I0+Im1+Im2
+
+print("I0")
+print(I0)
+print("Im1")
+print(Im1)
+print("Im2")
+print(Im2)
+print("I")
 print(I)
 
-
+Iexact = -5.749237/(4*np.pi)
+print(Iexact)
 #beta = 1/A
 #gamma = -(A1*B1 + A2*B2 + A3*B3)/A**4
 

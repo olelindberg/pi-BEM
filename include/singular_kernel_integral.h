@@ -71,11 +71,16 @@ public:
   Tensor<1, dim>
   evaluate_free_term_b(const typename DoFHandler<dim - 1, dim>::active_cell_iterator &cell, const Point<dim - 1> &eta);
 
+  Tensor<1, dim>
+  evaluate_Vk_integrals(const typename DoFHandler<dim - 1, dim>::active_cell_iterator &cell, const Point<dim - 1> &eta);
+
   std::vector<Tensor<1, dim>>
   evaluate_VkNj_integrals(const typename DoFHandler<dim - 1, dim>::active_cell_iterator &cell, const Point<dim - 1> &eta);
 
   std::vector<Tensor<1, dim>>
   evaluate_WkNj_integrals(const typename DoFHandler<dim - 1, dim>::active_cell_iterator &cell, const Point<dim - 1> &eta);
+
+  bool printstuff = false;
 
 private:
   double                       rho_quadrature_order;

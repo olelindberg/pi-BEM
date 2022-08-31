@@ -2374,7 +2374,12 @@ BEMProblem<dim>::compute_gradients_hypersingular(const TrilinosWrappers::MPI::Ve
                   Assert((*fe).has_support_points(), ExcMessage("The FE selected has no support points. This is not supported."));
                   Point<dim - 1> P = (*fe).unit_support_point(singular_index);
 
-                  std::cout << "i " << i << std::endl;
+                  singular_kernel_integrator.printstuff = false;
+                  if (i == 0)
+                    {
+                      std::cout << "i    " << i << std::endl;
+                      singular_kernel_integrator.printstuff = true;
+                    }
                   std::vector<Tensor<1, dim>> Vk_integrals = singular_kernel_integrator.evaluate_VkNj_integrals(cell, P);
                   std::vector<Tensor<1, dim>> Wk_integrals = singular_kernel_integrator.evaluate_WkNj_integrals(cell, P);
                   Tensor<1, dim>              singular_cell_contribution_hyp;

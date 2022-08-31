@@ -1,0 +1,6 @@
+
+ADD_EXECUTABLE(test_hypersingular test_hypersingular.cc)
+DEAL_II_SETUP_TARGET(test_hypersingular RELEASE)
+TARGET_LINK_LIBRARIES(test_hypersingular bem_fma-lib)
+target_compile_definitions(test_hypersingular PUBLIC DEAL_II_DIMENSION=3)
+
