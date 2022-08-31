@@ -35,8 +35,8 @@ class MeshGen41():
         return
 
     def position(self,xi1,xi2):
-        ypoints  = np.transpose(np.array([[-1,-1],[0,0],[0.66,0],[0.479226,0.66]]))
-        xipoints = np.transpose(np.array([[-1,-1],[0,0],[0.66,0],[0.66,0.66]]))
+        ypoints  = np.transpose(np.array([[-1,-1],[1.5,-1],[-1,1],[0.5,1]]))
+        xipoints = np.transpose(np.array([[-1,-1],[1,-1],[-1,1],[1,1]]))
         A = np.zeros((4,4))
         for i in range(4):
             A[i,:] = PolynomialBasis2d(xipoints[0,i],xipoints[1,i])
@@ -44,18 +44,33 @@ class MeshGen41():
         eval = np.transpose(coeffs)@PolynomialBasis2d(xi1,xi2)
 
         pos = np.array([eval[0],eval[1],0])
-
         return pos
 
-N = 3
-n = 8
+class MeshGen42():
+    def __init__(self):
+        return
 
-example = 41
+    def position(self,xi1,xi2):
+
+        angle = np.pi/2*(xi2+1)/2
+        x1 = np.cos(angle) 
+        x2 = xi1 + 1
+        x3 = np.sin(angle) 
+
+        pos = np.array([x1,x2,x3])
+        return pos
+
+
+N = 3
+n = 16
+
+example = 42
 if example==41:
     mesh = MeshGen41()
     eta  = np.array([0,0])
-
-#if example==42:
+if example==42:
+    mesh = MeshGen42()
+    eta  = np.array([0,0])
 
 y = mesh.position(eta[0],eta[1])
 
@@ -66,7 +81,8 @@ x = np.zeros((3,9))
 for i in range(9):
     x[:,i] = mesh.position(xi1.flatten()[i],xi2.flatten()[i])
 
-edgeloop = [0,1,2,5,8,7,6,3]
+#edgeloop = [0,1,2,5,8,7,6,3]
+edgeloop = [0,2,8,6]
 
 #------------------------------------------------------------------------------
 # Derivative matrices:
@@ -171,7 +187,7 @@ for i in range(len(edgeloop)):
         #Fm1 = -1/(4*np.pi)*((- 3*np.inner(Ai,Bi)/A**5)*np.outer(bi0,Na0)+1/A**3*ai1)
         Fm1 = 1/(4*np.pi)*(-3*C*Ji0/A**5 - 3*Ai/A**5*(np.inner(Ji0,Bi) + np.inner(Ji1,Ai)) + Ji1 / A**3)
 
-        dtheta = 2*np.pi/2*theta_gw
+        dtheta = (theta2-theta1)/2*theta_gw
         Im2 += - Fm2*(gamma/beta**2+1/rho_hat)*dtheta
         Im1 += Fm1*np.log(rho_hat/beta)*dtheta
 
@@ -208,17 +224,27 @@ for i in range(len(edgeloop)):
 
 I = I0+Im1+Im2
 
-print("I0")
-print(I0)
-print("Im1")
-print(Im1)
-print("Im2")
-print(Im2)
-print("I")
-print(I)
+if example==41:
+    Iexact = -5.749237
+    print("I0      ", I0[2]*4*np.pi)
+    print("Im1     ", Im1[2]*4*np.pi)
+    print("Im2     ", Im2[2]*4*np.pi)
+    print("I       ", I[2]*4*np.pi)
+    print("Iex     ", Iexact)
+    print("err abs ", np.abs(Iexact- I[2]*4*np.pi))
+    print("err rel ", np.abs(Iexact- I[2]*4*np.pi)/np.abs(Iexact))
 
-Iexact = -5.749237/(4*np.pi)
-print(Iexact)
+if example==42:
+    Iexact = -5.749237
+    print("I0      ", I0[2])
+    print("Im1     ", Im1[2])
+    print("Im2     ", Im2[2])
+    print("I       ", I[2])
+    print("Iex     ", Iexact)
+    print("err abs ", np.abs(Iexact- I[2]))
+    print("err rel ", np.abs(Iexact- I[2])/np.abs(Iexact))
+
+
 #beta = 1/A
 #gamma = -(A1*B1 + A2*B2 + A3*B3)/A**4
 

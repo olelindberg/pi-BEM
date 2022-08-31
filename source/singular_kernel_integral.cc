@@ -267,6 +267,10 @@ SingularKernelIntegral<3>::evaluate_Vk_integrals(const typename DoFHandler<2, 3>
               double a = (f < 2) ? 0.0 : 1.0;
               double b = (f < 2) ? 1.0 : 0.0;
               q_rho[q] = coeff / (a * sin(theta_q_points[q](0)) + b * (cos(theta_q_points[q](0))));
+
+              std::cout << "theta " << theta_q_points[q](0) << std::endl;
+              std::cout << "rho   " << q_rho[q] << std::endl;
+
             }
           // we now create a set of quadrature points and weights to be passed to a
           // FEValues<2,3> to take care of the mapping to the 3D space
@@ -315,6 +319,11 @@ SingularKernelIntegral<3>::evaluate_Vk_integrals(const typename DoFHandler<2, 3>
               double       beta  = 1 / q_A[q];
               double       gamma = -q_C[q] / pow(q_A[q], 4);
               Tensor<1, 3> F_2   = Jk0[q] / pow(q_A[q], 3);
+
+              std::cout << "Jk0[q] " << Jk0[q] << std::endl;
+              std::cout << "q_A[q] " << q_A[q] << std::endl;
+              std::cout << "Fm2    " << F_2 << std::endl;
+              std::cout << "Fm2/rho**2    " << F_2/(q_rho[q]*q_rho[q]) << std::endl;
               Tensor<1, 3> F_1   = -3 * q_C[q] * Jk0[q] / pow(q_A[q], 5) - 3 * A[q] / pow(q_A[q], 5) * (Jk0[q] * B[q] + Jk1[q] * A[q]) + Jk1[q] / pow(q_A[q], 3);
               // std::cout<<"f: "<<f<<"  q: "<<q<<" theta: "<<theta_q_points[q](0)*180/dealii::numbers::PI<<"  F_1: "<<F_1<<"  F_2: "<<F_2<<"  rho: "<<q_rho[q]<<"  beta: "<<beta<<"  gamma: "<<gamma<<"  w: "<<uv_q_weights[q]<<"  Jk0: "<<Jk0[q]<<"  Jk1: "<<Jk1[q]<<"  A: "<<A[q]<<"  B: "<<B[q]<<std::endl;
               // and the integral contribution of the present quadrature node is here added
@@ -392,7 +401,9 @@ SingularKernelIntegral<3>::evaluate_Vk_integrals(const typename DoFHandler<2, 3>
         }
     }
 
-
+  std::cout << "I_0 " << I_0 / numbers::PI / 4.0 << std::endl;
+  std::cout << "I_1 " << I_1 / numbers::PI / 4.0 << std::endl;
+  std::cout << "I_2 " << I_2 / numbers::PI / 4.0 << std::endl;
 
   return (I_0 + I_1 + I_2) / numbers::PI / 4.0;
 };
