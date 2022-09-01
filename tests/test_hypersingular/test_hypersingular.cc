@@ -1757,6 +1757,12 @@ private:
 };
 
 
+enum class EXAMPLE
+{
+  FOUR_ONE_A,
+  FOUR_ONE_B,
+  FOUR_ONE_C,
+};
 
 // @sect3{Creating the first mesh}
 
@@ -1765,11 +1771,30 @@ private:
 void
 compute_integrals_one_cell()
 {
+  auto example = EXAMPLE::FOUR_ONE_C;
   // "user" parameters are set in the next few lines
   double fe_degree = 2;
   // Point<2> singularity_location_in_parametric_plane(0.885764071856287,0.66*.5+.5);
   // Point<2> singularity_location_in_parametric_plane(1,0);
-  Point<2> singularity_location_in_parametric_plane(0.5, 0.5);
+  Point<2> singularity_location_in_parametric_plane(0, 0);
+  double   Iexact = 0.0;
+  switch (example)
+    {
+      case EXAMPLE::FOUR_ONE_A:
+        singularity_location_in_parametric_plane = Point<2>(0.5, 0.5);
+        Iexact                                   = -5.749236751228080;
+        break;
+      case EXAMPLE::FOUR_ONE_B:
+        singularity_location_in_parametric_plane = Point<2>((0.66 + 1.0) / 2.0, 0.5);
+        Iexact                                   = -9.154585;
+        break;
+      case EXAMPLE::FOUR_ONE_C:
+        singularity_location_in_parametric_plane = Point<2>(0.885764071856287, 0.66 * .5 + .5);
+        Iexact                                   = -15.3285;
+        break;
+      default:
+        break;
+    }
   // let's start creating the geometry
   Triangulation<2, 3> triangulation;
 
@@ -1777,22 +1802,22 @@ compute_integrals_one_cell()
   std::vector<CellData<2>> cells;
   SubCellData              subcelldata;
 
-    vertices.resize(4);
-    vertices[0](0)=-1.0;
-    vertices[0](1)=-1.0;
-    vertices[0](2)=0.0;
+  vertices.resize(4);
+  vertices[0](0) = -1.0;
+  vertices[0](1) = -1.0;
+  vertices[0](2) = 0.0;
 
-    vertices[1](0)=1.5;
-    vertices[1](1)=-1.0;
-    vertices[1](2)=0.0;
-    
-    vertices[2](0)=-1.0;
-    vertices[2](1)= 1.0;
-    vertices[2](2)= 0.0;
-    
-    vertices[3](0)=0.5;
-    vertices[3](1)=1.0;
-    vertices[3](2)=0.0;
+  vertices[1](0) = 1.5;
+  vertices[1](1) = -1.0;
+  vertices[1](2) = 0.0;
+
+  vertices[2](0) = -1.0;
+  vertices[2](1) = 1.0;
+  vertices[2](2) = 0.0;
+
+  vertices[3](0) = 0.5;
+  vertices[3](1) = 1.0;
+  vertices[3](2) = 0.0;
 
 
   //  vertices.resize(4);
@@ -1885,12 +1910,13 @@ compute_integrals_one_cell()
       // let's define Point<2> P as the location of the singularity
       // in the parametric plane
       Point<2>                  P = singularity_location_in_parametric_plane;
-      SingularKernelIntegral<3> sing_kernel_integrator(1,1,fe, mapping);
+      SingularKernelIntegral<3> sing_kernel_integrator(16, 16, fe, mapping);
       Tensor<1, 3>              I = sing_kernel_integrator.evaluate_Vk_integrals(cell, P);
 
-      std::cout << "Result : " << I*4 * dealii::numbers::PI << std::endl;
-            std::cout<<"Abs Err: "<<-5.749236751228080-I[2]*4 * dealii::numbers::PI<<std::endl;
-            std::cout<<"Rel Err: "<<fabs(-5.749236751228080-I[2]*4 * dealii::numbers::PI)/fabs(-5.749236751228080)<<std::endl;
+      std::cout << "Iexact : " << Iexact << std::endl;
+      std::cout << "Result : " << I[2] * 4 * dealii::numbers::PI << std::endl;
+      std::cout << "Abs Err: " << Iexact - I[2] * 4 * dealii::numbers::PI << std::endl;
+      std::cout << "Rel Err: " << fabs(Iexact - I[2] * 4 * dealii::numbers::PI) / fabs(Iexact) << std::endl;
       //      std::cout<<"Abs Err: "<<-9.154585469918885-I[2]<<std::endl;
       //      std::cout<<"Rel Err: "<<fabs(-9.154585469918885-I[2])/fabs(-9.154585469918885)<<std::endl;
 
@@ -1900,8 +1926,8 @@ compute_integrals_one_cell()
       //      std::cout<<"Abs Err: "<<-8.939872997672122-I[2]<<std::endl;
       //      std::cout<<"Rel Err: "<<fabs(-8.939872997672122-I[2])/fabs(-8.939872997672122)<<std::endl;
 
-//      std::cout << "Abs Err: " << -0.343807 * 4 * dealii::numbers::PI - I[2] << std::endl;
-//      std::cout << "Rel Err: " << fabs(-0.343807 * dealii::numbers::PI - I[2]) / fabs(-0.343807 * 4 * dealii::numbers::PI) << std::endl;
+      //      std::cout << "Abs Err: " << -0.343807 * 4 * dealii::numbers::PI - I[2] << std::endl;
+      //      std::cout << "Rel Err: " << fabs(-0.343807 * dealii::numbers::PI - I[2]) / fabs(-0.343807 * 4 * dealii::numbers::PI) << std::endl;
 
 
 
@@ -2033,7 +2059,7 @@ compute_integrals_four_cells_hyper()
           }
 
       Point<2>                  P = singularity_location_in_parametric_plane;
-      SingularKernelIntegral<3> sing_kernel_integrator(4,4,fe, mapping);
+      SingularKernelIntegral<3> sing_kernel_integrator(4, 4, fe, mapping);
       Tensor<1, 3>              I = sing_kernel_integrator.evaluate_Vk_integrals(cell, P);
       integral += I;
 
@@ -2047,7 +2073,7 @@ compute_integrals_four_cells_hyper()
       //      std::cout<<"Rel Err: "<<fabs(-8.939872997672122-I[2])/fabs(-8.939872997672122)<<std::endl;
 
       std::cout << "Test of integral including Shape Function: " << std::endl;
-      std::vector<Tensor<1, 3>> II = sing_kernel_integrator.evaluate_VkNj_integrals(cell,P);
+      std::vector<Tensor<1, 3>> II = sing_kernel_integrator.evaluate_VkNj_integrals(cell, P);
       for (unsigned int i = 0; i < fe.dofs_per_cell; ++i)
         std::cout << "Shape Function " << i << ": " << II[i] << std::endl;
     }
@@ -2176,7 +2202,7 @@ compute_integrals_four_cells_strong()
             singularity_location_in_parametric_plane = fe.unit_support_point(i);
           }
 
-      SingularKernelIntegral<3> sing_kernel_integrator(4,4,fe, mapping);
+      SingularKernelIntegral<3> sing_kernel_integrator(4, 4, fe, mapping);
       std::vector<Tensor<1, 3>> I = sing_kernel_integrator.evaluate_WkNj_integrals(cell, singularity_location_in_parametric_plane);
       integral += I[0];
 

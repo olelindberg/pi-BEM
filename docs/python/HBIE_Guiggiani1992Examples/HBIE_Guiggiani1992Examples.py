@@ -7,8 +7,6 @@ from LagrangePolynomial import *
 def angle_between_two_vectors(a, b):
     return np.arccos(a@b / (np.linalg.norm(a) * np.linalg.norm(b)))
 
-
-
 #
 # Equation of external contour in polar coordinates
 #     rho = rho(theta).
@@ -43,7 +41,7 @@ class MeshGen41():
         coeffs= np.linalg.solve(A,np.transpose(ypoints))
         eval = np.transpose(coeffs)@PolynomialBasis2d(xi1,xi2)
 
-        pos = np.array([eval[0],eval[1],0])
+        pos = np.array([eval[0],0,eval[1]])
         return pos
 
 class MeshGen42():
@@ -53,33 +51,87 @@ class MeshGen42():
     def position(self,xi1,xi2):
 
         angle = np.pi/2*(xi2+1)/2
-        x1 = np.cos(angle) 
-        x2 = xi1 + 1
-        x3 = np.sin(angle) 
-
-        pos = np.array([x1,x2,x3])
+        x = np.cos(angle) 
+        y = xi1 + 1
+        z = np.sin(angle) 
+        pos = np.array([x,y,z])
         return pos
 
+    def derivatives(self,xi1,xi2):
+        x_xi1    =  np.array([0,1,0])
+        x_xi2    =  np.array([-np.pi*np.sin(np.pi*(xi2/4 + 1/4))/4,0,np.pi*np.cos(np.pi*(xi2/4 + 1/4))/4])
+        x_xi1xi1 =  np.array([0,0,0])
+        x_xi1xi2 =  np.array([0,0,0])
+        x_xi2xi2 =  np.array([-np.pi**2*np.cos(np.pi*(xi2/4 + 1/4))/16,0,-np.pi**2*np.sin(np.pi*(xi2/4 + 1/4))/16])
+        return x_xi1,x_xi2,x_xi1xi1,x_xi1xi2,x_xi2xi2
+
+    def jacobian(self,xi1,xi2):
+        jac     =  np.array([np.pi*np.cos(np.pi*(xi2/4 + 1/4))/4, 0, np.pi*np.sin(np.pi*(xi2/4 + 1/4))/4])
+        return jac
+
+    def jacobian_derivatives(self,xi1,xi2):
+        jac_xi1 =  np.array([0, 0, 0])
+        jac_xi2 =  np.array([-np.pi**2*np.sin(np.pi*(xi2/4 + 1/4))/16, 0, np.pi**2*np.cos(np.pi*(xi2/4 + 1/4))/16])
+        return jac_xi1,jac_xi2
 
 N = 3
-n = 16
-
-example = 42
-if example==41:
+n = 8
+dim = 1
+example = ["4.2","a"]
+if example[0]=="4.1":
     mesh = MeshGen41()
-    eta  = np.array([0,0])
-if example==42:
-    mesh = MeshGen42()
-    eta  = np.array([0,0])
+    if example[1] =="a":
+        eta     = np.array([0,0])
+        Iexact  = -5.749237
+    if example[1] =="b":
+        eta     = np.array([0.66,0])
+        Iexact  = -9.154585
+    if example[1] =="c":
+        eta     = np.array([2.0*0.885764071856287-1.0, 0.66])
+        Iexact  = -15.3285
+if example[0]=="4.2":
+    mesh    = MeshGen42()
+    if example[1] =="a":
+        eta     = np.array([0,0])
+        Iexact  = -0.343807
+    if example[1] =="b":
+        eta     = np.array([0.66,0])
+        Iexact  = -0.497099
+    if example[1] =="c":
+        eta     = np.array([0.66,0.66])
+        Iexact  = -0.877214
 
 y = mesh.position(eta[0],eta[1])
+print("y ", y)
 
 xi1d      = np.linspace(-1,1,N)
 xi1,xi2 = np.meshgrid(xi1d,xi1d)
 xi = np.array([xi1.flatten(),xi2.flatten()])
 x = np.zeros((3,9))
+
+x_xi1     = np.zeros((9,3)) 
+x_xi2     = np.zeros((9,3))
+x_xi1xi1  = np.zeros((9,3))
+x_xi2xi1  = np.zeros((9,3))
+x_xi2xi2  = np.zeros((9,3))
+
+jac       = np.zeros((9,3)) 
+jac_xi1   = np.zeros((9,3)) 
+jac_xi2   = np.zeros((9,3))
+
 for i in range(9):
     x[:,i] = mesh.position(xi1.flatten()[i],xi2.flatten()[i])
+    derivative = mesh.derivatives(xi1.flatten()[i],xi2.flatten()[i])
+    x_xi1[i,:]    = derivative[0]
+    x_xi2[i,:]    = derivative[1]
+    x_xi1xi1[i,:] = derivative[2]
+    x_xi2xi1[i,:] = derivative[3]
+    x_xi2xi2[i,:] = derivative[4]
+
+    jac[i,:]    = mesh.jacobian(xi1.flatten()[i],xi2.flatten()[i])
+    jacobian_derivatives = mesh.jacobian_derivatives(xi1.flatten()[i],xi2.flatten()[i])
+    jac_xi1[i,:]    = jacobian_derivatives[0]
+    jac_xi2[i,:]    = jacobian_derivatives[1]
 
 #edgeloop = [0,1,2,5,8,7,6,3]
 edgeloop = [0,2,8,6]
@@ -88,35 +140,48 @@ edgeloop = [0,2,8,6]
 # Derivative matrices:
 #------------------------------------------------------------------------------
 
-# First derivatives:
+# # First derivatives:
 D1,D2 = Lagrange2DDerivativeMatrices(xi1d,1)
 
-# Second derivatives:
-D11 = D1@D1
-D12 = D1@D2
-D22 = D2@D2
+# # Second derivatives:
+# D11 = D1@D1
+# D12 = D1@D2
+# D22 = D2@D2
 
-x_xi1    = D1@np.transpose(x) 
-x_xi2    = D2@np.transpose(x) 
-x_xi1xi1 = D11@np.transpose(x) 
-x_xi2xi1 = D12@np.transpose(x) 
-x_xi2xi2 = D22@np.transpose(x)
-jac = 0*x_xi1
-for i in range(x_xi1.shape[0]): 
-    jac[i,:] = np.cross(x_xi1[i,:],x_xi2[i,:])
-jac_xi1  = D1@jac
-jac_xi2  = D2@jac
+# x_xi1    = D1@np.transpose(x) 
+# x_xi2    = D2@np.transpose(x) 
+# x_xi1xi1 = D11@np.transpose(x) 
+# x_xi2xi1 = D12@np.transpose(x) 
+# x_xi2xi2 = D22@np.transpose(x)
+# jac = 0*x_xi1
+# for i in range(x_xi1.shape[0]): 
+#     jac[i,:] = np.cross(x_xi1[i,:],x_xi2[i,:])
+# jac_xi1  = D1@jac
+# jac_xi2  = D2@jac
 
 interpToEta = Lagrange2DInterpMatrix(xi1d,xi1d,eta[0],eta[1]).flatten()
 
-x_xi1_eta    = interpToEta@x_xi1   
-x_xi2_eta    = interpToEta@x_xi2   
-x_xi1xi1_eta = interpToEta@x_xi1xi1
-x_xi2xi1_eta = interpToEta@x_xi2xi1
-x_xi2xi2_eta = interpToEta@x_xi2xi2
-jac_eta      = interpToEta@jac
-jac_xi1_eta  = interpToEta@jac_xi1
-jac_xi2_eta  = interpToEta@jac_xi2
+derivative = mesh.derivatives(eta[0],eta[1])
+x_xi1_eta    = derivative[0]
+x_xi2_eta    = derivative[1]
+x_xi1xi1_eta = derivative[2]
+x_xi2xi1_eta = derivative[3]
+x_xi2xi2_eta = derivative[4]
+
+
+# x_xi1_eta    = interpToEta@x_xi1   
+# x_xi2_eta    = interpToEta@x_xi2   
+# x_xi1xi1_eta = interpToEta@x_xi1xi1
+# x_xi2xi1_eta = interpToEta@x_xi2xi1
+# x_xi2xi2_eta = interpToEta@x_xi2xi2
+# jac_eta      = interpToEta@jac
+# jac_xi1_eta  = interpToEta@jac_xi1
+# jac_xi2_eta  = interpToEta@jac_xi2
+
+jac_eta     = mesh.jacobian(eta[0],eta[1])
+derivative  = mesh.jacobian_derivatives(eta[0],eta[1])
+jac_xi1_eta = derivative[0]
+jac_xi2_eta = derivative[1] 
 
 Na_eta      = interpToEta
 Na_xi1_eta  = interpToEta@D1
@@ -152,7 +217,6 @@ for i in range(len(edgeloop)):
 
         rho_hat = equation_of_external_contour_polar_coords(theta1,theta,eta,v1,v2)
 
-
         Ai = x_xi1_eta*np.cos(theta) + x_xi2_eta*np.sin(theta)
         Bi = 1/2*x_xi1xi1_eta*np.cos(theta)**2 + x_xi2xi1_eta*np.cos(theta)*np.sin(theta) + 1/2*x_xi2xi2_eta*np.sin(theta)**2
         Ai = Ai.flatten()
@@ -183,14 +247,13 @@ for i in range(len(edgeloop)):
 
         Fm2 = -1/(4*np.pi)*Sm3*ai0
         Fm1 = -1/(4*np.pi)*(Sm2*ai0+Sm3*ai1)
-        Fm2 = 1/(4*np.pi)*Ji0/A**3
-        #Fm1 = -1/(4*np.pi)*((- 3*np.inner(Ai,Bi)/A**5)*np.outer(bi0,Na0)+1/A**3*ai1)
-        Fm1 = 1/(4*np.pi)*(-3*C*Ji0/A**5 - 3*Ai/A**5*(np.inner(Ji0,Bi) + np.inner(Ji1,Ai)) + Ji1 / A**3)
+        
+        #Fm2 = 1/(4*np.pi)*Ji0/A**3
+        #Fm1 = 1/(4*np.pi)*(-3*C*Ji0/A**5 - 3*Ai/A**5*(np.inner(Ji0,Bi) + np.inner(Ji1,Ai)) + Ji1 / A**3)
 
         dtheta = (theta2-theta1)/2*theta_gw
         Im2 += - Fm2*(gamma/beta**2+1/rho_hat)*dtheta
         Im1 += Fm1*np.log(rho_hat/beta)*dtheta
-
 
         for rho_gx,rho_gw in zip(gaussx,gaussw):
 
@@ -204,77 +267,47 @@ for i in range(len(edgeloop)):
             rvec = xxx-y
             r = np.linalg.norm(rvec)
             ri = rvec/r
-            ni = jac_eta/np.linalg.norm(jac_eta)
             Na = Lagrange2DInterpMatrix(xi1d,xi1d,xi1,xi2).flatten()
-            J  = np.linalg.norm(Na@jac)
-#            F = - 1/(4*np.pi*r**3)*np.outer((3*ri*np.inner(ri,ni) - ni),Na)*J*rho
-            F = - 1/(4*np.pi*r**3)*(3*ri*np.inner(ri,ni) - ni)*J*rho
-
-            tmp = ai0 + rho*ai1
-            r3_inv = Sm3/rho**3 + Sm2/rho**2 
-            Ftmp = - 1/(4*np.pi)*r3_inv*tmp*rho
+            Ji = mesh.jacobian(xi1,xi2)
+            #Ji = Na@jac
+            J  = np.linalg.norm(Ji)
+            ni = Ji/J
+            F = - 1/(4*np.pi*r**3)*np.outer((3*ri*np.inner(ri,ni) - ni),Na)*J*rho
 
             drho = rho_hat/2*rho_gw
             I0 += (F - (Fm2/rho**2 + Fm1/rho))*drho*dtheta
 
-
             xx.append(xi1)
             yy.append(xi2)
 
+I = np.sum(I0+Im1+Im2,axis=1)
 
-I = I0+Im1+Im2
+if example[0]=="4.1":
+    print("I0      ", I0[dim]*4*np.pi)
+    print("Im1     ", Im1[dim]*4*np.pi)
+    print("Im2     ", Im2[dim]*4*np.pi)
+    print("I       ", I[dim]*4*np.pi)
+    print("Iexact  ", Iexact)
+    print("err abs ", np.abs(Iexact- I[dim]*4*np.pi))
+    print("err rel ", np.abs(Iexact- I[dim]*4*np.pi)/np.abs(Iexact))
 
-if example==41:
-    Iexact = -5.749237
-    print("I0      ", I0[2]*4*np.pi)
-    print("Im1     ", Im1[2]*4*np.pi)
-    print("Im2     ", Im2[2]*4*np.pi)
-    print("I       ", I[2]*4*np.pi)
-    print("Iex     ", Iexact)
-    print("err abs ", np.abs(Iexact- I[2]*4*np.pi))
-    print("err rel ", np.abs(Iexact- I[2]*4*np.pi)/np.abs(Iexact))
-
-if example==42:
-    Iexact = -5.749237
+if example[0]=="4.2":
     print("I0      ", I0[2])
     print("Im1     ", Im1[2])
     print("Im2     ", Im2[2])
-    print("I       ", I[2])
+    print("I       ", I)
     print("Iex     ", Iexact)
     print("err abs ", np.abs(Iexact- I[2]))
     print("err rel ", np.abs(Iexact- I[2])/np.abs(Iexact))
 
-
-#beta = 1/A
-#gamma = -(A1*B1 + A2*B2 + A3*B3)/A**4
-
-
-# print(xc)
-# Ntot = Nxi1*Nxi2
-# xi2     = np.linspace(-1,1,Nxi2)
-
-#xi = np.array((3,Ntot))
-
-
-# for j in range(0,Nxi2):
-#     for i in range(0,Nxi1):
-#         k = i + Nxi1*j
-#         theta = np.pi/2*(xi1[i]+1)/2
-#         x[k] = np.cos(theta)
-#         y[k] = 2*(xi2[j]+1)/2
-#         z[k] = np.sin(theta)
-
-
-
-
-
-
 ax = plt.axes(projection='3d')
+for i in range(len(xx)):
+    yyy = mesh.position(xx[i],yy[i])
+    ax.plot3D(np.array([yyy[0]]),np.array([yyy[1]]),np.array([yyy[2]]), 'go')
 ax.plot3D(x[0,:], x[1,:],x[2,:], 'bo')
-
-plt.figure()
-plt.plot(xx,yy,'o')
-plt.axis('equal')
-plt.grid(True)
+ax.plot3D(np.array([y[0]]),np.array([y[1]]),np.array([y[2]]), 'ro')
+ax.set_xlabel("x")
+ax.set_ylabel("y")
+ax.set_zlabel("z")
 
 plt.show()
