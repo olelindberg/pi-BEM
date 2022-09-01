@@ -75,7 +75,7 @@ class MeshGen42():
         return jac_xi1,jac_xi2
 
 N = 3
-n = 8
+n = 10
 dim = 1
 example = ["4.2","a"]
 if example[0]=="4.1":
@@ -109,29 +109,29 @@ xi1,xi2 = np.meshgrid(xi1d,xi1d)
 xi = np.array([xi1.flatten(),xi2.flatten()])
 x = np.zeros((3,9))
 
-x_xi1     = np.zeros((9,3)) 
-x_xi2     = np.zeros((9,3))
-x_xi1xi1  = np.zeros((9,3))
-x_xi2xi1  = np.zeros((9,3))
-x_xi2xi2  = np.zeros((9,3))
+# x_xi1     = np.zeros((9,3)) 
+# x_xi2     = np.zeros((9,3))
+# x_xi1xi1  = np.zeros((9,3))
+# x_xi2xi1  = np.zeros((9,3))
+# x_xi2xi2  = np.zeros((9,3))
 
-jac       = np.zeros((9,3)) 
-jac_xi1   = np.zeros((9,3)) 
-jac_xi2   = np.zeros((9,3))
+# jac       = np.zeros((9,3)) 
+# jac_xi1   = np.zeros((9,3)) 
+# jac_xi2   = np.zeros((9,3))
 
 for i in range(9):
     x[:,i] = mesh.position(xi1.flatten()[i],xi2.flatten()[i])
-    derivative = mesh.derivatives(xi1.flatten()[i],xi2.flatten()[i])
-    x_xi1[i,:]    = derivative[0]
-    x_xi2[i,:]    = derivative[1]
-    x_xi1xi1[i,:] = derivative[2]
-    x_xi2xi1[i,:] = derivative[3]
-    x_xi2xi2[i,:] = derivative[4]
+    # derivative = mesh.derivatives(xi1.flatten()[i],xi2.flatten()[i])
+    # x_xi1[i,:]    = derivative[0]
+    # x_xi2[i,:]    = derivative[1]
+    # x_xi1xi1[i,:] = derivative[2]
+    # x_xi2xi1[i,:] = derivative[3]
+    # x_xi2xi2[i,:] = derivative[4]
 
-    jac[i,:]    = mesh.jacobian(xi1.flatten()[i],xi2.flatten()[i])
-    jacobian_derivatives = mesh.jacobian_derivatives(xi1.flatten()[i],xi2.flatten()[i])
-    jac_xi1[i,:]    = jacobian_derivatives[0]
-    jac_xi2[i,:]    = jacobian_derivatives[1]
+    # jac[i,:]    = mesh.jacobian(xi1.flatten()[i],xi2.flatten()[i])
+    # jacobian_derivatives = mesh.jacobian_derivatives(xi1.flatten()[i],xi2.flatten()[i])
+    # jac_xi1[i,:]    = jacobian_derivatives[0]
+    # jac_xi2[i,:]    = jacobian_derivatives[1]
 
 #edgeloop = [0,1,2,5,8,7,6,3]
 edgeloop = [0,2,8,6]
@@ -144,20 +144,20 @@ edgeloop = [0,2,8,6]
 D1,D2 = Lagrange2DDerivativeMatrices(xi1d,1)
 
 # # Second derivatives:
-# D11 = D1@D1
-# D12 = D1@D2
-# D22 = D2@D2
+D11 = D1@D1
+D12 = D1@D2
+D22 = D2@D2
 
-# x_xi1    = D1@np.transpose(x) 
-# x_xi2    = D2@np.transpose(x) 
-# x_xi1xi1 = D11@np.transpose(x) 
-# x_xi2xi1 = D12@np.transpose(x) 
-# x_xi2xi2 = D22@np.transpose(x)
-# jac = 0*x_xi1
-# for i in range(x_xi1.shape[0]): 
-#     jac[i,:] = np.cross(x_xi1[i,:],x_xi2[i,:])
-# jac_xi1  = D1@jac
-# jac_xi2  = D2@jac
+x_xi1    = D1@np.transpose(x) 
+x_xi2    = D2@np.transpose(x) 
+x_xi1xi1 = D11@np.transpose(x) 
+x_xi2xi1 = D12@np.transpose(x) 
+x_xi2xi2 = D22@np.transpose(x)
+jac = 0*x_xi1
+for i in range(x_xi1.shape[0]): 
+    jac[i,:] = np.cross(x_xi1[i,:],x_xi2[i,:])
+jac_xi1  = D1@jac
+jac_xi2  = D2@jac
 
 interpToEta = Lagrange2DInterpMatrix(xi1d,xi1d,eta[0],eta[1]).flatten()
 
@@ -269,7 +269,7 @@ for i in range(len(edgeloop)):
             ri = rvec/r
             Na = Lagrange2DInterpMatrix(xi1d,xi1d,xi1,xi2).flatten()
             Ji = mesh.jacobian(xi1,xi2)
-            #Ji = Na@jac
+#            Ji = Na@jac
             J  = np.linalg.norm(Ji)
             ni = Ji/J
             F = - 1/(4*np.pi*r**3)*np.outer((3*ri*np.inner(ri,ni) - ni),Na)*J*rho
