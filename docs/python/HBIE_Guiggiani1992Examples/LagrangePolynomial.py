@@ -1,14 +1,12 @@
 import numpy as np
 
-#------------------------------------------------------------------------------
-def Lagrange2DDerivativeMatrices(x,derivative):
+def LagrangePolynomial2DDerivativeMatrices(x,derivative):
 
     D = LagrangePolynomialMthDerivativeMatrix(x,derivative)
-    [D1,D2] = Lagrange2DDerivativeMatricesAssemble(D)
+    [D1,D2] = LagrangePolynomial2DDerivativeMatricesAssemble(D)
     return D1,D2
 
-#------------------------------------------------------------------------------
-def Lagrange2DDerivativeMatricesAssemble(D):
+def LagrangePolynomial2DDerivativeMatricesAssemble(D):
 
     N1D = D.shape[0]
     N2D = N1D*N1D
@@ -30,26 +28,7 @@ def Lagrange2DDerivativeMatricesAssemble(D):
 
     return Dxi1,Dxi2
 
-#------------------------------------------------------------------------------
-def Lagrange2DInterpMatrix(xi1,xi2,xi10,xi20):
-
-    interp_xi1 = LagrangePolynomialShapeFunctions(xi1,np.array([xi10]))
-    interp_xi2 = LagrangePolynomialShapeFunctions(xi2,np.array([xi20]))
-    
-    N1 = len(xi1)
-    N2 = len(xi2)
-
-    # Make Interp1 matrix:
-    interp1 = np.zeros((N2,N1*N2))
-    for j in range(N1):
-        for i in range(N2):
-            interp1[i,j+i*N1] = interp_xi1.flatten()[j]
-
-    interp2d = interp_xi2@interp1
-    return interp2d
-
-#------------------------------------------------------------------------------
-def LagrangePolynomialBaryCentricWeights(xi):
+def LagrangePolynomial1DBarycentricWeights(xi):
 
     #--------------------------------------------------------------------------
     # Barycentric weights (see Kopriva 2009 alg. 30):
@@ -72,18 +51,47 @@ def LagrangePolynomialBaryCentricWeights(xi):
 
     return bw
 
+def LagrangePolynomial1DInterpMatrix(xi,xi0):
 
-#------------------------------------------------------------------------------
+    #------------------------------------------------------------------------------
+    # Lagrange interpolating polynomials matrix (see Kopriva 2009 alg. 34):
+    #------------------------------------------------------------------------------
+
+    order = len(xi)-1
+
+    bw = LagrangePolynomial1DBarycentricWeights(xi)
+    LP = np.zeros((len(xi0),len(xi)))
+
+    for j in range(len(xi0)):
+
+        lp          = 0*xi
+        node_match  = False
+        for i in range(order+1):
+            lp[i] = 0.0
+            if (np.fabs(xi[i]-xi0[j])<1e-12):
+                lp[i]      = 1.0
+                node_match = True
+
+        if (not node_match):
+            for i in range(order+1):
+                lp[i]   = bw[i]/(xi0[j]-xi[i])
+            
+            lp = lp/sum(lp)
+        
+
+        LP[j,:] = lp
+    return LP
+
 def LagrangePolynomialDerivativeMatrix(xi):
-#------------------------------------------------------------------------------
+
+    #------------------------------------------------------------------------------
     # Polynomial derivative matrix (see Kopriva 2009 alg. 37):
     #------------------------------------------------------------------------------
-    #  cout << "LagrangePolynomial::derivative_matrix" << endl
 
     # Assumes: 1) node positions, xi.
     #          2) bary_centric_weights, bw.
 
-    bw = LagrangePolynomialBaryCentricWeights(xi)
+    bw = LagrangePolynomial1DBarycentricWeights(xi)
 
     # Allocate derivative matrix:
     order   = len(xi) - 1
@@ -102,58 +110,25 @@ def LagrangePolynomialDerivativeMatrix(xi):
                 # Negative sum trick (see Kopriva 2009 page 55):
                 D[i,i] = D[i,i] - D[i,j]
     return D,bw
-            
-        
+
+
+def LagrangePolynomial2DInterpMatrix(xi1,xi2,xi10,xi20):
+
+    interp_xi1 = LagrangePolynomial1DInterpMatrix(xi1,np.array([xi10]))
+    interp_xi2 = LagrangePolynomial1DInterpMatrix(xi2,np.array([xi20]))
     
+    N1 = len(xi1)
+    N2 = len(xi2)
 
+    # Make Interp1 matrix:
+    interp1 = np.zeros((N2,N1*N2))
+    for j in range(N1):
+        for i in range(N2):
+            interp1[i,j+i*N1] = interp_xi1.flatten()[j]
 
-#----------------------------------------------------------------------------
-# Print result:
-#----------------------------------------------------------------------------
-#  for (int i=0i<N+1i++)
-#  {
-#    printf("D[#d][j]: ",i]
-#    for (int j=0j<N+1j++)
-#      printf("#8.4f",D[i,j])
-#    printf("\n")
-#  }
+    interp2d = interp_xi2@interp1
+    return interp2d
 
-    return D,bw
-
-
-#------------------------------------------------------------------------------
-def LagrangePolynomialShapeFunctions(xi,xi0):
-
-    order = len(xi)-1
-
-    bw = LagrangePolynomialBaryCentricWeights(xi)
-    LP = np.zeros((len(xi0),len(xi)))
-
-    for j in range(len(xi0)):
-
-        lp          = 0*xi
-        node_match  = False
-        for i in range(order+1):
-            lp[i] = 0.0
-            if (np.fabs(xi[i]-xi0[j])<1e-12):
-                lp[i]      = 1.0
-                node_match = True
-        
-        
-
-        if (not node_match):
-            for i in range(order+1):
-                lp[i]   = bw[i]/(xi0[j]-xi[i])
-            
-            lp = lp/sum(lp)
-        
-
-        LP[j,:] = lp
-    return LP
-
-
-
-#------------------------------------------------------------------------------
 def LagrangePolynomialMthDerivativeMatrix(xi,M):
 
 #------------------------------------------------------------------------------
