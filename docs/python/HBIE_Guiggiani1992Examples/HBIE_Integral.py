@@ -26,11 +26,16 @@ def HBIE_integral(mesh,shapeFunc,eta,n):
     I0 = 0
     Im1 = 0
     Im2 = 0
-    for i in range(4):
+
+    Im11 = 0
+    Im12 = 0
+    Im13 = 0
+    Im14 = 0
+    for i in [3,1,0,2]:
 
         v1 = xi_vertices[:,i]
         v2 = xi_vertices[:,(i+1)%4]
-
+        print(v1,v2)
         r1 = v1 - eta
         r2 = v2 - eta
 
@@ -43,7 +48,7 @@ def HBIE_integral(mesh,shapeFunc,eta,n):
 
             s     = 0.5*(theta_gx+1)
             theta = (1-s)*theta1 + s*theta2
-
+            print(theta)
             rho_hat = equation_of_external_contour_polar_coords(theta1,theta,eta,v1,v2)
 
             Ai = x_xi1_eta*np.cos(theta) + x_xi2_eta*np.sin(theta)
@@ -80,6 +85,10 @@ def HBIE_integral(mesh,shapeFunc,eta,n):
             Im2 += - Fm2*(gamma/beta**2+1/rho_hat)*dtheta
             Im1 += Fm1*np.log(rho_hat/beta)*dtheta
 
+            Im11 += Fm1*np.log(rho_hat/beta)
+            Im12 += np.log(rho_hat/beta)
+            Im13 += dtheta
+
             for rho_gx,rho_gw in zip(gaussx,gaussw):
 
                 s   = 0.5*(rho_gx+1)
@@ -100,6 +109,13 @@ def HBIE_integral(mesh,shapeFunc,eta,n):
 
                 drho = rho_hat/2*rho_gw
                 I0 += (F - (Fm2/rho**2 + Fm1/rho))*drho*dtheta
+#        print(Im1[2])
+        #print(" ")
+        print(Im11[2][0])
+        #print(Im12)
+
+#    print(I0)
+#    print(Im2)
 
     I = I0+Im1+Im2
     return I

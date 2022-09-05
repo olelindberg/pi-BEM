@@ -1762,6 +1762,9 @@ enum class EXAMPLE
   FOUR_ONE_A,
   FOUR_ONE_B,
   FOUR_ONE_C,
+  FOUR_TWO_A,
+  FOUR_TWO_B,
+  FOUR_TWO_C
 };
 
 // @sect3{Creating the first mesh}
@@ -1769,28 +1772,47 @@ enum class EXAMPLE
 // In the following, first function, we simply use the unit square as domain
 // and produce a globally refined grid from it.
 void
-compute_integrals_one_cell()
+compute_integrals_one_cell(int testId)
 {
-  auto example = EXAMPLE::FOUR_ONE_C;
+  auto example = (EXAMPLE)testId;
   // "user" parameters are set in the next few lines
-  double fe_degree = 2;
+  double fe_degree = 16;
   // Point<2> singularity_location_in_parametric_plane(0.885764071856287,0.66*.5+.5);
   // Point<2> singularity_location_in_parametric_plane(1,0);
   Point<2> singularity_location_in_parametric_plane(0, 0);
-  double   Iexact = 0.0;
+  double   Iexact      = 0.0;
+  double   resultscale = 1.0;
   switch (example)
     {
       case EXAMPLE::FOUR_ONE_A:
         singularity_location_in_parametric_plane = Point<2>(0.5, 0.5);
         Iexact                                   = -5.749236751228080;
+        resultscale                              = (4 * dealii::numbers::PI);
         break;
       case EXAMPLE::FOUR_ONE_B:
         singularity_location_in_parametric_plane = Point<2>((0.66 + 1.0) / 2.0, 0.5);
         Iexact                                   = -9.154585;
+        resultscale                              = (4 * dealii::numbers::PI);
         break;
       case EXAMPLE::FOUR_ONE_C:
         singularity_location_in_parametric_plane = Point<2>(0.885764071856287, 0.66 * .5 + .5);
         Iexact                                   = -15.3285;
+        resultscale                              = (4 * dealii::numbers::PI);
+        break;
+      case EXAMPLE::FOUR_TWO_A:
+        singularity_location_in_parametric_plane = Point<2>(0.5, 0.5);
+        Iexact                                   = -0.343807;
+        resultscale                              = 1.0 / (4 * dealii::numbers::PI);
+        break;
+      case EXAMPLE::FOUR_TWO_B:
+        singularity_location_in_parametric_plane = Point<2>(0.66 * .5 + .5, 0.0);
+        Iexact                                   = -0.497099;
+        resultscale                              = 1.0 / (4 * dealii::numbers::PI);
+        break;
+      case EXAMPLE::FOUR_TWO_C:
+        singularity_location_in_parametric_plane = Point<2>(0.66 * 0.5 + 0.5, 0.66 * 0.5 + 0.5);
+        Iexact                                   = -0.877214;
+        resultscale                              = 1.0 / (4 * dealii::numbers::PI);
         break;
       default:
         break;
@@ -1801,24 +1823,41 @@ compute_integrals_one_cell()
   std::vector<Point<3>>    vertices;
   std::vector<CellData<2>> cells;
   SubCellData              subcelldata;
+  if (testId < 3)
+    {
+      vertices.resize(4);
+      vertices[0](0) = -1.0;
+      vertices[0](1) = -1.0;
+      vertices[0](2) = 0.0;
 
-  vertices.resize(4);
-  vertices[0](0) = -1.0;
-  vertices[0](1) = -1.0;
-  vertices[0](2) = 0.0;
+      vertices[1](0) = 1.5;
+      vertices[1](1) = -1.0;
+      vertices[1](2) = 0.0;
 
-  vertices[1](0) = 1.5;
-  vertices[1](1) = -1.0;
-  vertices[1](2) = 0.0;
+      vertices[2](0) = -1.0;
+      vertices[2](1) = 1.0;
+      vertices[2](2) = 0.0;
 
-  vertices[2](0) = -1.0;
-  vertices[2](1) = 1.0;
-  vertices[2](2) = 0.0;
-
-  vertices[3](0) = 0.5;
-  vertices[3](1) = 1.0;
-  vertices[3](2) = 0.0;
-
+      vertices[3](0) = 0.5;
+      vertices[3](1) = 1.0;
+      vertices[3](2) = 0.0;
+    }
+  else
+    {
+      vertices.resize(4);
+      vertices[0](0) = 1.0;
+      vertices[0](1) = 0.0;
+      vertices[0](2) = 0.0;
+      vertices[1](0) = 1.0;
+      vertices[1](1) = 2.0;
+      vertices[1](2) = 0.0;
+      vertices[2](0) = 0.0;
+      vertices[2](1) = 0.0;
+      vertices[2](2) = 1.0;
+      vertices[3](0) = 0.0;
+      vertices[3](1) = 2.0;
+      vertices[3](2) = 1.0;
+    }
 
   //  vertices.resize(4);
   //  vertices[0](0)=-1.0;
@@ -1878,12 +1917,14 @@ compute_integrals_one_cell()
   triangulation.create_triangulation(vertices, cells, subcelldata);
 
   // curved
-  // std::string                                       cad_filename = "Revolution_1.iges";
-  // TopoDS_Shape                                      surface      = OpenCASCADE::read_IGES(cad_filename, 1e-3);
-  // OpenCASCADE::NormalToMeshProjectionManifold<2, 3> manifold(surface, 1e-7);
-  // triangulation.set_all_manifold_ids(0);
-  // triangulation.set_manifold(0, manifold);
-
+  if (testId > 2)
+    {
+      std::string                                       cad_filename = "Revolution_1.iges";
+      TopoDS_Shape                                      surface      = OpenCASCADE::read_IGES(cad_filename, 1e-3);
+      OpenCASCADE::NormalToMeshProjectionManifold<2, 3> manifold(surface, 1e-7);
+      triangulation.set_all_manifold_ids(0);
+      triangulation.set_manifold(0, manifold);
+    }
   // We write the resulting mesh to a file, again in SVG format. This works just
   // as above:
   std::ofstream out("grid-2.vtk");
@@ -1910,13 +1951,13 @@ compute_integrals_one_cell()
       // let's define Point<2> P as the location of the singularity
       // in the parametric plane
       Point<2>                  P = singularity_location_in_parametric_plane;
-      SingularKernelIntegral<3> sing_kernel_integrator(16, 16, fe, mapping);
+      SingularKernelIntegral<3> sing_kernel_integrator(1, 1, fe, mapping);
       Tensor<1, 3>              I = sing_kernel_integrator.evaluate_Vk_integrals(cell, P);
 
       std::cout << "Iexact : " << Iexact << std::endl;
-      std::cout << "Result : " << I[2] * 4 * dealii::numbers::PI << std::endl;
-      std::cout << "Abs Err: " << Iexact - I[2] * 4 * dealii::numbers::PI << std::endl;
-      std::cout << "Rel Err: " << fabs(Iexact - I[2] * 4 * dealii::numbers::PI) / fabs(Iexact) << std::endl;
+      std::cout << "Result : " << I[2] * resultscale << std::endl;
+      std::cout << "Abs Err: " << Iexact - I[2] * resultscale << std::endl;
+      std::cout << "Rel Err: " << fabs(Iexact - I[2] * resultscale) / fabs(Iexact) << std::endl;
       //      std::cout<<"Abs Err: "<<-9.154585469918885-I[2]<<std::endl;
       //      std::cout<<"Rel Err: "<<fabs(-9.154585469918885-I[2])/fabs(-9.154585469918885)<<std::endl;
 
@@ -2237,9 +2278,13 @@ compute_integrals_four_cells_strong()
 // Finally, the main function. There isn't much to do here, only to call the
 // two subfunctions, which produce the two grids.
 int
-main()
+main(int argc, char *argv[])
 {
-  compute_integrals_one_cell();
+  int testId = 0;
+  if (argc > 0)
+    testId = std::stoi(argv[1]);
+
+  compute_integrals_one_cell(testId);
   // compute_integrals_four_cells_hyper();
   // compute_integrals_four_cells_strong();
 }
