@@ -113,7 +113,7 @@ shapefunc = PointShapeFunction()
 #shapefunc = LagrangePolynomial2DShapeFunction(4)
 
 N = 3
-n = 1
+n = 2
 example = ["4.1","a"]
 if example[0]=="4.1":
     mesh = MeshGen41()
