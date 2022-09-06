@@ -35,14 +35,18 @@ def HBIE_integral(mesh,shapeFunc,eta,n):
 
         v1 = xi_vertices[:,i]
         v2 = xi_vertices[:,(i+1)%4]
-        if (i==3):
-
-            print(v1,v2)
+        print(v1,v2)
         r1 = v1 - eta
         r2 = v2 - eta
 
         theta1  = np.arctan2(r1[1],r1[0])
+        if (theta1<0):
+            theta1 += 2*np.pi
+
         theta2  = np.arctan2(r2[1],r2[0])
+        if (theta2<0):
+            theta2 += 2*np.pi
+
         if (theta2<theta1):
             theta2 += 2*np.pi
 
@@ -50,15 +54,13 @@ def HBIE_integral(mesh,shapeFunc,eta,n):
 
             s     = 0.5*(theta_gx+1)
             theta = (1-s)*theta1 + s*theta2
-            if (i==3):
-                print(theta)
+            print(theta)
             rho_hat = equation_of_external_contour_polar_coords(theta1,theta,eta,v1,v2)
 
             Ai = x_xi1_eta*np.cos(theta) + x_xi2_eta*np.sin(theta)
             Bi = 1/2*x_xi1xi1_eta*np.cos(theta)**2 + x_xi2xi1_eta*np.cos(theta)*np.sin(theta) + 1/2*x_xi2xi2_eta*np.sin(theta)**2
-            if (i==3):
-                print('x_xi1xi1_eta ',x_xi1xi1_eta)
-                print('Ai, Bi       ',Ai,Bi)
+            print('x_xi2 ',x_xi2_eta)
+
             Ai = Ai.flatten()
             Bi = Bi.flatten()
             A = np.linalg.norm(Ai)
@@ -66,8 +68,7 @@ def HBIE_integral(mesh,shapeFunc,eta,n):
 
             Ji0 = jac_eta
             Ji1 = jac_xi1_eta*np.cos(theta) + jac_xi2_eta*np.sin(theta)        
-            if (i==3):
-                print("Ji0,Ji1 ",Ji0,Ji1)
+
             Na0 = Na
             Na1 = Na_xi1*np.cos(theta) + Na_xi2*np.sin(theta)        
 
@@ -87,14 +88,14 @@ def HBIE_integral(mesh,shapeFunc,eta,n):
 
             Fm2 = -1/(4*np.pi)*Sm3*ai0
             Fm1 = -1/(4*np.pi)*(Sm2*ai0+Sm3*ai1)
-            
+
             dtheta = (theta2-theta1)/2*theta_gw
             Im2 += - Fm2*(gamma/beta**2+1/rho_hat)*dtheta
-            Im1 += Fm1*np.log(rho_hat/beta)*dtheta
+            Im1 += Fm1*np.log(np.fabs(rho_hat/beta))*dtheta
 
-            Im11 += Fm1*np.log(rho_hat/beta)
-            Im12 += np.log(rho_hat/beta)
-            Im13 += dtheta
+            Im11 = x_xi2_eta
+            Im12 = rho_hat
+            Im13 = beta
 
             for rho_gx,rho_gw in zip(gaussx,gaussw):
 
@@ -118,8 +119,9 @@ def HBIE_integral(mesh,shapeFunc,eta,n):
                 I0 += (F - (Fm2/rho**2 + Fm1/rho))*drho*dtheta
 #        print(Im1[2])
         #print(" ")
-        if (i==3):
-            print("Im11 ", Im11[2][0])
+        print("Im11 ", Im11)
+        print("Im12 ", Im12)
+        print("Im13 ", Im13)
         #print(Im12)
 
 #    print(I0)

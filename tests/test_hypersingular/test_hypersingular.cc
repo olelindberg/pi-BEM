@@ -1775,13 +1775,13 @@ void
 compute_integrals_one_cell(int testId)
 {
   auto example = (EXAMPLE)testId;
-  // "user" parameters are set in the next few lines
-  double fe_degree = 16;
-  // Point<2> singularity_location_in_parametric_plane(0.885764071856287,0.66*.5+.5);
-  // Point<2> singularity_location_in_parametric_plane(1,0);
+
+  double   fe_degree   = 2;
+  int      gauss_order = 16;
   Point<2> singularity_location_in_parametric_plane(0, 0);
   double   Iexact      = 0.0;
   double   resultscale = 1.0;
+
   switch (example)
     {
       case EXAMPLE::FOUR_ONE_A:
@@ -1802,17 +1802,14 @@ compute_integrals_one_cell(int testId)
       case EXAMPLE::FOUR_TWO_A:
         singularity_location_in_parametric_plane = Point<2>(0.5, 0.5);
         Iexact                                   = -0.343807;
-        resultscale                              = 1.0 / (4 * dealii::numbers::PI);
         break;
       case EXAMPLE::FOUR_TWO_B:
-        singularity_location_in_parametric_plane = Point<2>(0.66 * .5 + .5, 0.0);
+        singularity_location_in_parametric_plane = Point<2>(0.66 * .5 + .5, 0.5);
         Iexact                                   = -0.497099;
-        resultscale                              = 1.0 / (4 * dealii::numbers::PI);
         break;
       case EXAMPLE::FOUR_TWO_C:
         singularity_location_in_parametric_plane = Point<2>(0.66 * 0.5 + 0.5, 0.66 * 0.5 + 0.5);
         Iexact                                   = -0.877214;
-        resultscale                              = 1.0 / (4 * dealii::numbers::PI);
         break;
       default:
         break;
@@ -1858,50 +1855,6 @@ compute_integrals_one_cell(int testId)
       vertices[3](1) = 2.0;
       vertices[3](2) = 1.0;
     }
-
-  //  vertices.resize(4);
-  //  vertices[0](0)=-1.0;
-  //  vertices[0](1)=-1.0;
-  //  vertices[0](2)=0.0;
-  //  vertices[1](0)=1.0;
-  //  vertices[1](1)=-1.0;
-  //  vertices[1](2)=0.0;
-  //  vertices[2](0)=-1.0;
-  //  vertices[2](1)=0.5;
-  //  vertices[2](2)=0.0;
-  //  vertices[3](0)=1.0;
-  //  vertices[3](1)=1.5;
-  //  vertices[3](2)=0.0;
-
-  //  vertices.resize(4);
-  //  vertices[0](0)=0.125;
-  //  vertices[0](1)=.25;
-  //  vertices[0](2)=0.0;
-  //  vertices[1](0)=0.125;
-  //  vertices[1](1)=.375;
-  //  vertices[1](2)=0.0;
-  //  vertices[2](0)=.25;
-  //  vertices[2](1)=0.25;
-  //  vertices[2](2)=0.0;
-  //  vertices[3](0)=.25;
-  //  vertices[3](1)=0.375;
-  //  vertices[3](2)=0.0;
-
-  //  Curved
-  // vertices.resize(4);
-  // vertices[0](0) = 1.0;
-  // vertices[0](1) = 0.0;
-  // vertices[0](2) = 0.0;
-  // vertices[1](0) = 1.0;
-  // vertices[1](1) = 2.0;
-  // vertices[1](2) = 0.0;
-  // vertices[2](0) = 0.0;
-  // vertices[2](1) = 0.0;
-  // vertices[2](2) = 1.0;
-  // vertices[3](0) = 0.0;
-  // vertices[3](1) = 2.0;
-  // vertices[3](2) = 1.0;
-
 
   cells.resize(1);
 
@@ -1951,34 +1904,15 @@ compute_integrals_one_cell(int testId)
       // let's define Point<2> P as the location of the singularity
       // in the parametric plane
       Point<2>                  P = singularity_location_in_parametric_plane;
-      SingularKernelIntegral<3> sing_kernel_integrator(1, 1, fe, mapping);
+      SingularKernelIntegral<3> sing_kernel_integrator(gauss_order, gauss_order, fe, mapping);
       Tensor<1, 3>              I = sing_kernel_integrator.evaluate_Vk_integrals(cell, P);
 
       std::cout << "Iexact : " << Iexact << std::endl;
       std::cout << "Result : " << I[2] * resultscale << std::endl;
       std::cout << "Abs Err: " << Iexact - I[2] * resultscale << std::endl;
       std::cout << "Rel Err: " << fabs(Iexact - I[2] * resultscale) / fabs(Iexact) << std::endl;
-      //      std::cout<<"Abs Err: "<<-9.154585469918885-I[2]<<std::endl;
-      //      std::cout<<"Rel Err: "<<fabs(-9.154585469918885-I[2])/fabs(-9.154585469918885)<<std::endl;
-
-      // std::cout<<"Abs Err: "<<-15.32849545090306-I[2]<<std::endl;
-      // std::cout<<"Rel Err: "<<fabs(-15.32849545090306-I[2])/fabs(-15.32849545090306)<<std::endl;
-
-      //      std::cout<<"Abs Err: "<<-8.939872997672122-I[2]<<std::endl;
-      //      std::cout<<"Rel Err: "<<fabs(-8.939872997672122-I[2])/fabs(-8.939872997672122)<<std::endl;
-
-      //      std::cout << "Abs Err: " << -0.343807 * 4 * dealii::numbers::PI - I[2] << std::endl;
-      //      std::cout << "Rel Err: " << fabs(-0.343807 * dealii::numbers::PI - I[2]) / fabs(-0.343807 * 4 * dealii::numbers::PI) << std::endl;
-
-
-
-      //      std::cout<<"Test of integral including Shape Function: "<<std::endl;
-      //      std::vector<Tensor<1,3> > II = sing_kernel_integrator.evaluate_VkNj_integrals();
-      //      for (unsigned int i=0; i<fe.dofs_per_cell; ++i)
-      //          std::cout<<"Shape Function "<<i<<": "<<II[i]<<std::endl;
     }
 }
-
 
 void
 compute_integrals_four_cells_hyper()

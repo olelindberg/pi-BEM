@@ -4,12 +4,8 @@ import numpy as np
 from LagrangePolynomial import *
 from HBIE_Integral import *
 
-
-
-
 def PolynomialBasis2d(xi1,xi2):
     return np.array([1,xi1,xi2,xi1*xi2])
-
 
 class MeshGen41():
     def __init__(self):
@@ -51,7 +47,6 @@ class MeshGen41():
         jac_xi1 =  np.array([0, 0, -a[3]*(b[1] + b[3]*xi2) + b[3]*(a[1] + a[3]*xi2)])
         jac_xi2 =  np.array([0, 0, a[3]*(b[2] + b[3]*xi1) + b[3]*(-a[2] - a[3]*xi1)])    
         return jac_xi1,jac_xi2
-
 
 class MeshGen42():
     def __init__(self):
@@ -113,8 +108,8 @@ shapefunc = PointShapeFunction()
 #shapefunc = LagrangePolynomial2DShapeFunction(4)
 
 N = 3
-n = 2
-example = ["4.1","a"]
+n = 16
+example = ["4.2","c"]
 if example[0]=="4.1":
     mesh = MeshGen41()
     if example[1] =="a":
