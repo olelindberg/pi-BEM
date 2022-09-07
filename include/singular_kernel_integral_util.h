@@ -45,6 +45,9 @@ public:
 
   static void
   parameter_space_angles(const Point<3> &v0, const Point<3> &v1, const Point<3> &eta, double &theta_0, double &theta_1);
+
+  static void
+  expansion_functions_Fm1_Fm2(const Tensor<1, 3> &Jk0, const Tensor<1, 3> &Jk1, const Tensor<1, 3> &A, const Tensor<1, 3> &B, double q_A, double q_C, double N0, double N1, Tensor<1, 3> &FF_1, Tensor<1, 3> &FF_2);
 };
 
 #endif // singular_kernel_integral_util_h

@@ -115,3 +115,37 @@ singular_kernel_integral_util::parameter_space_angles(const Point<3> &v0, const 
   if (theta_1 < theta_0)
     theta_1 += 2 * dealii::numbers::PI;
 }
+
+void
+singular_kernel_integral_util::expansion_functions_Fm1_Fm2(const Tensor<1, 3> &Jk0, const Tensor<1, 3> &Jk1, const Tensor<1, 3> &A, const Tensor<1, 3> &B, double q_A, double q_C, double N0, double N1, Tensor<1, 3> &FF_1, Tensor<1, 3> &FF_2)
+{
+  // (r,k  Jk) expansion
+  // verified against (R/r)*inner_face_fe_values.JxW(p)*inner_uv_q_normals[p]
+  double p_1 = (Jk0 * B + Jk1 * A) / q_A;
+
+  // r,i expansion
+  // verified against R/r
+  Tensor<1, 3> d_0 = A / q_A;
+  //              Tensor<1, 3> d_1 = B / q_A - A / pow(q_A, 3) * q_C;
+
+  // r,i (r,k  Jk) expansion
+  // verified against (R/r)*((R/r)*inner_face_fe_values.JxW(p)*inner_uv_q_normals[p])
+  Tensor<1, 3> g_1 = d_0 * p_1;
+
+  // 3*r,i (r,k  Jk) - Ji  expansion
+  // verified against 3.0*(R/r)*((R/r)*inner_face_fe_values.JxW(p)*inner_uv_q_normals[p])-inner_uv_q_normals[p]*inner_face_fe_values.JxW(p)
+  Tensor<1, 3> b_0 = -Jk0;
+  Tensor<1, 3> b_1 = 3.0 * g_1 - Jk1;
+
+  // 1/r^3  expansion
+  // verified against 1/pow(r,3.0)
+  double s_3 = 1.0 / pow(q_A, 3.0);
+  double s_2 = -3.0 * q_C / pow(q_A, 5.0);
+
+  const auto a_0 = b_0 * N0;
+  const auto a_1 = b_1 * N0 + b_0 * N1;
+
+  // -1/r^3 * (3*r,i (r,k  Jk) - Ji ) expansion
+  FF_2 = -(s_3 * a_0);
+  FF_1 = -(s_2 * a_0 + s_3 * a_1);
+}

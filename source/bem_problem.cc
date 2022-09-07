@@ -1160,8 +1160,6 @@ BEMProblem<dim>::compute_hypersingular_free_coeffs()
 {
   pcout << "computing free cefficients for hypersingular BIE" << std::endl;
 
-
-
   Assert(fe->has_support_points(), ExcMessage("The FE selected has no support points. This is not supported."));
   const std::vector<Point<dim - 1>> &ref_dofs_location = fe->get_unit_support_points();
   // we use these points as quadrature points for a quadrature rule
@@ -2494,8 +2492,8 @@ BEMProblem<dim>::compute_gradients_hypersingular(const TrilinosWrappers::MPI::Ve
 
           Tensor<1, dim> hyp_gradient;
           Tensor<1, dim> rhs;
-          rhs[0] = vector_hyp_gradients_solution(i + 0 * dh.n_dofs()) - vector_b_free_coeff(i) * phi_local[i];
-          rhs[1] = vector_hyp_gradients_solution(i + 1 * dh.n_dofs()) - vector_b_free_coeff(i + dh.n_dofs()) * phi_local[i];
+          rhs[0] = vector_hyp_gradients_solution(i + 0 * dh.n_dofs()) - vector_b_free_coeff(i + 0 * dh.n_dofs()) * phi_local[i];
+          rhs[1] = vector_hyp_gradients_solution(i + 1 * dh.n_dofs()) - vector_b_free_coeff(i + 1 * dh.n_dofs()) * phi_local[i];
           rhs[2] = vector_hyp_gradients_solution(i + 2 * dh.n_dofs()) - vector_b_free_coeff(i + 2 * dh.n_dofs()) * phi_local[i];
           FullMatrix<double> C(dim, dim);
           FullMatrix<double> Cinv(dim, dim);
