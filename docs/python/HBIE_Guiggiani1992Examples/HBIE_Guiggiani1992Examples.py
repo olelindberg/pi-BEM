@@ -104,8 +104,8 @@ class PointShapeFunction():
     def derivatives(self,eta):
         return 0,0
 
-#shapefunc = PointShapeFunction()
-shapefunc = LagrangePolynomial2DShapeFunction(2)
+shapefunc = PointShapeFunction()
+#shapefunc = LagrangePolynomial2DShapeFunction(2)
 
 N = 3
 n = 16

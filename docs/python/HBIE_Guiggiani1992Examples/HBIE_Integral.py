@@ -117,11 +117,15 @@ def HBIE_integral(mesh,shapeFunc,eta,n):
 
                 drho = rho_hat/2*rho_gw
                 I0 += (F - (Fm2/rho**2 + Fm1/rho))*drho*dtheta
-#        print(Im1[2])
+        
+        print(I0)
+        print(Im1)
+        print(Im2)
+
         #print(" ")
-        print("Im11 ", Im11)
-        print("Im12 ", Im12)
-        print("Im13 ", Im13)
+        #print("Im11 ", Im11)
+        #print("Im12 ", Im12)
+        #print("Im13 ", Im13)
         #print(Im12)
 
 #    print(I0)

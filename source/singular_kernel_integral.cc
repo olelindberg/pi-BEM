@@ -663,7 +663,7 @@ SingularKernelIntegral<3>::evaluate_VkNj_integrals(const typename DoFHandler<2, 
               Quadrature<2> inner_uv_quadrature(inner_uv_q_points, inner_uv_q_weights);
               {
                 Teuchos::TimeMonitor LocalTimer(*SKI42);
-                FEValues<2, 3>       inner_face_fe_values(mapping,fe, inner_uv_quadrature, update_values | update_gradients | update_quadrature_points | update_JxW_values | update_normal_vectors);
+                FEValues<2, 3>       inner_face_fe_values(mapping, fe, inner_uv_quadrature, update_values | update_gradients | update_quadrature_points | update_JxW_values | update_normal_vectors);
                 inner_face_fe_values.reinit(cell);
                 // let's obtain the quadrature points in the 3D space from the
                 // inner_face_fe_values
@@ -1041,7 +1041,7 @@ SingularKernelIntegral<3>::evaluate_Wk_integrals(const typename DoFHandler<2, 3>
 
               // we can then create the quadrature and the FEValues
               Quadrature<2>  inner_uv_quadrature(inner_uv_q_points, inner_uv_q_weights);
-              FEValues<2, 3> inner_face_fe_values(fe, inner_uv_quadrature, update_values | update_gradients | update_quadrature_points | update_JxW_values | update_normal_vectors);
+              FEValues<2, 3> inner_face_fe_values(mapping, fe, inner_uv_quadrature, update_values | update_gradients | update_quadrature_points | update_JxW_values | update_normal_vectors);
               inner_face_fe_values.reinit(cell);
               // let's obtain the quadrature points in the 3D space from the
               // inner_face_fe_values
@@ -1237,7 +1237,6 @@ SingularKernelIntegral<3>::evaluate_WkNj_integrals(const typename DoFHandler<2, 
 
       if (dist > std::numeric_limits<double>::epsilon())
         {
-
           double theta_0, theta_1;
           singular_kernel_integral_util::parameter_space_angles(v0, v1, Point<3>(eta[0], eta[1], 0.0), theta_0, theta_1);
 
@@ -1446,7 +1445,7 @@ SingularKernelIntegral<3>::evaluate_WkNj_integrals(const typename DoFHandler<2, 
 
               // we can then create the quadrature and the FEValues
               Quadrature<2>  inner_uv_quadrature(inner_uv_q_points, inner_uv_q_weights);
-              FEValues<2, 3> inner_face_fe_values(fe, inner_uv_quadrature, update_values | update_gradients | update_quadrature_points | update_JxW_values | update_normal_vectors);
+              FEValues<2, 3> inner_face_fe_values(mapping, fe, inner_uv_quadrature, update_values | update_gradients | update_quadrature_points | update_JxW_values | update_normal_vectors);
               inner_face_fe_values.reinit(cell);
               // let's obtain the quadrature points in the 3D space from the
               // inner_face_fe_values

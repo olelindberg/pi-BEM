@@ -2001,13 +2001,24 @@ compute_integrals_one_cell(EXAMPLE exampleId, int meshId)
   std::cout << "Result : " << integral_shapefuncs[2] * resultscale << std::endl;
   std::cout << "Abs Err: " << Iexact - integral_shapefuncs[2] * resultscale << std::endl;
   std::cout << "Rel Err: " << fabs(Iexact - integral_shapefuncs[2] * resultscale) / fabs(Iexact) << std::endl;
-
-
 }
 
 void
 compute_integrals_four_cells_hyper(EXAMPLE exampleId, int meshId)
 {
+  if (exampleId != EXAMPLE::FOUR_ONE_A && exampleId != EXAMPLE::FOUR_TWO_A)
+    {
+      std::cout << "Error: compute_integrals_four_cells_hyper only works for examples 4.1a and 4.2a, that is exampleIds " << (int)EXAMPLE::FOUR_ONE_A << " and " << (int)EXAMPLE::FOUR_TWO_A << " respectively\n";
+      return;
+    }
+
+  if (meshId > 1)
+    {
+      std::cout << "Error: meshId can not be larger than 1\n";
+      return;
+    }
+
+
   // "user" parameters are set in the next few lines
   double       fe_degree       = 2;
   unsigned int singular_dof_id = 3;
@@ -2024,120 +2035,249 @@ compute_integrals_four_cells_hyper(EXAMPLE exampleId, int meshId)
   double   resultscale = 1.0;
   Guiggiani1992Examples(exampleId, tmp, Iexact, resultscale);
 
-  if (meshId == 0)
+  if (int(exampleId) < 3) // Example 4.1:
     {
-      singular_dof_id = 3;
+      if (meshId == 0)
+        {
+          singular_dof_id = 3;
 
-      vertices.resize(9);
-      // Vertices on lower edge:
-      vertices[0](0) = -1.0;
-      vertices[0](1) = -1.0;
-      vertices[0](2) = 0.0;
+          vertices.resize(9);
+          // Vertices on lower edge:
+          vertices[0](0) = -1.0;
+          vertices[0](1) = -1.0;
+          vertices[0](2) = 0.0;
 
-      vertices[1](0) = 0.25;
-      vertices[1](1) = -1.0;
-      vertices[1](2) = 0.0;
+          vertices[1](0) = 0.25;
+          vertices[1](1) = -1.0;
+          vertices[1](2) = 0.0;
 
-      vertices[2](0) = 1.5;
-      vertices[2](1) = -1.0;
-      vertices[2](2) = 0.0;
+          vertices[2](0) = 1.5;
+          vertices[2](1) = -1.0;
+          vertices[2](2) = 0.0;
 
-      // Vertices on center edge:
-      vertices[3](0) = -1.0;
-      vertices[3](1) = 0.0;
-      vertices[3](2) = 0.0;
+          // Vertices on center edge:
+          vertices[3](0) = -1.0;
+          vertices[3](1) = 0.0;
+          vertices[3](2) = 0.0;
 
-      vertices[4](0) = 0.0;
-      vertices[4](1) = 0.0;
-      vertices[4](2) = 0.0;
+          vertices[4](0) = 0.0;
+          vertices[4](1) = 0.0;
+          vertices[4](2) = 0.0;
 
-      vertices[5](0) = 1.0;
-      vertices[5](1) = 0.0;
-      vertices[5](2) = 0.0;
+          vertices[5](0) = 1.0;
+          vertices[5](1) = 0.0;
+          vertices[5](2) = 0.0;
 
-      // Vertices on upper edge:
-      vertices[6](0) = -1.0;
-      vertices[6](1) = 1.0;
-      vertices[6](2) = 0.0;
+          // Vertices on upper edge:
+          vertices[6](0) = -1.0;
+          vertices[6](1) = 1.0;
+          vertices[6](2) = 0.0;
 
-      vertices[7](0) = -0.25;
-      vertices[7](1) = 1.0;
-      vertices[7](2) = 0.0;
+          vertices[7](0) = -0.25;
+          vertices[7](1) = 1.0;
+          vertices[7](2) = 0.0;
 
-      vertices[8](0) = 0.5;
-      vertices[8](1) = 1.0;
-      vertices[8](2) = 0.0;
+          vertices[8](0) = 0.5;
+          vertices[8](1) = 1.0;
+          vertices[8](2) = 0.0;
 
-      cells.resize(4);
+          cells.resize(4);
 
-      cells[0].vertices[0] = 0;
-      cells[0].vertices[1] = 1;
-      cells[0].vertices[2] = 3;
-      cells[0].vertices[3] = 4;
+          cells[0].vertices[0] = 0;
+          cells[0].vertices[1] = 1;
+          cells[0].vertices[2] = 3;
+          cells[0].vertices[3] = 4;
 
-      cells[1].vertices[0] = 1;
-      cells[1].vertices[1] = 2;
-      cells[1].vertices[2] = 4;
-      cells[1].vertices[3] = 5;
+          cells[1].vertices[0] = 1;
+          cells[1].vertices[1] = 2;
+          cells[1].vertices[2] = 4;
+          cells[1].vertices[3] = 5;
 
-      cells[2].vertices[0] = 3;
-      cells[2].vertices[1] = 4;
-      cells[2].vertices[2] = 6;
-      cells[2].vertices[3] = 7;
+          cells[2].vertices[0] = 3;
+          cells[2].vertices[1] = 4;
+          cells[2].vertices[2] = 6;
+          cells[2].vertices[3] = 7;
 
-      cells[3].vertices[0] = 4;
-      cells[3].vertices[1] = 5;
-      cells[3].vertices[2] = 7;
-      cells[3].vertices[3] = 8;
+          cells[3].vertices[0] = 4;
+          cells[3].vertices[1] = 5;
+          cells[3].vertices[2] = 7;
+          cells[3].vertices[3] = 8;
+        }
+      else if (meshId == 1)
+        {
+          singular_dof_id = 5;
+
+          vertices.resize(6);
+          // Vertices on lower edge:
+          vertices[0](0) = -1.0;
+          vertices[0](1) = -1.0;
+          vertices[0](2) = 0.0;
+
+          vertices[1](0) = 0.25;
+          vertices[1](1) = -1.0;
+          vertices[1](2) = 0.0;
+
+          vertices[2](0) = 1.5;
+          vertices[2](1) = -1.0;
+          vertices[2](2) = 0.0;
+
+          // Vertices on upper edge:
+          vertices[3](0) = -1.0;
+          vertices[3](1) = 1.0;
+          vertices[3](2) = 0.0;
+
+          vertices[4](0) = -0.25;
+          vertices[4](1) = 1.0;
+          vertices[4](2) = 0.0;
+
+          vertices[5](0) = 0.5;
+          vertices[5](1) = 1.0;
+          vertices[5](2) = 0.0;
+
+          cells.resize(2);
+
+          cells[0].vertices[0] = 0;
+          cells[0].vertices[1] = 1;
+          cells[0].vertices[2] = 3;
+          cells[0].vertices[3] = 4;
+
+          cells[1].vertices[0] = 1;
+          cells[1].vertices[1] = 2;
+          cells[1].vertices[2] = 4;
+          cells[1].vertices[3] = 5;
+        }
     }
-  else if (meshId == 1)
+  else // Example 4.2:
     {
-      singular_dof_id = 5;
+      if (meshId == 0)
+        {
+          singular_dof_id = 3;
 
-      vertices.resize(6);
-      // Vertices on lower edge:
-      vertices[0](0) = -1.0;
-      vertices[0](1) = -1.0;
-      vertices[0](2) = 0.0;
+          vertices.resize(9);
 
-      vertices[1](0) = 0.25;
-      vertices[1](1) = -1.0;
-      vertices[1](2) = 0.0;
+          // Lower edge:
+          vertices[0](0) = 1.0;
+          vertices[0](1) = 0.0;
+          vertices[0](2) = 0.0;
 
-      vertices[2](0) = 1.5;
-      vertices[2](1) = -1.0;
-      vertices[2](2) = 0.0;
+          vertices[1](0) = 1.0;
+          vertices[1](1) = 1.0;
+          vertices[1](2) = 0.0;
 
-      // Vertices on upper edge:
-      vertices[3](0) = -1.0;
-      vertices[3](1) = 1.0;
-      vertices[3](2) = 0.0;
+          vertices[2](0) = 1.0;
+          vertices[2](1) = 2.0;
+          vertices[2](2) = 0.0;
 
-      vertices[4](0) = -0.25;
-      vertices[4](1) = 1.0;
-      vertices[4](2) = 0.0;
+          // Center edge:
+          vertices[3](0) = 0.7071067811865476;
+          vertices[3](1) = 0.0;
+          vertices[3](2) = 0.7071067811865476;
 
-      vertices[5](0) = 0.5;
-      vertices[5](1) = 1.0;
-      vertices[5](2) = 0.0;
+          vertices[4](0) = 0.7071067811865476;
+          vertices[4](1) = 1.0;
+          vertices[4](2) = 0.7071067811865476;
 
-      cells.resize(2);
+          vertices[5](0) = 0.7071067811865476;
+          vertices[5](1) = 2.0;
+          vertices[5](2) = 0.7071067811865476;
 
-      cells[0].vertices[0] = 0;
-      cells[0].vertices[1] = 1;
-      cells[0].vertices[2] = 3;
-      cells[0].vertices[3] = 4;
+          // Upper edge:
+          vertices[6](0) = 0.0;
+          vertices[6](1) = 0.0;
+          vertices[6](2) = 1.0;
 
-      cells[1].vertices[0] = 1;
-      cells[1].vertices[1] = 2;
-      cells[1].vertices[2] = 4;
-      cells[1].vertices[3] = 5;
+          vertices[7](0) = 0.0;
+          vertices[7](1) = 1.0;
+          vertices[7](2) = 1.0;
+
+          vertices[8](0) = 0.0;
+          vertices[8](1) = 2.0;
+          vertices[8](2) = 1.0;
+
+
+          cells.resize(4);
+
+          cells[0].vertices[0] = 0;
+          cells[0].vertices[1] = 1;
+          cells[0].vertices[2] = 3;
+          cells[0].vertices[3] = 4;
+
+          cells[1].vertices[0] = 1;
+          cells[1].vertices[1] = 2;
+          cells[1].vertices[2] = 4;
+          cells[1].vertices[3] = 5;
+
+          cells[2].vertices[0] = 3;
+          cells[2].vertices[1] = 4;
+          cells[2].vertices[2] = 6;
+          cells[2].vertices[3] = 7;
+
+          cells[3].vertices[0] = 4;
+          cells[3].vertices[1] = 5;
+          cells[3].vertices[2] = 7;
+          cells[3].vertices[3] = 8;
+        }
+      else if (meshId == 1)
+        {
+          singular_dof_id = 5;
+
+          vertices.resize(6);
+
+          // Lower edge:
+          vertices[0](0) = 1.0;
+          vertices[0](1) = 0.0;
+          vertices[0](2) = 0.0;
+
+          vertices[1](0) = 1.0;
+          vertices[1](1) = 1.0;
+          vertices[1](2) = 0.0;
+
+          vertices[2](0) = 1.0;
+          vertices[2](1) = 2.0;
+          vertices[2](2) = 0.0;
+
+          // Upper edge:
+          vertices[3](0) = 0.0;
+          vertices[3](1) = 0.0;
+          vertices[3](2) = 1.0;
+
+          vertices[4](0) = 0.0;
+          vertices[4](1) = 1.0;
+          vertices[4](2) = 1.0;
+
+          vertices[5](0) = 0.0;
+          vertices[5](1) = 2.0;
+          vertices[5](2) = 1.0;
+
+
+          cells.resize(2);
+
+          cells[0].vertices[0] = 0;
+          cells[0].vertices[1] = 1;
+          cells[0].vertices[2] = 3;
+          cells[0].vertices[3] = 4;
+
+          cells[1].vertices[0] = 1;
+          cells[1].vertices[1] = 2;
+          cells[1].vertices[2] = 4;
+          cells[1].vertices[3] = 5;
+        }
     }
+
   GridTools::delete_unused_vertices(vertices, cells, subcelldata);
   GridTools::consistently_order_cells(cells);
 
   // here's the triangulation set up
   triangulation.create_triangulation(vertices, cells, subcelldata);
+
+  if (int(exampleId) > 2)
+    {
+      std::string                                       cad_filename = "Revolution_1.iges";
+      TopoDS_Shape                                      surface      = OpenCASCADE::read_IGES(cad_filename, 1e-3);
+      OpenCASCADE::NormalToMeshProjectionManifold<2, 3> manifold(surface, 1e-7);
+      triangulation.set_all_manifold_ids(0);
+      triangulation.set_manifold(0, manifold);
+    }
 
   // We write the resulting mesh to a file, again in SVG format. This works just
   // as above:
@@ -2420,16 +2560,19 @@ main(int argc, char *argv[])
   if (argc > 3)
     meshId = std::stoi(argv[3]);
 
-  if (testId==0)
+  std::cout << "testId    " << testId << std::endl;
+  std::cout << "exampleId " << exampleId << std::endl;
+  std::cout << "meshId    " << meshId << std::endl;
+
+  if (testId == 0)
     compute_integrals_one_cell((EXAMPLE)exampleId, meshId);
 
-  if (testId==1)
+  if (testId == 1)
     compute_integrals_four_cells_hyper((EXAMPLE)exampleId, meshId);
 
-  if (testId==2)
+  if (testId == 2)
     compute_integrals_one_cell_strong();
 
-  if (testId==3)
+  if (testId == 3)
     compute_integrals_four_cells_strong();
-
 }
