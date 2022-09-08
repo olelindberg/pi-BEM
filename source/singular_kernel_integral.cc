@@ -1,22 +1,6 @@
 #include "../include/singular_kernel_integral.h"
 
 #include "../include/singular_kernel_integral_util.h"
-#include "Teuchos_TimeMonitor.hpp"
-
-using Teuchos::RCP;
-using Teuchos::Time;
-RCP<Time> SKI1  = Teuchos::TimeMonitor::getNewTimer("SKI1");
-RCP<Time> SKI2  = Teuchos::TimeMonitor::getNewTimer("SKI2");
-RCP<Time> SKI3  = Teuchos::TimeMonitor::getNewTimer("SKI3");
-RCP<Time> SKI4  = Teuchos::TimeMonitor::getNewTimer("SKI4");
-RCP<Time> SKI41 = Teuchos::TimeMonitor::getNewTimer("SKI41");
-RCP<Time> SKI42 = Teuchos::TimeMonitor::getNewTimer("SKI42");
-RCP<Time> SKI5  = Teuchos::TimeMonitor::getNewTimer("SKI5");
-RCP<Time> SKI6  = Teuchos::TimeMonitor::getNewTimer("SKI6");
-RCP<Time> SKI7  = Teuchos::TimeMonitor::getNewTimer("SKI7");
-RCP<Time> SKI8  = Teuchos::TimeMonitor::getNewTimer("SKI8");
-RCP<Time> SKI9  = Teuchos::TimeMonitor::getNewTimer("SKI9");
-
 
 template <>
 SingularKernelIntegral<3>::SingularKernelIntegral(double in_rho_quadrature_order, double in_theta_quadrature_order, FiniteElement<2, 3> &in_fe, Mapping<2, 3> &in_mapping)
@@ -24,7 +8,33 @@ SingularKernelIntegral<3>::SingularKernelIntegral(double in_rho_quadrature_order
   , theta_quadrature_order(in_theta_quadrature_order)
   , fe(in_fe)
   , mapping(in_mapping)
-{}
+{
+  // We must obtain the shape function derivatives at the singularity point eta
+  // in the parametric plane. In the deal.II framework the (to my knowledge)
+  // best way is to create a reference Triangulation<dim,spacedim> and
+  // FE<dim,spacedim> and use it to get the shape function values and
+  // derivatives building reference cell
+
+  std::vector<CellData<2>> ref_cells;
+  ref_cells.resize(1);
+  ref_cells[0].vertices[0] = 0;
+  ref_cells[0].vertices[1] = 1;
+  ref_cells[0].vertices[2] = 2;
+  ref_cells[0].vertices[3] = 3;
+  ref_cells[0].material_id = 1;
+
+  SubCellData ref_subcelldata;
+  GridTools::delete_unused_vertices(ref_vertices, ref_cells, ref_subcelldata);
+  GridTools::consistently_order_cells(ref_cells);
+
+  // here's the triangulation set up
+  _ref_triangulation.create_triangulation(ref_vertices, ref_cells, ref_subcelldata);
+
+  // we will need a codimension one finite element and
+  // the corresponding dof handler
+  _ref_dof_handler = std::make_shared<DoFHandler<2, 3>>(_ref_triangulation);
+  _ref_dof_handler->distribute_dofs(fe);
+}
 
 
 template <>
@@ -35,6 +45,8 @@ SingularKernelIntegral<2>::SingularKernelIntegral(double in_rho_quadrature_order
   , mapping(in_mapping)
 {}
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 template <>
 Tensor<1, 2>
 SingularKernelIntegral<2>::evaluate_Vk_integrals(const typename DoFHandler<1, 2>::active_cell_iterator &cell, const Point<1> &eta)
@@ -42,7 +54,49 @@ SingularKernelIntegral<2>::evaluate_Vk_integrals(const typename DoFHandler<1, 2>
   ExcNotImplemented();
   Tensor<1, 2> dummy;
   return dummy;
-};
+}
+#pragma GCC diagnostic pop
+
+
+
+void
+mapping_derivatives(const typename DoFHandler<2, 3>::active_cell_iterator &cell, const Point<2> &eta, const FiniteElement<2, 3> &fe, const Mapping<2, 3> &mapping, DerivativeForm<1, 2, 3> &eta_jacobian, DerivativeForm<2, 2, 3> &eta_jacobian_grad, Tensor<1, 3> &eta_Jxn, Tensor<1, 3> &d_eta_Jxn_du, Tensor<1, 3> &d_eta_Jxn_dv)
+{
+  // we have a single quadrature point (eta) located at P
+  std::vector<Point<2>> eta_q_points(1);
+  eta_q_points[0] = eta;
+  // and a single quadrature weight set to one
+  std::vector<double> eta_q_weights(1);
+  eta_q_weights[0] = 1;
+  // here's the quadrature rule obtained with the point and weight generated
+  Quadrature<2> eta_quadrature(eta_q_points, eta_q_weights);
+  // and here's the FEValues class resulting by it
+  FEValues<2, 3> eta_fe_values(mapping, fe, eta_quadrature, update_values | update_gradients | update_quadrature_points | update_JxW_values | update_normal_vectors | update_jacobians | update_jacobian_grads);
+  // we initialize FEValues object on the current cell
+  eta_fe_values.reinit(cell);
+  // the single quadrature point is the point in the three dimensional domain corresponding to eta/P
+  const std::vector<Point<3>> &eta_q_points_spacedim = eta_fe_values.get_quadrature_points();
+  // we also get the acobian and jacobian gradient at such a location
+  eta_jacobian      = eta_fe_values.jacobian(0);
+  eta_jacobian_grad = eta_fe_values.jacobian_grad(0);
+  // we now have all the first and second order mapping derivaives
+  // the product of the jacobian by the normal vector Jxn is the surface normal vector
+  // let us obtain it in terms of the mapping derivatives
+  eta_Jxn[0] = eta_jacobian[1][0] * eta_jacobian[2][1] - eta_jacobian[1][1] * eta_jacobian[2][0];
+  eta_Jxn[1] = eta_jacobian[0][1] * eta_jacobian[2][0] - eta_jacobian[0][0] * eta_jacobian[2][1];
+  eta_Jxn[2] = eta_jacobian[0][0] * eta_jacobian[1][1] - eta_jacobian[0][1] * eta_jacobian[1][0];
+
+  // we also want the derivative of the previous vector with respect to the first parametric plane coordinate u
+  d_eta_Jxn_du[0] = eta_jacobian_grad[1][0][0] * eta_jacobian[2][1] + eta_jacobian[1][0] * eta_jacobian_grad[2][1][0] - eta_jacobian_grad[1][1][0] * eta_jacobian[2][0] - eta_jacobian[1][1] * eta_jacobian_grad[2][0][0];
+  d_eta_Jxn_du[1] = eta_jacobian_grad[0][1][0] * eta_jacobian[2][0] + eta_jacobian[0][1] * eta_jacobian_grad[2][0][0] - eta_jacobian_grad[0][0][0] * eta_jacobian[2][1] - eta_jacobian[0][0] * eta_jacobian_grad[2][1][0];
+  d_eta_Jxn_du[2] = eta_jacobian_grad[0][0][0] * eta_jacobian[1][1] + eta_jacobian[0][0] * eta_jacobian_grad[1][1][0] - eta_jacobian_grad[0][1][0] * eta_jacobian[1][0] - eta_jacobian[0][1] * eta_jacobian_grad[1][0][0];
+
+  // we also want the derivative of the previous vector with respect to the second parametric plane coordinate v
+  d_eta_Jxn_dv[0] = eta_jacobian_grad[1][0][1] * eta_jacobian[2][1] + eta_jacobian[1][0] * eta_jacobian_grad[2][1][1] - eta_jacobian_grad[1][1][1] * eta_jacobian[2][0] - eta_jacobian[1][1] * eta_jacobian_grad[2][0][1];
+  d_eta_Jxn_dv[1] = eta_jacobian_grad[0][1][1] * eta_jacobian[2][0] + eta_jacobian[0][1] * eta_jacobian_grad[2][0][1] - eta_jacobian_grad[0][0][1] * eta_jacobian[2][1] - eta_jacobian[0][0] * eta_jacobian_grad[2][1][1];
+  d_eta_Jxn_dv[2] = eta_jacobian_grad[0][0][1] * eta_jacobian[1][1] + eta_jacobian[0][0] * eta_jacobian_grad[1][1][1] - eta_jacobian_grad[0][1][1] * eta_jacobian[1][0] - eta_jacobian[0][1] * eta_jacobian_grad[1][0][1];
+}
+
 
 
 template <>
@@ -64,7 +118,6 @@ SingularKernelIntegral<3>::evaluate_Vk_integrals(const typename DoFHandler<2, 3>
   // and a single quadrature weight set to one
   std::vector<double> eta_q_weights(1);
   eta_q_weights[0] = 1;
-
   // here's the quadrature rule obtained with the point and weight generated
   Quadrature<2> eta_quadrature(eta_q_points, eta_q_weights);
   // and here's the FEValues class resulting by it
@@ -73,28 +126,11 @@ SingularKernelIntegral<3>::evaluate_Vk_integrals(const typename DoFHandler<2, 3>
   eta_fe_values.reinit(cell);
   // the single quadrature point is the point in the three dimensional domain corresponding to eta/P
   const std::vector<Point<3>> &eta_q_points_spacedim = eta_fe_values.get_quadrature_points();
-  // we also get the acobian and jacobian gradient at such a location
-  auto eta_jacobian      = eta_fe_values.jacobian(0);
-  auto eta_jacobian_grad = eta_fe_values.jacobian_grad(0);
-  // we now have all the first and second order mapping derivaives
-  // the product of the jacobian by the normal vector Jxn is the surface normal vector
-  // let us obtain it in terms of the mapping derivatives
-  Tensor<1, 3> eta_Jxn;
-  eta_Jxn[0] = eta_jacobian[1][0] * eta_jacobian[2][1] - eta_jacobian[1][1] * eta_jacobian[2][0];
-  eta_Jxn[1] = eta_jacobian[0][1] * eta_jacobian[2][0] - eta_jacobian[0][0] * eta_jacobian[2][1];
-  eta_Jxn[2] = eta_jacobian[0][0] * eta_jacobian[1][1] - eta_jacobian[0][1] * eta_jacobian[1][0];
 
-  // we also want the derivative of the previous vector with respect to the first parametric plane coordinate u
-  Tensor<1, 3> d_eta_Jxn_du;
-  d_eta_Jxn_du[0] = eta_jacobian_grad[1][0][0] * eta_jacobian[2][1] + eta_jacobian[1][0] * eta_jacobian_grad[2][1][0] - eta_jacobian_grad[1][1][0] * eta_jacobian[2][0] - eta_jacobian[1][1] * eta_jacobian_grad[2][0][0];
-  d_eta_Jxn_du[1] = eta_jacobian_grad[0][1][0] * eta_jacobian[2][0] + eta_jacobian[0][1] * eta_jacobian_grad[2][0][0] - eta_jacobian_grad[0][0][0] * eta_jacobian[2][1] - eta_jacobian[0][0] * eta_jacobian_grad[2][1][0];
-  d_eta_Jxn_du[2] = eta_jacobian_grad[0][0][0] * eta_jacobian[1][1] + eta_jacobian[0][0] * eta_jacobian_grad[1][1][0] - eta_jacobian_grad[0][1][0] * eta_jacobian[1][0] - eta_jacobian[0][1] * eta_jacobian_grad[1][0][0];
-
-  // we also want the derivative of the previous vector with respect to the second parametric plane coordinate v
-  Tensor<1, 3> d_eta_Jxn_dv;
-  d_eta_Jxn_dv[0] = eta_jacobian_grad[1][0][1] * eta_jacobian[2][1] + eta_jacobian[1][0] * eta_jacobian_grad[2][1][1] - eta_jacobian_grad[1][1][1] * eta_jacobian[2][0] - eta_jacobian[1][1] * eta_jacobian_grad[2][0][1];
-  d_eta_Jxn_dv[1] = eta_jacobian_grad[0][1][1] * eta_jacobian[2][0] + eta_jacobian[0][1] * eta_jacobian_grad[2][0][1] - eta_jacobian_grad[0][0][1] * eta_jacobian[2][1] - eta_jacobian[0][0] * eta_jacobian_grad[2][1][1];
-  d_eta_Jxn_dv[2] = eta_jacobian_grad[0][0][1] * eta_jacobian[1][1] + eta_jacobian[0][0] * eta_jacobian_grad[1][1][1] - eta_jacobian_grad[0][1][1] * eta_jacobian[1][0] - eta_jacobian[0][1] * eta_jacobian_grad[1][0][1];
+  DerivativeForm<1, 2, 3> eta_jacobian;
+  DerivativeForm<2, 2, 3> eta_jacobian_grad;
+  Tensor<1, 3>            eta_Jxn, d_eta_Jxn_du, d_eta_Jxn_dv;
+  mapping_derivatives(cell, eta, fe, mapping, eta_jacobian, eta_jacobian_grad, eta_Jxn, d_eta_Jxn_du, d_eta_Jxn_dv);
 
   // we now loop over the cell faces to carry out the integrals
   for (unsigned int f = 0; f < GeometryInfo<2>::faces_per_cell; ++f)
@@ -282,7 +318,7 @@ SingularKernelIntegral<3>::evaluate_Vk_integrals(const typename DoFHandler<2, 3>
                   // based on rho and theta, the quadrature points are generated in polar coordinates
                   // centered at the singularity eta_q_points[0]
                   double rho           = rho_jac_fact * rho_q_points[p](0);
-                  inner_uv_q_points[p] = Point<2>(rho * cos(theta_q_points[q](0)) + eta_q_points[0](0), rho * sin(theta_q_points[q](0)) + eta_q_points[0](1));
+                  inner_uv_q_points[p] = Point<2>(rho * cos(theta_q_points[q](0)) + eta(0), rho * sin(theta_q_points[q](0)) + eta(1));
                 }
 
               // we can then create the quadrature and the FEValues
@@ -313,8 +349,10 @@ SingularKernelIntegral<3>::evaluate_Vk_integrals(const typename DoFHandler<2, 3>
     } // face loop
 
   return (I_0 + I_1 + I_2) / (4.0 * numbers::PI);
-};
+}
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 template <>
 std::vector<Tensor<1, 2>>
 SingularKernelIntegral<2>::evaluate_VkNj_integrals(const typename DoFHandler<1, 2>::active_cell_iterator &cell, const Point<1> &eta)
@@ -323,6 +361,7 @@ SingularKernelIntegral<2>::evaluate_VkNj_integrals(const typename DoFHandler<1, 
   std::vector<Tensor<1, 2>> dummy;
   return dummy;
 }
+#pragma GCC diagnostic pop
 
 
 
@@ -330,8 +369,6 @@ template <>
 std::vector<Tensor<1, 3>>
 SingularKernelIntegral<3>::evaluate_VkNj_integrals(const typename DoFHandler<2, 3>::active_cell_iterator &cell, const Point<2> &eta)
 {
-  Teuchos::TimeMonitor LocalTimer(*SKI1);
-
   Tensor<1, 3>              zero_tensor;
   std::vector<Tensor<1, 3>> I_0(fe.dofs_per_cell, zero_tensor);
   std::vector<Tensor<1, 3>> I_1(fe.dofs_per_cell, zero_tensor);
@@ -357,34 +394,6 @@ SingularKernelIntegral<3>::evaluate_VkNj_integrals(const typename DoFHandler<2, 
   // values of shape function 1-st order Taylor series coefficient
   std::vector<std::vector<double>> N1(theta_quadrature_order, serv);
 
-  // We must obtain the shape function derivatives at the singularity point eta
-  // in the parametric plane. In the deal.II framework the (to my knowledge)
-  // best way is to create a reference Triangulation<dim,spacedim> and
-  // FE<dim,spacedim> and use it to get the shape function values and
-  // derivatives building reference cell
-  Triangulation<2, 3> ref_triangulation;
-
-  std::vector<CellData<2>> ref_cells;
-  SubCellData              ref_subcelldata;
-
-  ref_cells.resize(1);
-
-  ref_cells[0].vertices[0] = 0;
-  ref_cells[0].vertices[1] = 1;
-  ref_cells[0].vertices[2] = 2;
-  ref_cells[0].vertices[3] = 3;
-  ref_cells[0].material_id = 1;
-
-  GridTools::delete_unused_vertices(ref_vertices, ref_cells, ref_subcelldata);
-  GridTools::consistently_order_cells(ref_cells);
-
-  // here's the triangulation set up
-  ref_triangulation.create_triangulation(ref_vertices, ref_cells, ref_subcelldata);
-
-  // we will need a codimension one finite element and
-  // the corresponding dof handler
-  DoFHandler<2, 3> ref_dof_handler(ref_triangulation);
-  ref_dof_handler.distribute_dofs(fe);
 
 
   // we now need to compute all the mapping first and second order derivatives
@@ -406,7 +415,7 @@ SingularKernelIntegral<3>::evaluate_VkNj_integrals(const typename DoFHandler<2, 
 
   FEValues<2, 3> ref_eta_fe_values(fe, eta_quadrature, update_values | update_gradients | update_quadrature_points | update_JxW_values | update_normal_vectors | update_jacobians | update_jacobian_grads);
   // we initialize rference FEValues object on the reference cell
-  ref_eta_fe_values.reinit(ref_dof_handler.begin_active());
+  ref_eta_fe_values.reinit(_ref_dof_handler->begin_active());
 
   FEValues<2, 3> eta_fe_values(mapping, fe, eta_quadrature, update_values | update_gradients | update_quadrature_points | update_JxW_values | update_normal_vectors | update_jacobians | update_jacobian_grads);
   // we initialize FEValues object on the current cell
@@ -452,7 +461,6 @@ SingularKernelIntegral<3>::evaluate_VkNj_integrals(const typename DoFHandler<2, 
   // we now loop over the cell faces to carry out the integrals
   for (unsigned int f = 0; f < GeometryInfo<2>::faces_per_cell; ++f)
     {
-      Teuchos::TimeMonitor LocalTimer(*SKI2);
       // (to the best of my knowledge)
       // deal.ii does not offer an easy way to get the values of the
       // face vertices in the cell parametric plane
@@ -587,8 +595,6 @@ SingularKernelIntegral<3>::evaluate_VkNj_integrals(const typename DoFHandler<2, 
 
           for (unsigned int q = 0; q < theta_q_points.size(); ++q)
             {
-              Teuchos::TimeMonitor LocalTimer(*SKI3);
-
               double theta = theta_q_points[q](0);
 
               for (unsigned int i = 0; i < 3; ++i)
@@ -616,8 +622,6 @@ SingularKernelIntegral<3>::evaluate_VkNj_integrals(const typename DoFHandler<2, 
           // for I_1 and I_2
           for (unsigned int q = 0; q < theta_q_points.size(); ++q)
             {
-              Teuchos::TimeMonitor LocalTimer(*SKI4);
-
               // the taylor expansion coefficients F_1 and F_2 are finally
               // computed
               double                    beta  = 1 / q_A[q];
@@ -650,8 +654,6 @@ SingularKernelIntegral<3>::evaluate_VkNj_integrals(const typename DoFHandler<2, 
               std::vector<Point<2>> inner_uv_q_points(rho_q_points.size());
               for (unsigned int p = 0; p < rho_q_points.size(); ++p)
                 {
-                  Teuchos::TimeMonitor LocalTimer(*SKI5);
-
                   // based on rho and theta, the quadrature points are generated
                   // in polar coordinates centered at the singularity
                   // eta_q_points[0]
@@ -662,8 +664,7 @@ SingularKernelIntegral<3>::evaluate_VkNj_integrals(const typename DoFHandler<2, 
               // we can then create the quadrature and the FEValues
               Quadrature<2> inner_uv_quadrature(inner_uv_q_points, inner_uv_q_weights);
               {
-                Teuchos::TimeMonitor LocalTimer(*SKI42);
-                FEValues<2, 3>       inner_face_fe_values(mapping, fe, inner_uv_quadrature, update_values | update_gradients | update_quadrature_points | update_JxW_values | update_normal_vectors);
+                FEValues<2, 3> inner_face_fe_values(mapping, fe, inner_uv_quadrature, update_values | update_gradients | update_quadrature_points | update_JxW_values | update_normal_vectors);
                 inner_face_fe_values.reinit(cell);
                 // let's obtain the quadrature points in the 3D space from the
                 // inner_face_fe_values
@@ -671,7 +672,6 @@ SingularKernelIntegral<3>::evaluate_VkNj_integrals(const typename DoFHandler<2, 
                 const std::vector<Tensor<1, 3>> &inner_uv_q_normals         = inner_face_fe_values.get_normal_vectors();
                 for (unsigned int p = 0; p < rho_q_points.size(); ++p)
                   {
-                    Teuchos::TimeMonitor LocalTimer(*SKI6);
                     // this is the rho obtained scaling the quadrature point in
                     // the [0,1] interval
                     double rho = rho_jac_fact * rho_q_points[p](0);
@@ -686,8 +686,6 @@ SingularKernelIntegral<3>::evaluate_VkNj_integrals(const typename DoFHandler<2, 
                     // there
                     for (unsigned int ii = 0; ii < fe.dofs_per_cell; ++ii)
                       {
-                        Teuchos::TimeMonitor LocalTimer(*SKI7);
-
                         Tensor<1, 3> fun = -1 / pow(r, 3) * (3 * (R / r) * (R * inner_uv_q_normals[p] / r) - inner_uv_q_normals[p]) * inner_face_fe_values.shape_value(ii, p);
                         Tensor<1, 3> arg = fun * rho * inner_face_fe_values.JxW(p) - F_2[ii] / pow(rho, 2) - F_1[ii] / rho;
 
@@ -715,6 +713,8 @@ SingularKernelIntegral<3>::evaluate_VkNj_integrals(const typename DoFHandler<2, 
   return II;
 }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 template <>
 Tensor<1, 2>
 SingularKernelIntegral<2>::evaluate_Wk_integrals(const typename DoFHandler<1, 2>::active_cell_iterator &cell, const Point<1> &eta)
@@ -723,6 +723,7 @@ SingularKernelIntegral<2>::evaluate_Wk_integrals(const typename DoFHandler<1, 2>
   Tensor<1, 2> dummy;
   return dummy;
 }
+#pragma GCC diagnostic pop
 
 template <>
 Tensor<1, 3>
@@ -733,35 +734,6 @@ SingularKernelIntegral<3>::evaluate_Wk_integrals(const typename DoFHandler<2, 3>
   Tensor<1, 3> I_1;
   Tensor<1, 3> I_2;
 
-  // We must obtain the shape function derivatives at the singularity point eta
-  // in the parametric plane. In the deal.II framework the (to my knowledge)
-  // best way is to create a reference Triangulation<dim,spacedim> and
-  // FE<dim,spacedim> and use it to get the shape function values and
-  // derivatives building reference cell
-  Triangulation<2, 3> ref_triangulation;
-
-  std::vector<CellData<2>> ref_cells;
-  SubCellData              ref_subcelldata;
-
-
-  ref_cells.resize(1);
-
-  ref_cells[0].vertices[0] = 0;
-  ref_cells[0].vertices[1] = 1;
-  ref_cells[0].vertices[2] = 2;
-  ref_cells[0].vertices[3] = 3;
-  ref_cells[0].material_id = 1;
-
-  GridTools::delete_unused_vertices(ref_vertices, ref_cells, ref_subcelldata);
-  GridTools::consistently_order_cells(ref_cells);
-
-  // here's the triangulation set up
-  ref_triangulation.create_triangulation(ref_vertices, ref_cells, ref_subcelldata);
-
-  // we will need a codimension one finite element and
-  // the corresponding dof handler
-  DoFHandler<2, 3> ref_dof_handler(ref_triangulation);
-  ref_dof_handler.distribute_dofs(fe);
 
 
   // we now need to compute all the mapping first and second order derivatives
@@ -780,10 +752,6 @@ SingularKernelIntegral<3>::evaluate_Wk_integrals(const typename DoFHandler<2, 3>
   Quadrature<2> eta_quadrature(eta_q_points, eta_q_weights);
   // and here are the reference and spacedim FEValues class resulting by it
   // (both FEValues are initialized with the correct cell)
-
-  FEValues<2, 3> ref_eta_fe_values(fe, eta_quadrature, update_values | update_gradients | update_quadrature_points | update_JxW_values | update_normal_vectors | update_jacobians | update_jacobian_grads);
-  // we initialize rference FEValues object on the reference cell
-  ref_eta_fe_values.reinit(ref_dof_handler.begin_active());
 
   FEValues<2, 3> eta_fe_values(mapping, fe, eta_quadrature, update_values | update_gradients | update_quadrature_points | update_JxW_values | update_normal_vectors | update_jacobians | update_jacobian_grads);
   // we initialize FEValues object on the current cell
@@ -1116,6 +1084,8 @@ SingularKernelIntegral<3>::evaluate_Wk_integrals(const typename DoFHandler<2, 3>
 
 
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 template <>
 std::vector<Tensor<1, 2>>
 SingularKernelIntegral<2>::evaluate_WkNj_integrals(const typename DoFHandler<1, 2>::active_cell_iterator &cell, const Point<1> &eta)
@@ -1124,6 +1094,7 @@ SingularKernelIntegral<2>::evaluate_WkNj_integrals(const typename DoFHandler<1, 
   std::vector<Tensor<1, 2>> dummy;
   return dummy;
 }
+#pragma GCC diagnostic pop
 
 template <>
 std::vector<Tensor<1, 3>>
@@ -1133,35 +1104,6 @@ SingularKernelIntegral<3>::evaluate_WkNj_integrals(const typename DoFHandler<2, 
   std::vector<Tensor<1, 3>> I_0(fe.dofs_per_cell, zero_tensor);
   std::vector<Tensor<1, 3>> I_1(fe.dofs_per_cell, zero_tensor);
   std::vector<Tensor<1, 3>> I_2(fe.dofs_per_cell, zero_tensor);
-
-  // We must obtain the shape function derivatives at the singularity point eta
-  // in the parametric plane. In the deal.II framework the (to my knowledge)
-  // best way is to create a reference Triangulation<dim,spacedim> and
-  // FE<dim,spacedim> and use it to get the shape function values and
-  // derivatives building reference cell
-  Triangulation<2, 3> ref_triangulation;
-
-  std::vector<CellData<2>> ref_cells;
-  SubCellData              ref_subcelldata;
-
-  ref_cells.resize(1);
-  ref_cells[0].vertices[0] = 0;
-  ref_cells[0].vertices[1] = 1;
-  ref_cells[0].vertices[2] = 2;
-  ref_cells[0].vertices[3] = 3;
-  ref_cells[0].material_id = 1;
-
-  GridTools::delete_unused_vertices(ref_vertices, ref_cells, ref_subcelldata);
-  GridTools::consistently_order_cells(ref_cells);
-
-  // here's the triangulation set up
-  ref_triangulation.create_triangulation(ref_vertices, ref_cells, ref_subcelldata);
-
-  // we will need a codimension one finite element and
-  // the corresponding dof handler
-  DoFHandler<2, 3> ref_dof_handler(ref_triangulation);
-  ref_dof_handler.distribute_dofs(fe);
-
 
   // we now need to compute all the mapping first and second order derivatives
   // in correspondence with the singularity
@@ -1182,7 +1124,7 @@ SingularKernelIntegral<3>::evaluate_WkNj_integrals(const typename DoFHandler<2, 
 
   FEValues<2, 3> ref_eta_fe_values(fe, eta_quadrature, update_values | update_gradients | update_quadrature_points | update_JxW_values | update_normal_vectors | update_jacobians | update_jacobian_grads);
   // we initialize rference FEValues object on the reference cell
-  ref_eta_fe_values.reinit(ref_dof_handler.begin_active());
+  ref_eta_fe_values.reinit(_ref_dof_handler->begin_active());
 
   FEValues<2, 3> eta_fe_values(mapping, fe, eta_quadrature, update_values | update_gradients | update_quadrature_points | update_JxW_values | update_normal_vectors | update_jacobians | update_jacobian_grads);
   // we initialize FEValues object on the current cell
@@ -1399,23 +1341,13 @@ SingularKernelIntegral<3>::evaluate_WkNj_integrals(const typename DoFHandler<2, 
               // computed
               double beta = 1 / q_A[q];
               // double gamma = -q_C[q]/pow(q_A[q],4);
-              std::vector<Tensor<1, 3>> F_2(fe.dofs_per_cell, zero_tensor);
               std::vector<Tensor<1, 3>> F_1(fe.dofs_per_cell, zero_tensor);
               for (unsigned int ii = 0; ii < fe.dofs_per_cell; ++ii)
                 {
-                  F_2[ii] = 0;
                   F_1[ii] = A[q] * J0 / pow(q_A[q], 3) * N0[q][ii];
-                  // std::cout<<"f: "<<f<<"  q: "<<q<<" theta:
-                  // "<<theta_q_points[q](0)*180/dealii::numbers::PI<<"  F_1:
-                  // "<<F_1[ii]<<"  F_2: "<<F_2[ii]<<"  rho: "<<q_rho[q]<<"
-                  // beta:
-                  // "<<beta<<"  gamma: "<<gamma<<"  w: "<<uv_q_weights[q]<<"
-                  // Jk0: "<<Jk0[q]<<"  Jk1: "<<Jk1[q]<<"  A: "<<A[q]<<"  B:
-                  // "<<B[q]<<std::endl;
                   // and the integral contribution of the present quadrature
                   // node is here added
                   I_1[ii] += F_1[ii] * log(fabs(q_rho[q] / beta)) * uv_q_weights[q];
-                  // I_1 += F_1*log(fabs(q_rho[q]))*uv_q_weights[q];
                 }
 
               // we still miss the surface integral I_0
@@ -1469,29 +1401,7 @@ SingularKernelIntegral<3>::evaluate_WkNj_integrals(const typename DoFHandler<2, 
                   for (unsigned int ii = 0; ii < fe.dofs_per_cell; ++ii)
                     {
                       Tensor<1, 3> fun = 1 / pow(r, 3) * (R)*inner_face_fe_values.shape_value(ii, p);
-                      Tensor<1, 3> arg = fun * rho * inner_face_fe_values.JxW(p) - F_2[ii] / pow(rho, 2) - F_1[ii] / rho;
-
-                      //                          std::cout<<"rho: "<<rho<<"  r:
-                      //                          "<<r<<"  arg1:
-                      //                          "<<1/pow(r,3)*R*rho*inner_face_fe_values.JxW(p)<<
-                      //                      "   arg2:
-                      //                      "<<-F_2[ii]/pow(rho,2)-F_1[ii]/rho<<"
-                      //                      diff:
-                      //                      "<<1/pow(r,2)*R*rho*inner_face_fe_values.JxW(p)-F_2[ii]/pow(rho,2)-F_1[ii]/rho<<std::endl;
-
-                      // std::cout<<rho<<"  "<<r<<"
-                      // "<<1/pow(r,3)*rho*inner_face_fe_values.JxW(p)<< "
-                      //"<<-F_2/pow(rho,2)-F_1/rho<<"
-                      //"<<1/pow(r,3)*rho*inner_face_fe_values.JxW(p)-F_2/pow(rho,2)-F_1/rho<<std::endl;
-
-                      //                      std::cout<<rho<<"  "<<r<<"
-                      //                      "<<Jk0[q][2]+rho*Jk1[q][2]<<"
-                      //                      "<<inner_uv_q_normals[p][2]*inner_face_fe_values.JxW(p)<<"
-                      //                      "<<inner_uv_q_normals[p][2]*inner_face_fe_values.JxW(p)-Jk0[q][2]-rho*Jk1[q][2]<<std::endl;
-
-                      //                  std::cout<<rho<<"  "<<R<<"
-                      //                  "<<rho*A[q]+rho*rho*B[q]<<"
-                      //                  "<<(R-rho*A[q]-rho*rho*B[q]).norm()<<std::endl;
+                      Tensor<1, 3> arg = fun * rho * inner_face_fe_values.JxW(p) - F_1[ii] / rho;
 
                       // we add the conribution of the present node to the
                       // surface integral the inner weights are given by
@@ -1521,6 +1431,8 @@ SingularKernelIntegral<3>::evaluate_WkNj_integrals(const typename DoFHandler<2, 
   return II;
 }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 template <>
 Tensor<1, 2>
 SingularKernelIntegral<2>::evaluate_free_term_b(const typename DoFHandler<1, 2>::active_cell_iterator &cell, const Point<1> &eta)
@@ -1529,6 +1441,7 @@ SingularKernelIntegral<2>::evaluate_free_term_b(const typename DoFHandler<1, 2>:
   Tensor<1, 2> dummy;
   return dummy;
 }
+#pragma GCC diagnostic pop
 
 template <>
 Tensor<1, 3>
@@ -1539,30 +1452,6 @@ SingularKernelIntegral<3>::evaluate_free_term_b(const typename DoFHandler<2, 3>:
   // best way is to create a reference Triangulation<dim,spacedim> and
   // FE<dim,spacedim> and use it to get the shape function values and
   // derivatives building reference cell
-  Triangulation<2, 3> ref_triangulation;
-
-  std::vector<CellData<2>> ref_cells;
-  SubCellData              ref_subcelldata;
-
-  ref_cells.resize(1);
-
-  ref_cells[0].vertices[0] = 0;
-  ref_cells[0].vertices[1] = 1;
-  ref_cells[0].vertices[2] = 2;
-  ref_cells[0].vertices[3] = 3;
-  ref_cells[0].material_id = 1;
-
-  GridTools::delete_unused_vertices(ref_vertices, ref_cells, ref_subcelldata);
-  GridTools::consistently_order_cells(ref_cells);
-
-  // here's the triangulation set up
-  ref_triangulation.create_triangulation(ref_vertices, ref_cells, ref_subcelldata);
-
-  // we will need a codimension one finite element and
-  // the corresponding dof handler
-  DoFHandler<2, 3> ref_dof_handler(ref_triangulation);
-  ref_dof_handler.distribute_dofs(fe);
-
 
   // we now need to compute all the mapping first and second order derivatives
   // in correspondence with the singularity
@@ -1583,7 +1472,7 @@ SingularKernelIntegral<3>::evaluate_free_term_b(const typename DoFHandler<2, 3>:
 
   FEValues<2, 3> ref_eta_fe_values(fe, eta_quadrature, update_values | update_gradients | update_quadrature_points | update_JxW_values | update_normal_vectors | update_jacobians | update_jacobian_grads);
   // we initialize rference FEValues object on the reference cell
-  ref_eta_fe_values.reinit(ref_dof_handler.begin_active());
+  ref_eta_fe_values.reinit(_ref_dof_handler->begin_active());
 
   FEValues<2, 3> eta_fe_values(mapping, fe, eta_quadrature, update_values | update_gradients | update_quadrature_points | update_JxW_values | update_normal_vectors | update_jacobians | update_jacobian_grads);
   // we initialize FEValues object on the current cell

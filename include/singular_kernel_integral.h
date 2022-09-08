@@ -92,6 +92,9 @@ private:
   Mapping<dim - 1, dim> &      mapping;
   std::vector<Point<3>>        ref_vertices          = {Point<3>(0.0, 0.0, 0.0), Point<3>(1.0, 0.0, 0.0), Point<3>(0.0, 1.0, 0.0), Point<3>(1.0, 1.0, 0.0)};
   int                          ref_edge_to_vtx[4][2] = {{2, 0}, {1, 3}, {0, 1}, {3, 2}}; // Counter clockwise orientation of edges
+
+  Triangulation<2, 3>               _ref_triangulation;
+  std::shared_ptr<DoFHandler<2, 3>> _ref_dof_handler;
 };
 
 #endif
