@@ -2216,7 +2216,7 @@ BEMProblem<dim>::compute_gradients_hypersingular(const TrilinosWrappers::MPI::Ve
   Teuchos::TimeMonitor LocalTimer(*HBIEGradientTime);
 
   int                         rho_quadrature_order   = 4;
-  int                         theta_quadrature_order = 8;
+  int                         theta_quadrature_order = 20;
   SingularKernelIntegral<dim> singular_kernel_integrator(rho_quadrature_order, theta_quadrature_order, *fe, *mapping);
 
   TrilinosWrappers::MPI::Vector vector_hyp_gradients_solution(vector_this_cpu_set, mpi_communicator);

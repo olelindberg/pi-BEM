@@ -357,8 +357,6 @@ SingularKernelIntegral<3>::evaluate_VkNj_integrals(const typename DoFHandler<2, 
   // values of shape function 1-st order Taylor series coefficient
   std::vector<std::vector<double>> N1(theta_quadrature_order, serv);
 
-
-
   // We must obtain the shape function derivatives at the singularity point eta
   // in the parametric plane. In the deal.II framework the (to my knowledge)
   // best way is to create a reference Triangulation<dim,spacedim> and
@@ -366,24 +364,8 @@ SingularKernelIntegral<3>::evaluate_VkNj_integrals(const typename DoFHandler<2, 
   // derivatives building reference cell
   Triangulation<2, 3> ref_triangulation;
 
-  std::vector<Point<3>>    ref_vertices;
   std::vector<CellData<2>> ref_cells;
   SubCellData              ref_subcelldata;
-
-  ref_vertices.resize(4);
-  ref_vertices[0](0) = 0.0;
-  ref_vertices[0](1) = 0.0;
-  ref_vertices[0](2) = 0.0;
-  ref_vertices[1](0) = 1.0;
-  ref_vertices[1](1) = 0.0;
-  ref_vertices[1](2) = 0.0;
-  ref_vertices[2](0) = 0.0;
-  ref_vertices[2](1) = 1.0;
-  ref_vertices[2](2) = 0.0;
-  ref_vertices[3](0) = 1.0;
-  ref_vertices[3](1) = 1.0;
-  ref_vertices[3](2) = 0.0;
-
 
   ref_cells.resize(1);
 
@@ -681,7 +663,7 @@ SingularKernelIntegral<3>::evaluate_VkNj_integrals(const typename DoFHandler<2, 
               Quadrature<2> inner_uv_quadrature(inner_uv_q_points, inner_uv_q_weights);
               {
                 Teuchos::TimeMonitor LocalTimer(*SKI42);
-                FEValues<2, 3>       inner_face_fe_values(fe, inner_uv_quadrature, update_values | update_gradients | update_quadrature_points | update_JxW_values | update_normal_vectors);
+                FEValues<2, 3>       inner_face_fe_values(mapping,fe, inner_uv_quadrature, update_values | update_gradients | update_quadrature_points | update_JxW_values | update_normal_vectors);
                 inner_face_fe_values.reinit(cell);
                 // let's obtain the quadrature points in the 3D space from the
                 // inner_face_fe_values
@@ -758,23 +740,9 @@ SingularKernelIntegral<3>::evaluate_Wk_integrals(const typename DoFHandler<2, 3>
   // derivatives building reference cell
   Triangulation<2, 3> ref_triangulation;
 
-  std::vector<Point<3>>    ref_vertices;
   std::vector<CellData<2>> ref_cells;
   SubCellData              ref_subcelldata;
 
-  ref_vertices.resize(4);
-  ref_vertices[0](0) = 0.0;
-  ref_vertices[0](1) = 0.0;
-  ref_vertices[0](2) = 0.0;
-  ref_vertices[1](0) = 1.0;
-  ref_vertices[1](1) = 0.0;
-  ref_vertices[1](2) = 0.0;
-  ref_vertices[2](0) = 0.0;
-  ref_vertices[2](1) = 1.0;
-  ref_vertices[2](2) = 0.0;
-  ref_vertices[3](0) = 1.0;
-  ref_vertices[3](1) = 1.0;
-  ref_vertices[3](2) = 0.0;
 
   ref_cells.resize(1);
 
@@ -1173,26 +1141,10 @@ SingularKernelIntegral<3>::evaluate_WkNj_integrals(const typename DoFHandler<2, 
   // derivatives building reference cell
   Triangulation<2, 3> ref_triangulation;
 
-  std::vector<Point<3>>    ref_vertices;
   std::vector<CellData<2>> ref_cells;
   SubCellData              ref_subcelldata;
 
-  ref_vertices.resize(4);
-  ref_vertices[0](0) = 0.0;
-  ref_vertices[0](1) = 0.0;
-  ref_vertices[0](2) = 0.0;
-  ref_vertices[1](0) = 1.0;
-  ref_vertices[1](1) = 0.0;
-  ref_vertices[1](2) = 0.0;
-  ref_vertices[2](0) = 0.0;
-  ref_vertices[2](1) = 1.0;
-  ref_vertices[2](2) = 0.0;
-  ref_vertices[3](0) = 1.0;
-  ref_vertices[3](1) = 1.0;
-  ref_vertices[3](2) = 0.0;
-
   ref_cells.resize(1);
-
   ref_cells[0].vertices[0] = 0;
   ref_cells[0].vertices[1] = 1;
   ref_cells[0].vertices[2] = 2;
@@ -1271,23 +1223,6 @@ SingularKernelIntegral<3>::evaluate_WkNj_integrals(const typename DoFHandler<2, 
   d_eta_Jxn_dv[0] = eta_jacobian_grad[1][0][1] * eta_jacobian[2][1] + eta_jacobian[1][0] * eta_jacobian_grad[2][1][1] - eta_jacobian_grad[1][1][1] * eta_jacobian[2][0] - eta_jacobian[1][1] * eta_jacobian_grad[2][0][1];
   d_eta_Jxn_dv[1] = eta_jacobian_grad[0][1][1] * eta_jacobian[2][0] + eta_jacobian[0][1] * eta_jacobian_grad[2][0][1] - eta_jacobian_grad[0][0][1] * eta_jacobian[2][1] - eta_jacobian[0][0] * eta_jacobian_grad[2][1][1];
   d_eta_Jxn_dv[2] = eta_jacobian_grad[0][0][1] * eta_jacobian[1][1] + eta_jacobian[0][0] * eta_jacobian_grad[1][1][1] - eta_jacobian_grad[0][1][1] * eta_jacobian[1][0] - eta_jacobian[0][1] * eta_jacobian_grad[1][0][1];
-  // std::cout<<"dim singularity location: "<<eta<<std::endl;
-  // std::cout<<"Spacedim singularity location:
-  // "<<eta_q_points_spacedim[0]<<std::endl; std::cout<<"d_eta_Jxn_du
-  // "<<d_eta_Jxn_du<<std::endl; std::cout<<"d_eta_Jxn_dv
-  // "<<d_eta_Jxn_dv<<std::endl;
-  //      std::cout<<"H1r: "<<eta_jacobian_grad[0][0][0]<<"
-  //      "<<eta_jacobian_grad[0][0][1]<<std::endl; std::cout<<"
-  //      "<<eta_jacobian_grad[0][1][0]<<"
-  //      "<<eta_jacobian_grad[0][1][1]<<std::endl; std::cout<<"H2r:
-  //      "<<eta_jacobian_grad[1][0][0]<<"
-  //      "<<eta_jacobian_grad[1][0][1]<<std::endl; std::cout<<"
-  //      "<<eta_jacobian_grad[1][1][0]<<"
-  //      "<<eta_jacobian_grad[1][1][1]<<std::endl; std::cout<<"H3r:
-  //      "<<eta_jacobian_grad[2][0][0]<<"
-  //      "<<eta_jacobian_grad[2][0][1]<<std::endl; std::cout<<"
-  //      "<<eta_jacobian_grad[2][1][0]<<"
-  //      "<<eta_jacobian_grad[2][1][1]<<std::endl;
 
   double J0    = eta_Jxn.norm();
   double J0_du = 1 / eta_Jxn.norm() * eta_Jxn * d_eta_Jxn_du;
@@ -1302,20 +1237,9 @@ SingularKernelIntegral<3>::evaluate_WkNj_integrals(const typename DoFHandler<2, 
 
       if (dist > std::numeric_limits<double>::epsilon())
         {
-          auto r0 = v0 - Point<3>(eta[0], eta[1], 0.0);
-          auto r1 = v1 - Point<3>(eta[0], eta[1], 0.0);
 
-          double theta_0 = atan2(r0[1], r0[0]);
-          if (theta_0 < 0)
-            theta_0 += 2 * dealii::numbers::PI;
-
-          double theta_1 = atan2(r1[1], r1[0]);
-          if (theta_1 < 0)
-            theta_1 += 2 * dealii::numbers::PI;
-
-          if (theta_1 < theta_0)
-            theta_1 += 2 * dealii::numbers::PI;
-
+          double theta_0, theta_1;
+          singular_kernel_integral_util::parameter_space_angles(v0, v1, Point<3>(eta[0], eta[1], 0.0), theta_0, theta_1);
 
           // we now create a 1D triangulation for the integration
           // in the theta direction of the polar coordinates
@@ -1618,23 +1542,8 @@ SingularKernelIntegral<3>::evaluate_free_term_b(const typename DoFHandler<2, 3>:
   // derivatives building reference cell
   Triangulation<2, 3> ref_triangulation;
 
-  std::vector<Point<3>>    ref_vertices;
   std::vector<CellData<2>> ref_cells;
   SubCellData              ref_subcelldata;
-
-  ref_vertices.resize(4);
-  ref_vertices[0](0) = 0.0;
-  ref_vertices[0](1) = 0.0;
-  ref_vertices[0](2) = 0.0;
-  ref_vertices[1](0) = 1.0;
-  ref_vertices[1](1) = 0.0;
-  ref_vertices[1](2) = 0.0;
-  ref_vertices[2](0) = 0.0;
-  ref_vertices[2](1) = 1.0;
-  ref_vertices[2](2) = 0.0;
-  ref_vertices[3](0) = 1.0;
-  ref_vertices[3](1) = 1.0;
-  ref_vertices[3](2) = 0.0;
 
   ref_cells.resize(1);
 

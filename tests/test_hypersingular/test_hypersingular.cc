@@ -1818,7 +1818,7 @@ Example41_unit_to_real_cell(Point<2> pnt)
 }
 
 void
-examples(EXAMPLE exampleId, Point<2> &singularity_location_in_parametric_plane, double &Iexact, double &resultscale)
+Guiggiani1992Examples(EXAMPLE exampleId, Point<2> &singularity_location_in_parametric_plane, double &Iexact, double &resultscale)
 {
   resultscale = 1.0;
   switch (exampleId)
@@ -1860,17 +1860,15 @@ examples(EXAMPLE exampleId, Point<2> &singularity_location_in_parametric_plane, 
 // In the following, first function, we simply use the unit square as domain
 // and produce a globally refined grid from it.
 void
-compute_integrals_one_cell(int exampleId, int meshId)
+compute_integrals_one_cell(EXAMPLE exampleId, int meshId)
 {
-  auto example = (EXAMPLE)exampleId;
-
   double   fe_degree   = 2;
   int      gauss_order = 16;
   Point<2> singularity_location_in_parametric_plane(0, 0);
   double   Iexact      = 0.0;
   double   resultscale = 1.0;
 
-  examples(example, singularity_location_in_parametric_plane, Iexact, resultscale);
+  Guiggiani1992Examples(exampleId, singularity_location_in_parametric_plane, Iexact, resultscale);
 
   // let's start creating the geometry
   Triangulation<2, 3> triangulation;
@@ -1878,7 +1876,7 @@ compute_integrals_one_cell(int exampleId, int meshId)
   std::vector<Point<3>>    vertices;
   std::vector<CellData<2>> cells;
   SubCellData              subcelldata;
-  if (exampleId < 3)
+  if (int(exampleId) < 3)
     {
       vertices.resize(4);
       vertices[0](0) = -1.0;
@@ -1937,7 +1935,7 @@ compute_integrals_one_cell(int exampleId, int meshId)
   triangulation.create_triangulation(vertices, cells, subcelldata);
 
   // curved
-  if (exampleId > 2)
+  if (int(exampleId) > 2)
     {
       std::string                                       cad_filename = "Revolution_1.iges";
       TopoDS_Shape                                      surface      = OpenCASCADE::read_IGES(cad_filename, 1e-3);
@@ -1966,8 +1964,9 @@ compute_integrals_one_cell(int exampleId, int meshId)
   // in a normal application we would need to loop
   // on the grid cells. In this case this loop will only
   // have one cell
-  Tensor<1, 3> I;
-  I = 0;
+  Tensor<1, 3> integral;
+  integral = 0;
+  Tensor<1, 3> integral_shapefuncs({0, 0, 0});
 
   auto Preal = Example41_unit_to_real_cell(singularity_location_in_parametric_plane);
   std::cout << Preal << std::endl;
@@ -1982,14 +1981,28 @@ compute_integrals_one_cell(int exampleId, int meshId)
 
       Point<2>                  P = singularity_location_in_parametric_plane;
       SingularKernelIntegral<3> sing_kernel_integrator(gauss_order, gauss_order, fe, mapping);
-      I += sing_kernel_integrator.evaluate_Vk_integrals(cell, P);
+      integral += sing_kernel_integrator.evaluate_Vk_integrals(cell, P);
+
+      auto II = sing_kernel_integrator.evaluate_VkNj_integrals(cell, P);
+      for (auto &III : II)
+        integral_shapefuncs += III;
+
 
       ++tria_cell;
     }
+  std::cout << "\nPointwise: " << std::endl;
   std::cout << "Iexact : " << Iexact << std::endl;
-  std::cout << "Result : " << I[2] * resultscale << std::endl;
-  std::cout << "Abs Err: " << Iexact - I[2] * resultscale << std::endl;
-  std::cout << "Rel Err: " << fabs(Iexact - I[2] * resultscale) / fabs(Iexact) << std::endl;
+  std::cout << "Result : " << integral[2] * resultscale << std::endl;
+  std::cout << "Abs Err: " << Iexact - integral[2] * resultscale << std::endl;
+  std::cout << "Rel Err: " << fabs(Iexact - integral[2] * resultscale) / fabs(Iexact) << std::endl;
+
+  std::cout << "\nWith shape function: " << std::endl;
+  std::cout << "Iexact : " << Iexact << std::endl;
+  std::cout << "Result : " << integral_shapefuncs[2] * resultscale << std::endl;
+  std::cout << "Abs Err: " << Iexact - integral_shapefuncs[2] * resultscale << std::endl;
+  std::cout << "Rel Err: " << fabs(Iexact - integral_shapefuncs[2] * resultscale) / fabs(Iexact) << std::endl;
+
+
 }
 
 void
@@ -2009,7 +2022,7 @@ compute_integrals_four_cells_hyper(EXAMPLE exampleId, int meshId)
   Point<2> tmp(0, 0);
   double   Iexact      = 0.0;
   double   resultscale = 1.0;
-  examples(exampleId, tmp, Iexact, resultscale);
+  Guiggiani1992Examples(exampleId, tmp, Iexact, resultscale);
 
   if (meshId == 0)
     {
@@ -2312,20 +2325,6 @@ compute_integrals_four_cells_strong()
   vertices[8](1) = 1.0;
   vertices[8](2) = 0.0;
 
-  //  vertices.resize(4);
-  //  vertices[0](0)=-1.0;
-  //  vertices[0](1)=-1.0;
-  //  vertices[0](2)=0.0;
-  //  vertices[1](0)=1.0;
-  //  vertices[1](1)=-1.0;
-  //  vertices[1](2)=0.0;
-  //  vertices[2](0)=-1.0;
-  //  vertices[2](1)=0.5;
-  //  vertices[2](2)=0.0;
-  //  vertices[3](0)=1.0;
-  //  vertices[3](1)=1.5;
-  //  vertices[3](2)=0.0;
-
   cells.resize(4);
 
   cells[0].vertices[0] = 0;
@@ -2394,32 +2393,11 @@ compute_integrals_four_cells_strong()
 
       for (auto &III : I)
         {
-          std::cout << III << std::endl;
           integral += III;
         }
-      //      std::cout<<"Abs Err: "<<-5.749236751228080-I[2]<<std::endl;
-      //      std::cout<<"Rel Err: "<<fabs(-5.749236751228080-I[2])/fabs(-5.749236751228080)<<std::endl;
-      //      std::cout<<"Abs Err: "<<-9.154585469918885-I[2]<<std::endl;
-      //      std::cout<<"Rel Err: "<<fabs(-9.154585469918885-I[2])/fabs(-9.154585469918885)<<std::endl;
-      //      std::cout<<"Abs Err: "<<-15.32849545090306-I[2]<<std::endl;
-      //      std::cout<<"Rel Err: "<<fabs(-15.32849545090306-I[2])/fabs(-15.32849545090306)<<std::endl;
-      //      std::cout<<"Abs Err: "<<-8.939872997672122-I[2]<<std::endl;
-      //      std::cout<<"Rel Err: "<<fabs(-8.939872997672122-I[2])/fabs(-8.939872997672122)<<std::endl;
-
-      //      std::cout<<"Test of integral including Shape Function: "<<std::endl;
-      //      std::vector<Tensor<1,3> > II = sing_kernel_integrator.evaluate_VkNj_integrals();
-      //      for (unsigned int i=0; i<fe.dofs_per_cell; ++i)
-      //          std::cout<<"Shape Function "<<i<<": "<<II[i]<<std::endl;
-
-      //        std::cout<<"Test of integral including Shape Function: "<<std::endl;
-      //        std::vector<Tensor<1,3> > II = sing_kernel_integrator.evaluate_WkNj_integrals();
-      //        for (unsigned int i=0; i<fe.dofs_per_cell; ++i)
-      //            std::cout<<"Shape Function "<<i<<": "<<II[i]<<std::endl;
     }
   std::cout << integral * (4 * dealii::numbers::PI) << std::endl;
   std::cout << "Integral: " << integral[0] * (4 * dealii::numbers::PI) << "  vs " << -2.114175 << std::endl;
-  // std::cout<<"Abs Err: "<<-8.547920819221268-integral[2]<<std::endl;
-  // std::cout<<"Rel Err: "<<fabs(-8.547920819221268-integral[2])/fabs(-8.547920819221268)<<std::endl;
 }
 
 
@@ -2430,16 +2408,28 @@ compute_integrals_four_cells_strong()
 int
 main(int argc, char *argv[])
 {
-  int exampleId = 0;
+  int testId = 0;
   if (argc > 1)
-    exampleId = std::stoi(argv[1]);
+    testId = std::stoi(argv[1]);
+
+  int exampleId = 0;
+  if (argc > 2)
+    exampleId = std::stoi(argv[2]);
 
   int meshId = 0;
-  if (argc > 2)
-    meshId = std::stoi(argv[2]);
+  if (argc > 3)
+    meshId = std::stoi(argv[3]);
 
-  // compute_integrals_one_cell((EXAMPLE)exampleId, meshId);
-  // compute_integrals_four_cells_hyper((EXAMPLE)exampleId, meshId);
-  compute_integrals_one_cell_strong();
-  compute_integrals_four_cells_strong();
+  if (testId==0)
+    compute_integrals_one_cell((EXAMPLE)exampleId, meshId);
+
+  if (testId==1)
+    compute_integrals_four_cells_hyper((EXAMPLE)exampleId, meshId);
+
+  if (testId==2)
+    compute_integrals_one_cell_strong();
+
+  if (testId==3)
+    compute_integrals_four_cells_strong();
+
 }

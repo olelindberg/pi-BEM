@@ -104,12 +104,12 @@ class PointShapeFunction():
     def derivatives(self,eta):
         return 0,0
 
-shapefunc = PointShapeFunction()
-#shapefunc = LagrangePolynomial2DShapeFunction(4)
+#shapefunc = PointShapeFunction()
+shapefunc = LagrangePolynomial2DShapeFunction(2)
 
 N = 3
 n = 16
-example = ["4.2","c"]
+example = ["4.2","a"]
 if example[0]=="4.1":
     mesh = MeshGen41()
     if example[1] =="a":
