@@ -73,15 +73,13 @@ BoundaryConditions<dim>::parse_parameters(ParameterHandler &prm)
   output_file_name = prm.get("Output file name");
 
 
-  prm.enter_subsection(std::string("Wind function ") +
-                       Utilities::int_to_string(dim) + std::string("d"));
+  prm.enter_subsection(std::string("Wind function ") + Utilities::int_to_string(dim) + std::string("d"));
   {
     wind.parse_parameters(prm);
   }
   prm.leave_subsection();
 
-  prm.enter_subsection(std::string("Potential ") +
-                       Utilities::int_to_string(dim) + std::string("d"));
+  prm.enter_subsection(std::string("Potential ") + Utilities::int_to_string(dim) + std::string("d"));
   {
     potential.parse_parameters(prm);
   }
@@ -121,15 +119,12 @@ BoundaryConditions<dim>::solve_problem()
   have_dirichlet_bc = bem.have_dirichlet_bc;
   if (!have_dirichlet_bc)
     {
-    const types::global_dof_index    n_dofs = bem.dh.n_dofs();
-      std::vector<Point<dim>> support_points(n_dofs);
-      DoFTools::map_dofs_to_support_points<dim - 1, dim>(*bem.mapping,
-                                                         bem.dh,
-                                                         support_points);
+      const types::global_dof_index n_dofs = bem.dh.n_dofs();
+      std::vector<Point<dim>>       support_points(n_dofs);
+      DoFTools::map_dofs_to_support_points<dim - 1, dim>(*bem.mapping, bem.dh, support_points);
       double shift = 0.0;
       if (this_mpi_process == 0)
-        shift = potential.value(support_points[*bem.this_cpu_set.begin()]) -
-                phi(*bem.this_cpu_set.begin());
+        shift = potential.value(support_points[*bem.this_cpu_set.begin()]) - phi(*bem.this_cpu_set.begin());
       MPI_Bcast(&shift, 1, MPI_DOUBLE, 0, mpi_communicator);
       vector_shift(phi, shift);
     }
@@ -159,24 +154,16 @@ BoundaryConditions<dim>::assign_potential_normal_derivative()
   dphi_dn.reinit(this_cpu_set, mpi_communicator);
 
   std::vector<Point<dim>> support_points(n_dofs);
-  DoFTools::map_dofs_to_support_points<dim - 1, dim>(*bem.mapping,
-                                                     bem.dh,
-                                                     support_points);
+  DoFTools::map_dofs_to_support_points<dim - 1, dim>(*bem.mapping, bem.dh, support_points);
 
   std::vector<Point<dim>> vec_support_points(bem.gradient_dh.n_dofs());
-  DoFTools::map_dofs_to_support_points<dim - 1, dim>(*bem.mapping,
-                                                     bem.gradient_dh,
-                                                     vec_support_points);
+  DoFTools::map_dofs_to_support_points<dim - 1, dim>(*bem.mapping, bem.gradient_dh, vec_support_points);
 
   cell_it cell = bem.dh.begin_active(), endc = bem.dh.end();
 
   const unsigned int                   dofs_per_cell = bem.fe->dofs_per_cell;
   std::vector<types::global_dof_index> local_dof_indices(dofs_per_cell);
-  FEValues<dim - 1, dim>               fe_v(*bem.mapping,
-                              *bem.fe,
-                              *bem.quadrature,
-                              update_values | update_normal_vectors |
-                                update_quadrature_points | update_JxW_values);
+  FEValues<dim - 1, dim>               fe_v(*bem.mapping, *bem.fe, *bem.quadrature, update_values | update_normal_vectors | update_quadrature_points | update_JxW_values);
 
 
   for (cell = bem.dh.begin_active(); cell != endc; ++cell)
@@ -188,27 +175,18 @@ BoundaryConditions<dim>::assign_potential_normal_derivative()
         if (this_cpu_set.is_element(local_dof_indices[j]))
           {
             Vector<double> imposed_pot_grad(dim);
-            wind.vector_value(support_points[local_dof_indices[j]],
-                              imposed_pot_grad);
+            wind.vector_value(support_points[local_dof_indices[j]], imposed_pot_grad);
 
             double tmp_dphi_dn = 0;
             for (unsigned int d = 0; d < dim; ++d)
               {
-                types::global_dof_index dummy =
-                  bem.sub_wise_to_original[local_dof_indices[j]];
-                types::global_dof_index vec_index =
-                  bem.vec_original_to_sub_wise
-                    [bem.gradient_dh.n_dofs() / dim * d +
-                      dummy];
-                Assert(
-                  bem.vector_this_cpu_set.is_element(vec_index),
-                  ExcMessage(
-                    "vector cpu set and cpu set are inconsistent"));
+                types::global_dof_index dummy     = bem.sub_wise_to_original[local_dof_indices[j]];
+                types::global_dof_index vec_index = bem.vec_original_to_sub_wise[bem.gradient_dh.n_dofs() / dim * d + dummy];
+                Assert(bem.vector_this_cpu_set.is_element(vec_index), ExcMessage("vector cpu set and cpu set are inconsistent"));
 
-                tmp_dphi_dn += imposed_pot_grad[d] *
-                                bem.vector_normals_solution[vec_index];
+                tmp_dphi_dn += imposed_pot_grad[d] * bem.vector_normals_solution[vec_index];
               }
-          
+
             dphi_dn(local_dof_indices[j]) = tmp_dphi_dn;
           }
     }
@@ -219,24 +197,20 @@ template <int dim>
 void
 BoundaryConditions<dim>::assign_potential()
 {
-   const types::global_dof_index n_dofs = bem.dh.n_dofs();
+  const types::global_dof_index n_dofs = bem.dh.n_dofs();
 
   phi.reinit(this_cpu_set, mpi_communicator);
 
-   std::vector<Point<dim>> support_points(n_dofs);
-   DoFTools::map_dofs_to_support_points<dim - 1, dim>(*bem.mapping,
-                                                      bem.dh,
-                                                      support_points);
+  std::vector<Point<dim>> support_points(n_dofs);
+  DoFTools::map_dofs_to_support_points<dim - 1, dim>(*bem.mapping, bem.dh, support_points);
 
   std::vector<Point<dim>> vec_support_points(bem.gradient_dh.n_dofs());
-  DoFTools::map_dofs_to_support_points<dim - 1, dim>(*bem.mapping,
-                                                      bem.gradient_dh,
-                                                      vec_support_points);
+  DoFTools::map_dofs_to_support_points<dim - 1, dim>(*bem.mapping, bem.gradient_dh, vec_support_points);
 
   cell_it cell = bem.dh.begin_active(), endc = bem.dh.end();
 
-   const unsigned int                   dofs_per_cell = bem.fe->dofs_per_cell;
-   std::vector<types::global_dof_index> local_dof_indices(dofs_per_cell);
+  const unsigned int                   dofs_per_cell = bem.fe->dofs_per_cell;
+  std::vector<types::global_dof_index> local_dof_indices(dofs_per_cell);
   // FEValues<dim - 1, dim>               fe_v(*bem.mapping,
   //                             *bem.fe,
   //                             *bem.quadrature,
@@ -246,16 +220,15 @@ BoundaryConditions<dim>::assign_potential()
 
   for (cell = bem.dh.begin_active(); cell != endc; ++cell)
     {
-  //    fe_v.reinit(cell);
+      //    fe_v.reinit(cell);
       cell->get_dof_indices(local_dof_indices);
       for (unsigned int j = 0; j < bem.fe->dofs_per_cell; ++j)
-      {
-        if (this_cpu_set.is_element(local_dof_indices[j]))
-          {
-                phi(local_dof_indices[j]) =
-                  potential.value(support_points[local_dof_indices[j]]);
-          }
-      }
+        {
+          if (this_cpu_set.is_element(local_dof_indices[j]))
+            {
+              phi(local_dof_indices[j]) = potential.value(support_points[local_dof_indices[j]]);
+            }
+        }
     }
 }
 
@@ -275,24 +248,16 @@ BoundaryConditions<dim>::prepare_bem_vectors()
 
 
   std::vector<Point<dim>> support_points(n_dofs);
-  DoFTools::map_dofs_to_support_points<dim - 1, dim>(*bem.mapping,
-                                                     bem.dh,
-                                                     support_points);
+  DoFTools::map_dofs_to_support_points<dim - 1, dim>(*bem.mapping, bem.dh, support_points);
 
   std::vector<Point<dim>> vec_support_points(bem.gradient_dh.n_dofs());
-  DoFTools::map_dofs_to_support_points<dim - 1, dim>(*bem.mapping,
-                                                     bem.gradient_dh,
-                                                     vec_support_points);
+  DoFTools::map_dofs_to_support_points<dim - 1, dim>(*bem.mapping, bem.gradient_dh, vec_support_points);
 
   cell_it cell = bem.dh.begin_active(), endc = bem.dh.end();
 
   const unsigned int                   dofs_per_cell = bem.fe->dofs_per_cell;
   std::vector<types::global_dof_index> local_dof_indices(dofs_per_cell);
-  FEValues<dim - 1, dim>               fe_v(*bem.mapping,
-                              *bem.fe,
-                              *bem.quadrature,
-                              update_values | update_normal_vectors |
-                                update_quadrature_points | update_JxW_values);
+  FEValues<dim - 1, dim>               fe_v(*bem.mapping, *bem.fe, *bem.quadrature, update_values | update_normal_vectors | update_quadrature_points | update_JxW_values);
 
 
   for (cell = bem.dh.begin_active(); cell != endc; ++cell)
@@ -318,10 +283,8 @@ BoundaryConditions<dim>::prepare_bem_vectors()
             if (dirichlet)
               {
                 // tmp_rhs(local_dof_indices[j]) = node_coors[j](0);
-                phi(local_dof_indices[j]) =
-                  potential.value(support_points[local_dof_indices[j]]);
-                tmp_rhs(local_dof_indices[j]) =
-                  potential.value(support_points[local_dof_indices[j]]);
+                phi(local_dof_indices[j])     = potential.value(support_points[local_dof_indices[j]]);
+                tmp_rhs(local_dof_indices[j]) = potential.value(support_points[local_dof_indices[j]]);
                 // bem.pcout<<"internalElse "<<local_dof_indices[j]<<" norm
                 // ("<<node_normals[j]<<")  "<<" pos ("<<node_coors[j]<<")
                 // "<<node_coors[j](0)<<std::endl;
@@ -342,37 +305,27 @@ BoundaryConditions<dim>::prepare_bem_vectors()
                     // dphi_dn(local_dof_indices[j]) =
                     // normals_sys_solution(local_dof_indices[j]);
                     Vector<double> imposed_pot_grad(dim);
-                    wind.vector_value(support_points[local_dof_indices[j]],
-                                      imposed_pot_grad);
+                    wind.vector_value(support_points[local_dof_indices[j]], imposed_pot_grad);
                     // Point<dim> imposed_potential_gradient;
                     double tmp_dphi_dn = 0;
                     double normy       = 0;
                     // double tol = 1e-1;
                     for (unsigned int d = 0; d < dim; ++d)
                       {
-                        types::global_dof_index dummy =
-                          bem.sub_wise_to_original[local_dof_indices[j]];
-                        types::global_dof_index vec_index =
-                          bem.vec_original_to_sub_wise
-                            [bem.gradient_dh.n_dofs() / dim * d +
-                             dummy]; // bem.vector_start_per_process[this_mpi_process]
-                                     // + d*bem.this_cpu_set.n_elements() +
-                                     // local_dof_indices[j]-bem.start_per_process[this_mpi_process];//bem.gradient_dh.n_dofs()/dim*d+local_dof_indices[j];//bem.vector_start_per_process[this_mpi_process]+((local_dof_indices[j]-bem.start_per_process[this_mpi_process])*dim+d);
-                                     // //local_dof_indices[j]*dim+d;
+                        types::global_dof_index dummy     = bem.sub_wise_to_original[local_dof_indices[j]];
+                        types::global_dof_index vec_index = bem.vec_original_to_sub_wise[bem.gradient_dh.n_dofs() / dim * d + dummy]; // bem.vector_start_per_process[this_mpi_process]
+                                                                                                                                      // + d*bem.this_cpu_set.n_elements() +
+                                                                                                                                      // local_dof_indices[j]-bem.start_per_process[this_mpi_process];//bem.gradient_dh.n_dofs()/dim*d+local_dof_indices[j];//bem.vector_start_per_process[this_mpi_process]+((local_dof_indices[j]-bem.start_per_process[this_mpi_process])*dim+d);
+                                                                                                                                      // //local_dof_indices[j]*dim+d;
                         // std::cout<<this_mpi_process<<"
                         // "<<support_points[local_dof_indices[j]]<<"
                         // "<<vec_support_points[vec_index]<<std::endl;
-                        Assert(
-                          bem.vector_this_cpu_set.is_element(vec_index),
-                          ExcMessage(
-                            "vector cpu set and cpu set are inconsistent"));
+                        Assert(bem.vector_this_cpu_set.is_element(vec_index), ExcMessage("vector cpu set and cpu set are inconsistent"));
                         // Assert(support_points[local_dof_indices[j]]==vec_support_points[vec_index],
                         // ExcMessage("the support points of dh and gradient_dh
                         // are different"));
-                        tmp_dphi_dn += imposed_pot_grad[d] *
-                                       bem.vector_normals_solution[vec_index];
-                        normy += bem.vector_normals_solution[vec_index] *
-                                 bem.vector_normals_solution[vec_index];
+                        tmp_dphi_dn += imposed_pot_grad[d] * bem.vector_normals_solution[vec_index];
+                        normy += bem.vector_normals_solution[vec_index] * bem.vector_normals_solution[vec_index];
                       }
                     // Assert(std::fabs(normy-1.)<tol, ExcMessage("you are using
                     // wrongly the normal vector"));
@@ -393,14 +346,11 @@ template <int dim>
 void
 BoundaryConditions<dim>::compute_errors()
 {
-  bem.compute_gradients_hypersingular(phi, dphi_dn);
-
-  Teuchos::TimeMonitor LocalTimer(*ErrorsTime);
+    Teuchos::TimeMonitor LocalTimer(*ErrorsTime);
 
   // We still need to communicate our results to compute the errors.
   // bem.compute_gradients(phi, dphi_dn);
-  Vector<double> localized_gradient_solution(
-    bem.vector_gradients_solution); // vector_gradients_solution
+  Vector<double> localized_gradient_solution(bem.vector_gradients_solution); // vector_gradients_solution
   Vector<double> localized_phi(phi);
   Vector<double> localized_dphi_dn(dphi_dn);
   Vector<double> localised_normals(bem.vector_normals_solution);
@@ -412,13 +362,11 @@ BoundaryConditions<dim>::compute_errors()
       // for(auto i : localised_alpha.locally_owned_elements())
       //   localised_alpha[i] -= 0.5;
 
-      Vector<double> grad_difference_per_cell(comp_dom.tria.n_active_cells());
+      Vector<double>          grad_difference_per_cell(comp_dom.tria.n_active_cells());
       std::vector<Point<dim>> support_points(bem.dh.n_dofs());
       double                  phi_max_error; // = localized_phi.linfty_norm();
-      Vector<double> difference_per_cell(comp_dom.tria.n_active_cells());
-      DoFTools::map_dofs_to_support_points<dim - 1, dim>(*bem.mapping,
-                                                         bem.dh,
-                                                         support_points);
+      Vector<double>          difference_per_cell(comp_dom.tria.n_active_cells());
+      DoFTools::map_dofs_to_support_points<dim - 1, dim>(*bem.mapping, bem.dh, support_points);
 
       // removing this because now solution is translated after BEM solution
       // is given back by bem_problem in solve_problem
@@ -450,40 +398,23 @@ BoundaryConditions<dim>::compute_errors()
             else
               {
       */
-      VectorTools::integrate_difference(*bem.mapping,
-                                        bem.dh,
-                                        localized_phi,
-                                        potential,
-                                        difference_per_cell,
-                                        QGauss<(dim - 1)>(
-                                          2 * (2 * bem.fe->degree + 1)),
-                                        VectorTools::L2_norm);
+      VectorTools::integrate_difference(*bem.mapping, bem.dh, localized_phi, potential, difference_per_cell, QGauss<(dim - 1)>(2 * (2 * bem.fe->degree + 1)), VectorTools::L2_norm);
 
       phi_max_error = difference_per_cell.linfty_norm();
 
       //        }
-      VectorTools::integrate_difference(*bem.mapping,
-                                        bem.gradient_dh,
-                                        localized_gradient_solution,
-                                        wind,
-                                        grad_difference_per_cell,
-                                        QGauss<(dim - 1)>(
-                                          2 * (2 * bem.fe->degree + 1)),
-                                        VectorTools::L2_norm);
-      const double grad_L2_error = grad_difference_per_cell.l2_norm();
+      VectorTools::integrate_difference(*bem.mapping, bem.gradient_dh, localized_gradient_solution, wind, grad_difference_per_cell, QGauss<(dim - 1)>(2 * (2 * bem.fe->degree + 1)), VectorTools::L2_norm);
+      _grad_phi_L2_error = grad_difference_per_cell.l2_norm();
 
       const double L2_error = difference_per_cell.l2_norm();
 
 
-      Vector<double> vector_gradients_node_error(bem.gradient_dh.n_dofs());
-      std::vector<Vector<double>> grads_nodes_errs(bem.dh.n_dofs(),
-                                                   Vector<double>(dim));
+      Vector<double>              vector_gradients_node_error(bem.gradient_dh.n_dofs());
+      std::vector<Vector<double>> grads_nodes_errs(bem.dh.n_dofs(), Vector<double>(dim));
       wind.vector_value_list(support_points, grads_nodes_errs);
       for (types::global_dof_index d = 0; d < dim; ++d)
         for (types::global_dof_index i = 0; i < bem.dh.n_dofs(); ++i)
-          vector_gradients_node_error(
-            bem.vec_original_to_sub_wise[d * bem.dh.n_dofs() + i]) =
-            grads_nodes_errs[bem.original_to_sub_wise[i]](d);
+          vector_gradients_node_error(bem.vec_original_to_sub_wise[d * bem.dh.n_dofs() + i]) = grads_nodes_errs[bem.original_to_sub_wise[i]](d);
       vector_gradients_node_error *= -1.0;
       vector_gradients_node_error.add(1., localized_gradient_solution);
 
@@ -497,8 +428,7 @@ BoundaryConditions<dim>::compute_errors()
       phi_node_error.add(1., localized_phi);
 
       Vector<double>              dphi_dn_node_error(bem.dh.n_dofs());
-      std::vector<Vector<double>> dphi_dn_nodes_errs(bem.dh.n_dofs(),
-                                                     Vector<double>(dim));
+      std::vector<Vector<double>> dphi_dn_nodes_errs(bem.dh.n_dofs(), Vector<double>(dim));
       wind.vector_value_list(support_points, dphi_dn_nodes_errs);
       dphi_dn_node_error = 0.;
       for (types::global_dof_index i = 0; i < bem.dh.n_dofs(); ++i)
@@ -506,10 +436,7 @@ BoundaryConditions<dim>::compute_errors()
           // dphi_dn_node_error[i] = 0.;
           for (unsigned int d = 0; d < dim; ++d)
             {
-              dphi_dn_node_error[bem.original_to_sub_wise[i]] +=
-                localised_normals
-                  [bem.vec_original_to_sub_wise[i + d * bem.dh.n_dofs()]] *
-                dphi_dn_nodes_errs[bem.original_to_sub_wise[i]][d];
+              dphi_dn_node_error[bem.original_to_sub_wise[i]] += localised_normals[bem.vec_original_to_sub_wise[i + d * bem.dh.n_dofs()]] * dphi_dn_nodes_errs[bem.original_to_sub_wise[i]][d];
             }
         }
       dphi_dn_node_error *= -1.0;
@@ -517,54 +444,32 @@ BoundaryConditions<dim>::compute_errors()
 
       // dphi_dn_node_error.print(std::cout);
       Vector<double> difference_per_cell_2(comp_dom.tria.n_active_cells());
-      VectorTools::integrate_difference(*bem.mapping,
-                                        bem.dh,
-                                        dphi_dn_node_error,
-                                        ZeroFunction<dim, double>(1),
-                                        difference_per_cell_2,
-                                        QGauss<(dim - 1)>(
-                                          2 * (2 * bem.fe->degree + 1)),
-                                        VectorTools::L2_norm);
+      VectorTools::integrate_difference(*bem.mapping, bem.dh, dphi_dn_node_error, ZeroFunction<dim, double>(1), difference_per_cell_2, QGauss<(dim - 1)>(2 * (2 * bem.fe->degree + 1)), VectorTools::L2_norm);
       const double dphi_dn_L2_error = difference_per_cell_2.l2_norm();
 
-      const double grad_phi_max_error =
-        vector_gradients_node_error.linfty_norm();
-      const types::global_dof_index n_active_cells =
-        comp_dom.tria.n_active_cells();
-      const types::global_dof_index n_dofs = bem.dh.n_dofs();
+      _grad_phi_max_error                          = vector_gradients_node_error.linfty_norm();
+      const types::global_dof_index n_active_cells = comp_dom.tria.n_active_cells();
+      const types::global_dof_index n_dofs         = bem.dh.n_dofs();
 
-      pcout << "   Number of active cells:       " << n_active_cells
-            << std::endl
-            << "   Number of degrees of freedom: " << n_dofs << std::endl;
+      pcout << "   Number of active cells:       " << n_active_cells << std::endl << "   Number of degrees of freedom: " << n_dofs << std::endl;
 
       pcout << "Phi Nodes error L_inf norm: " << phi_max_error << std::endl;
       pcout << "Phi Cells error L_2 norm: " << L2_error << std::endl;
-      pcout << "dPhidN Nodes error L_inf norm: "
-            << dphi_dn_node_error.linfty_norm() << std::endl;
+      pcout << "dPhidN Nodes error L_inf norm: " << dphi_dn_node_error.linfty_norm() << std::endl;
       pcout << "dPhidN Nodes error L_2 norm: " << dphi_dn_L2_error << std::endl;
-      pcout << "Phi Nodes Gradient error L_inf norm: " << grad_phi_max_error
-            << std::endl;
-      pcout << "Phi Cells Gradient  error L_2 norm: " << grad_L2_error
-            << std::endl;
+      pcout << "Phi Nodes Gradient error L_inf norm: " << _grad_phi_max_error << std::endl;
+      pcout << "Phi Cells Gradient  error L_2 norm: " << _grad_phi_L2_error << std::endl;
       // pcout<<"alpha Nodes error L_inf norm:
       // "<<localised_alpha.linfty_norm()<<std::endl; pcout<<"alpha Nodes error
       // L_2 norm: "<<localised_alpha.l2_norm()<<std::endl;
 
-      std::string filename_vector = "vector_error.vtu";
-      std::vector<DataComponentInterpretation::DataComponentInterpretation>
-        data_component_interpretation(
-          dim, DataComponentInterpretation::component_is_part_of_vector);
-      DataOut<dim - 1, dim> dataout_vector;
+      std::string                                                           filename_vector = "vector_error.vtu";
+      std::vector<DataComponentInterpretation::DataComponentInterpretation> data_component_interpretation(dim, DataComponentInterpretation::component_is_part_of_vector);
+      DataOut<dim - 1, dim>                                                 dataout_vector;
       dataout_vector.attach_dof_handler(bem.gradient_dh);
-      dataout_vector.add_data_vector(
-        vector_gradients_node_error,
-        std::vector<std::string>(dim, "phi_gradient_error"),
-        DataOut<dim - 1, dim>::type_dof_data,
-        data_component_interpretation);
+      dataout_vector.add_data_vector(vector_gradients_node_error, std::vector<std::string>(dim, "phi_gradient_error"), DataOut<dim - 1, dim>::type_dof_data, data_component_interpretation);
 
-      dataout_vector.build_patches(*bem.mapping,
-                                   bem.mapping_degree,
-                                   DataOut<dim - 1, dim>::curved_inner_cells);
+      dataout_vector.build_patches(*bem.mapping, bem.get_mapping_degree(), DataOut<dim - 1, dim>::curved_inner_cells);
 
       std::ofstream file_vector(filename_vector.c_str());
 
@@ -573,16 +478,9 @@ BoundaryConditions<dim>::compute_errors()
       std::string           filename_scalar = "scalar_error.vtu";
       DataOut<dim - 1, dim> dataout_scalar;
       dataout_scalar.attach_dof_handler(bem.dh);
-      dataout_scalar.add_data_vector(phi_node_error,
-                                     std::vector<std::string>(1, "phi_error"),
-                                     DataOut<dim - 1, dim>::type_dof_data);
-      dataout_scalar.add_data_vector(dphi_dn_node_error,
-                                     std::vector<std::string>(1,
-                                                              "dphi_dn_error"),
-                                     DataOut<dim - 1, dim>::type_dof_data);
-      dataout_scalar.build_patches(*bem.mapping,
-                                   bem.mapping_degree,
-                                   DataOut<dim - 1, dim>::curved_inner_cells);
+      dataout_scalar.add_data_vector(phi_node_error, std::vector<std::string>(1, "phi_error"), DataOut<dim - 1, dim>::type_dof_data);
+      dataout_scalar.add_data_vector(dphi_dn_node_error, std::vector<std::string>(1, "dphi_dn_error"), DataOut<dim - 1, dim>::type_dof_data);
+      dataout_scalar.build_patches(*bem.mapping, bem.get_mapping_degree(), DataOut<dim - 1, dim>::curved_inner_cells);
 
       std::ofstream file_scalar(filename_scalar.c_str());
       dataout_scalar.write_vtu(file_scalar);
@@ -601,8 +499,7 @@ BoundaryConditions<dim>::output_results(const std::string filename)
   const Vector<double> localized_dphi_dn(dphi_dn);
   const Vector<double> localized_alpha(bem.alpha);
   const Vector<double> localized_gradients(bem.vector_gradients_solution);
-  const Vector<double> localized_surf_gradients(
-    bem.vector_surface_gradients_solution);
+  const Vector<double> localized_surf_gradients(bem.vector_surface_gradients_solution);
   const Vector<double> localized_normals(bem.vector_normals_solution);
   // localized_dphi_dn.print(std::cout);
   // localized_phi.print(std::cout);
@@ -612,9 +509,7 @@ BoundaryConditions<dim>::output_results(const std::string filename)
       filename_scalar = filename + "_scalar_results" + ".vtu";
       filename_vector = filename + "_vector_results" + ".vtu";
 
-      std::vector<DataComponentInterpretation::DataComponentInterpretation>
-        data_component_interpretation(
-          dim, DataComponentInterpretation::component_is_part_of_vector);
+      std::vector<DataComponentInterpretation::DataComponentInterpretation> data_component_interpretation(dim, DataComponentInterpretation::component_is_part_of_vector);
 
       DataOut<dim - 1, dim> dataout_scalar;
       DataOut<dim - 1, dim> dataout_vector;
@@ -624,44 +519,22 @@ BoundaryConditions<dim>::output_results(const std::string filename)
 
 
 
-      dataout_scalar.add_data_vector(localized_phi,
-                                     "phi",
-                                     DataOut<dim - 1, dim>::type_dof_data);
-      dataout_scalar.add_data_vector(localized_dphi_dn,
-                                     "dphi_dn",
-                                     DataOut<dim - 1, dim>::type_dof_data);
-      dataout_scalar.add_data_vector(localized_alpha,
-                                     "alpha",
-                                     DataOut<dim - 1, dim>::type_dof_data);
+      dataout_scalar.add_data_vector(localized_phi, "phi", DataOut<dim - 1, dim>::type_dof_data);
+      dataout_scalar.add_data_vector(localized_dphi_dn, "dphi_dn", DataOut<dim - 1, dim>::type_dof_data);
+      dataout_scalar.add_data_vector(localized_alpha, "alpha", DataOut<dim - 1, dim>::type_dof_data);
 
-      dataout_vector.add_data_vector(localized_gradients,
-                                     std::vector<std::string>(dim,
-                                                              "phi_gradient"),
-                                     DataOut<dim - 1, dim>::type_dof_data,
-                                     data_component_interpretation);
-      dataout_vector.add_data_vector(
-        localized_surf_gradients,
-        std::vector<std::string>(dim, "phi_surf_gradient"),
-        DataOut<dim - 1, dim>::type_dof_data,
-        data_component_interpretation);
-      dataout_vector.add_data_vector(
-        localized_normals,
-        std::vector<std::string>(dim, "normals_at_nodes"),
-        DataOut<dim - 1, dim>::type_dof_data,
-        data_component_interpretation);
+      dataout_vector.add_data_vector(localized_gradients, std::vector<std::string>(dim, "phi_gradient"), DataOut<dim - 1, dim>::type_dof_data, data_component_interpretation);
+      dataout_vector.add_data_vector(localized_surf_gradients, std::vector<std::string>(dim, "phi_surf_gradient"), DataOut<dim - 1, dim>::type_dof_data, data_component_interpretation);
+      dataout_vector.add_data_vector(localized_normals, std::vector<std::string>(dim, "normals_at_nodes"), DataOut<dim - 1, dim>::type_dof_data, data_component_interpretation);
 
 
-      dataout_scalar.build_patches(*bem.mapping,
-                                   bem.mapping_degree,
-                                   DataOut<dim - 1, dim>::curved_inner_cells);
+      dataout_scalar.build_patches(*bem.mapping, bem.get_mapping_degree(), DataOut<dim - 1, dim>::curved_inner_cells);
 
       std::ofstream file_scalar(filename_scalar.c_str());
 
       dataout_scalar.write_vtu(file_scalar);
 
-      dataout_vector.build_patches(*bem.mapping,
-                                   bem.mapping_degree,
-                                   DataOut<dim - 1, dim>::curved_inner_cells);
+      dataout_vector.build_patches(*bem.mapping, bem.get_mapping_degree(), DataOut<dim - 1, dim>::curved_inner_cells);
 
       std::ofstream file_vector(filename_vector.c_str());
 

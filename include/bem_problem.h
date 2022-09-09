@@ -122,13 +122,10 @@ class BEMProblem : public ParameterAcceptor
 public:
   typedef typename DoFHandler<dim - 1, dim>::active_cell_iterator cell_it;
 
-  BEMProblem(ComputationalDomain<dim> &comp_dom,
-             const MPI_Comm            comm = MPI_COMM_WORLD);
+  BEMProblem(ComputationalDomain<dim> &comp_dom, const MPI_Comm comm = MPI_COMM_WORLD);
 
   void
-  solve(TrilinosWrappers::MPI::Vector &      phi,
-        TrilinosWrappers::MPI::Vector &      dphi_dn,
-        const TrilinosWrappers::MPI::Vector &tmp_rhs);
+  solve(TrilinosWrappers::MPI::Vector &phi, TrilinosWrappers::MPI::Vector &dphi_dn, const TrilinosWrappers::MPI::Vector &tmp_rhs);
 
   /// This function takes care of the proper initialization of all the elements
   /// needed by the bem problem class. Since we need to sum elements associated
@@ -151,11 +148,7 @@ public:
   /// have kept this function serial. We stress that it needs to be called only
   /// once.
   void
-  compute_constraints(IndexSet &                           c_cpu_set,
-                      AffineConstraints<double> &          constraints,
-                      const TrilinosWrappers::MPI::Vector &tmp_rhs);
-
-  //  private:
+  compute_constraints(IndexSet &c_cpu_set, AffineConstraints<double> &constraints, const TrilinosWrappers::MPI::Vector &tmp_rhs);
 
   /// We declare the parameters needed by the class. We made good use of the
   /// deal.ii SwissArmyKnife library. The parameters will be read from a file if
@@ -170,7 +163,8 @@ public:
   parse_parameters(ParameterHandler &prm);
 
   /// This function computes the free coefficients appearing  in the hypersingular BIE.
-  void compute_hypersingular_free_coeffs();
+  void
+  compute_hypersingular_free_coeffs();
 
   /// This function computes the fraction of solid angles seen by our domain. We
   /// use the Double Layer Operator (through the Neumann matrix) to determine
@@ -196,16 +190,14 @@ public:
   /// vector src. The result is stored
   /// in the vector dst.
   void
-  vmult(TrilinosWrappers::MPI::Vector &      dst,
-        const TrilinosWrappers::MPI::Vector &src) const;
+  vmult(TrilinosWrappers::MPI::Vector &dst, const TrilinosWrappers::MPI::Vector &src) const;
 
   /// The second method computes the
   /// right hand side vector of the
   /// system.
 
   void
-  compute_rhs(TrilinosWrappers::MPI::Vector &      dst,
-              const TrilinosWrappers::MPI::Vector &src) const;
+  compute_rhs(TrilinosWrappers::MPI::Vector &dst, const TrilinosWrappers::MPI::Vector &src) const;
 
   /// The third method computes the
   /// product between the solution vector
@@ -221,9 +213,7 @@ public:
   /// Depending on the resolution stategy we go whether for the direct or fma
   /// strategy.
   void
-  solve_system(TrilinosWrappers::MPI::Vector &      phi,
-               TrilinosWrappers::MPI::Vector &      dphi_dn,
-               const TrilinosWrappers::MPI::Vector &tmp_rhs);
+  solve_system(TrilinosWrappers::MPI::Vector &phi, TrilinosWrappers::MPI::Vector &dphi_dn, const TrilinosWrappers::MPI::Vector &tmp_rhs);
 
 
   void
@@ -245,16 +235,14 @@ public:
   /// need  to make good use of both surface gradients and the normal
   /// derivative.
   void
-  compute_gradients(const TrilinosWrappers::MPI::Vector &phi,
-                    const TrilinosWrappers::MPI::Vector &dphi_dn);
+  compute_gradients(const TrilinosWrappers::MPI::Vector &phi, const TrilinosWrappers::MPI::Vector &dphi_dn);
 
 
   /// We compute the potential gradients also in an alternative way.
   /// Here we make use of the hypersingular integrals computed with the
   /// SingularKernelIntegral class
   void
-  compute_gradients_hypersingular(const TrilinosWrappers::MPI::Vector &phi,
-                                  const TrilinosWrappers::MPI::Vector &dphi_dn);
+  compute_gradients_hypersingular(const TrilinosWrappers::MPI::Vector &phi, const TrilinosWrappers::MPI::Vector &dphi_dn);
 
   /// We have parallelised the computation of the L2 projection of the normal
   /// vector. We need a solution vector that has also ghost cells. for this
@@ -296,7 +284,6 @@ public:
   ComputationalDomain<dim> &comp_dom;
 
   std::string                                  scalar_fe_type, vector_fe_type;
-  unsigned int                                 scalar_fe_order, vector_fe_order;
   std::unique_ptr<FiniteElement<dim - 1, dim>> fe;
   std::unique_ptr<FiniteElement<dim - 1, dim>> gradient_fe;
   DoFHandler<dim - 1, dim>                     dh;
@@ -313,7 +300,6 @@ public:
 
   Vector<double>                         map_vector;
   std::shared_ptr<Mapping<dim - 1, dim>> mapping;
-  unsigned int                           mapping_degree;
   Vector<double>                         map_points;
 
 
@@ -332,7 +318,6 @@ public:
 
 
   std::shared_ptr<Quadrature<dim - 1>> quadrature;
-  unsigned int                         quadrature_order;
 
   /// the number of standard quadrature points
   /// and singular kernel quadrature to be
@@ -346,9 +331,9 @@ public:
 
   TrilinosWrappers::MPI::Vector system_rhs;
 
-  TrilinosWrappers::MPI::Vector sol;
-  TrilinosWrappers::MPI::Vector alpha;
-  TrilinosWrappers::MPI::Vector hyp_alpha;
+  TrilinosWrappers::MPI::Vector              sol;
+  TrilinosWrappers::MPI::Vector              alpha;
+  TrilinosWrappers::MPI::Vector              hyp_alpha;
   std::vector<TrilinosWrappers::MPI::Vector> C_ii;
 
   mutable TrilinosWrappers::MPI::Vector serv_phi;
@@ -437,9 +422,56 @@ public:
   bool have_dirichlet_bc;
 
   BEMFMA<dim> fma;
-  
-  
-  
+
+  void
+  set_scalar_fe_order(int val)
+  {
+    scalar_fe_order = val;
+  }
+
+  void
+  set_vector_fe_order(int val)
+  {
+    vector_fe_order = val;
+  }
+
+  void
+  set_mapping_degree(int val)
+  {
+    mapping_degree = val;
+  }
+
+  unsigned int
+  get_mapping_degree()
+  {
+    return mapping_degree;
+  }
+
+  void
+  set_quadrature_order(int val)
+  {
+    quadrature_order = val;
+  }
+
+  void
+  set_hbie_radial_quadrature_order(int val)
+  {
+    hbie_radial_quadrature_order = val;
+  }
+
+  void
+  set_hbie_angular_quadrature_order(int val)
+  {
+    hbie_angular_quadrature_order = val;
+  }
+
+private:
+  unsigned int scalar_fe_order, vector_fe_order;
+  unsigned int mapping_degree;
+  unsigned int quadrature_order;
+
+  unsigned int hbie_radial_quadrature_order  = 4;
+  unsigned int hbie_angular_quadrature_order = 4;
 };
 
 #endif

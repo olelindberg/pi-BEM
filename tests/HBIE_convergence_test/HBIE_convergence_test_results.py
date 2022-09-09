@@ -1,20 +1,63 @@
+
+
+
 from cProfile import label
 import matplotlib.pyplot as plt
 import numpy as np
 
-data = np.genfromtxt("/home/ole/Projects/pi-BEM/tests/HBIE_convergence_test/HBIE_convergence_test_results.dat",delimiter=",")
+
+data = np.genfromtxt("tests/HBIE_convergence_test/HBIE_convergence_test1.csv",delimiter=",")
 print(data)
+ndof = data[:,1]
+order = data[:,2]
+err_l2 = data[:,-3]
+err_inf = data[:,-2]
+time = data[:,-1]
 
 R    = 1
 area = 4*np.pi*R**2
-element_area = area/data[:,4] # actually not the element error, more like the dof area
-element_length = np.sqrt(element_area)
+element_area = area/ndof # actually not the element error, more like the dof area
+dx = np.sqrt(element_area)
 
-plt.plot(np.log10(element_length[:4]),0.5+1*np.log10(element_length[:4]),'k--',label="slope 1")
-plt.plot(np.log10(element_length),np.log10(data[:,5]),'ro',label='$L_{\infty} error$')
-plt.plot(np.log10(element_length),np.log10(data[:,6]),'go',label='$L_2$ error')
+for p in range(1,4):
+    id = np.where(order==p)
+    lbl = "degree = " + str(p)
+    plt.plot(np.log10(dx[id]),np.log10(err_inf[id]),'-o',label=lbl + ", Linf")
+    plt.plot(np.log10(dx[id]),np.log10(err_l2[id]),'-o',label=lbl + ", L2")
+
+dx = np.sort(np.unique(dx))
+plt.plot(np.log10(dx),np.log10(dx),'k--',label="slope 1")
+plt.plot(np.log10(dx),2*np.log10(dx),'k--',label="slope 2")
+plt.plot(np.log10(dx),3*np.log10(dx),'k--',label="slope 3")
+
 plt.grid(True)
-plt.xlabel(r"$\log_{10}(\Delta x)$")
+plt.xlabel(r"$\log_{10}(dx)$")
 plt.ylabel(r"$\log_{10}(||err||)$")
 plt.legend()
+
+plt.figure()
+for p in range(1,4):
+    id = np.where(order==p)
+    lbl = "degree = " + str(p)
+    plt.plot(np.log10(ndof[id]),np.log10(time[id]),'-o',label=lbl)
+
+plt.grid(True)
+plt.xlabel(r"$\log_{10}(ndof)$")
+plt.ylabel(r"$\log_{10}(cputime[s])$")
+plt.legend()
+
+
+plt.figure()
+for p in range(1,4):
+    id = np.where(order==p)
+    lbl = "degree = " + str(p)
+    plt.plot(np.log10(time[id]),np.log10(err_inf[id]),'-o',label=lbl + ", Linf")
+    plt.plot(np.log10(time[id]),np.log10(err_l2[id]),'-o',label=lbl + ", L2")
+
+plt.grid(True)
+plt.xlabel(r"$\log_{10}(cputime [s])$")
+plt.ylabel(r"$\log_{10}(||err||)$")
+plt.legend()
+
+
 plt.show()

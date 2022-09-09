@@ -76,9 +76,7 @@ template <int dim>
 class BoundaryConditions : public ParameterAcceptor
 {
 public:
-  BoundaryConditions(ComputationalDomain<dim> &comp_dom,
-                     BEMProblem<dim> &         bem,
-                     const MPI_Comm            comm = MPI_COMM_WORLD)
+  BoundaryConditions(ComputationalDomain<dim> &comp_dom, BEMProblem<dim> &bem, const MPI_Comm comm = MPI_COMM_WORLD)
     : wind(dim)
     , comp_dom(comp_dom)
     , bem(bem)
@@ -102,9 +100,12 @@ public:
   void
   prepare_bem_vectors();
 
-  void assign_potential();
-  void assign_potential_normal_derivative();
-  void initialize();
+  void
+  assign_potential();
+  void
+  assign_potential_normal_derivative();
+  void
+  initialize();
 
   void
   solve_problem();
@@ -123,6 +124,19 @@ public:
 
 
   std::string output_file_name;
+
+  double
+  get_grad_phi_max_error()
+  {
+    return _grad_phi_max_error;
+  }
+
+  double
+  get_grad_phi_L2_error()
+  {
+    return _grad_phi_L2_error;
+  }
+
 
 protected:
   Functions::ParsedFunction<dim> wind;
@@ -156,6 +170,10 @@ protected:
   IndexSet this_cpu_set;
 
   ConditionalOStream pcout;
+
+private:
+  double _grad_phi_max_error = 0.0;
+  double _grad_phi_L2_error  = 0.0;
 };
 
 #endif

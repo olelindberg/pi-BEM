@@ -83,8 +83,6 @@ public:
   std::vector<Tensor<1, dim>>
   evaluate_WkNj_integrals(const typename DoFHandler<dim - 1, dim>::active_cell_iterator &cell, const Point<dim - 1> &eta);
 
-  bool printstuff = false;
-
 private:
   double                       rho_quadrature_order;
   double                       theta_quadrature_order;

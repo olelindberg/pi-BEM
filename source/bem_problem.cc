@@ -1305,10 +1305,10 @@ BEMProblem<dim>::compute_hypersingular_free_coeffs()
             }
           geom_alpha /= 4 * numbers::PI;
           hyp_alpha(i) = geom_alpha;
-          pcout << i << "->      geom_alpha: " << geom_alpha << "  " << geom_alpha - alpha(i) << endl;
-          if (fabs(geom_alpha - alpha(i)) > 1e-3)
-            pcout << "HELP!" << endl;
-          error += sqrt(pow(geom_alpha - alpha(i), 2));
+          //          pcout << i << "->      geom_alpha: " << geom_alpha << "  " << geom_alpha - alpha(i) << endl;
+          //          if (fabs(geom_alpha - alpha(i)) > 1e-3)
+          //            pcout << "HELP!" << endl;
+          //          error += sqrt(pow(geom_alpha - alpha(i), 2));
 
           Tensor<2, dim> C_matrix;
           for (unsigned int d = 0; d < dim; ++d)
@@ -2215,9 +2215,7 @@ BEMProblem<dim>::compute_gradients_hypersingular(const TrilinosWrappers::MPI::Ve
 {
   Teuchos::TimeMonitor LocalTimer(*HBIEGradientTime);
 
-  int                         rho_quadrature_order   = 4;
-  int                         theta_quadrature_order = 20;
-  SingularKernelIntegral<dim> singular_kernel_integrator(rho_quadrature_order, theta_quadrature_order, *fe, *mapping);
+  SingularKernelIntegral<dim> singular_kernel_integrator(hbie_radial_quadrature_order, hbie_angular_quadrature_order, *fe, *mapping);
 
   TrilinosWrappers::MPI::Vector vector_hyp_gradients_solution(vector_this_cpu_set, mpi_communicator);
   TrilinosWrappers::MPI::Vector vector_b_free_coeff(vector_this_cpu_set, mpi_communicator);
@@ -2372,12 +2370,6 @@ BEMProblem<dim>::compute_gradients_hypersingular(const TrilinosWrappers::MPI::Ve
                   Assert((*fe).has_support_points(), ExcMessage("The FE selected has no support points. This is not supported."));
                   Point<dim - 1> P = (*fe).unit_support_point(singular_index);
 
-                  singular_kernel_integrator.printstuff = false;
-                  if (i == 0)
-                    {
-                      std::cout << "i    " << i << std::endl;
-                      singular_kernel_integrator.printstuff = true;
-                    }
                   std::vector<Tensor<1, dim>> Vk_integrals = singular_kernel_integrator.evaluate_VkNj_integrals(cell, P);
                   std::vector<Tensor<1, dim>> Wk_integrals = singular_kernel_integrator.evaluate_WkNj_integrals(cell, P);
                   Tensor<1, dim>              singular_cell_contribution_hyp;
@@ -2388,14 +2380,6 @@ BEMProblem<dim>::compute_gradients_hypersingular(const TrilinosWrappers::MPI::Ve
                       Teuchos::TimeMonitor LocalTimer(*HBIEGradientTime6);
                       singular_cell_contribution_hyp += -phi_local(local_dof_indices[j]) * Vk_integrals[j];
                       singular_cell_contribution_str += dphi_dn_local(local_dof_indices[j]) * Wk_integrals[j];
-
-                      // if (i == 4)
-                      //   {
-                      //     std::cout << i << " " << j << std::endl;
-                      //     std::cout << Vk_integrals[j][0] << " " << Wk_integrals[j][0] << std::endl;
-                      //     std::cout << Vk_integrals[j][1] << " " << Wk_integrals[j][1] << std::endl;
-                      //     std::cout << Vk_integrals[j][2] << " " << Wk_integrals[j][2] << std::endl;
-                      //   }
 
                       b_singular_cell_contribution_hyp += -Vk_integrals[j];
                     }
@@ -2474,27 +2458,14 @@ BEMProblem<dim>::compute_gradients_hypersingular(const TrilinosWrappers::MPI::Ve
           b_error_norm += pow(vector_b_free_coeff(i + dh.n_dofs()) - free_term_b_all[i][1], 2.0);
           b_error_norm += pow(vector_b_free_coeff(i + 2 * dh.n_dofs()) - free_term_b_all[i][2], 2.0);
 
-          // std::cout << i << std::endl;
-          // std::cout << vector_b_free_coeff(i) << " " << free_term_b_all[i][0]
-          //           << std::endl;
-          // std::cout << vector_b_free_coeff(i + dh.n_dofs()) << " "
-          //           << free_term_b_all[i][1] << std::endl;
-          // std::cout << vector_b_free_coeff(i + 2 * dh.n_dofs()) << " "
-          //           << free_term_b_all[i][2] << std::endl;
-
-          // std::cout << vector_hyp_gradients_solution(i + 0 * dh.n_dofs())
-          //           << std::endl;
-          // std::cout << vector_hyp_gradients_solution(i + 1 * dh.n_dofs())
-          //           << std::endl;
-          // std::cout << vector_hyp_gradients_solution(i + 2 * dh.n_dofs())
-          //           << std::endl;
-
-
           Tensor<1, dim> hyp_gradient;
           Tensor<1, dim> rhs;
           rhs[0] = vector_hyp_gradients_solution(i + 0 * dh.n_dofs()) - vector_b_free_coeff(i + 0 * dh.n_dofs()) * phi_local[i];
           rhs[1] = vector_hyp_gradients_solution(i + 1 * dh.n_dofs()) - vector_b_free_coeff(i + 1 * dh.n_dofs()) * phi_local[i];
           rhs[2] = vector_hyp_gradients_solution(i + 2 * dh.n_dofs()) - vector_b_free_coeff(i + 2 * dh.n_dofs()) * phi_local[i];
+          // rhs[0] = vector_hyp_gradients_solution(i + 0 * dh.n_dofs()) - free_term_b_all[i][0] * phi_local[i];
+          // rhs[1] = vector_hyp_gradients_solution(i + 1 * dh.n_dofs()) - free_term_b_all[i][1] * phi_local[i];
+          // rhs[2] = vector_hyp_gradients_solution(i + 2 * dh.n_dofs()) - free_term_b_all[i][2] * phi_local[i];
           FullMatrix<double> C(dim, dim);
           FullMatrix<double> Cinv(dim, dim);
           for (unsigned int di = 0; di < dim; ++di)
