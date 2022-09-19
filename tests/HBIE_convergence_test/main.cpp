@@ -184,7 +184,25 @@ main(int argc, char *argv[])
       std::string pname2 = "used_parameters_bem_" + std::to_string(DEAL_II_DIMENSION) + ".prm";
 
       std::vector<DriverSetup> setups;
-      setups.push_back(DriverSetup(2, 3, 16, 16, 20));
+      setups.push_back(DriverSetup(2, 2, 5, 4, 20));
+      // setups.push_back(DriverSetup(0, 1, 20, 4, 20));
+      // setups.push_back(DriverSetup(1, 1, 20, 4, 20));
+      // setups.push_back(DriverSetup(2, 1, 20, 4, 20));
+      // setups.push_back(DriverSetup(3, 1, 20, 4, 20));
+      // setups.push_back(DriverSetup(4, 1, 20, 4, 20));
+      // setups.push_back(DriverSetup(0, 2, 20, 4, 20));
+      // setups.push_back(DriverSetup(1, 2, 20, 4, 20));
+      // setups.push_back(DriverSetup(2, 2, 20, 4, 20));
+      // setups.push_back(DriverSetup(3, 2, 20, 4, 20));
+      // setups.push_back(DriverSetup(4, 2, 20, 4, 20));
+      // setups.push_back(DriverSetup(0, 3, 20, 4, 20));
+      // setups.push_back(DriverSetup(1, 3, 20, 4, 20));
+      // setups.push_back(DriverSetup(2, 3, 20, 4, 20));
+      // setups.push_back(DriverSetup(3, 3, 20, 4, 20));
+      // setups.push_back(DriverSetup(0, 4, 20, 4, 20));
+      // setups.push_back(DriverSetup(1, 4, 20, 4, 20));
+      // setups.push_back(DriverSetup(2, 4, 20, 4, 20));
+
 
       std::ofstream file;
       file.open("HBIE_convergence_test.csv", std::ios::trunc);

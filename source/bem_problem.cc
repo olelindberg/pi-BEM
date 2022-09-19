@@ -152,19 +152,16 @@ template <int dim>
 void
 BEMProblem<dim>::reinit()
 {
-  // ENTRY
   Teuchos::TimeMonitor LocalTimer(*ReinitTime);
+
+  std::cout << "Reinitializing bem problem with parameters:\n";
+  std::cout << "quadrature_type  " << quadrature_type << "\n";
+  std::cout << "quadrature_order " << quadrature_order << "\n";
+
+  quadrature = std::shared_ptr<Quadrature<dim - 1>>(new QuadratureSelector<dim - 1>(quadrature_type, quadrature_order));
 
   fe          = createFiniteElementPointer<dim - 1, dim, false>(scalar_fe_type, scalar_fe_order);
   gradient_fe = createFiniteElementPointer<dim - 1, dim, true>(vector_fe_type, vector_fe_order);
-  // fe = new FE_DGQArbitraryNodes<dim-1, dim>(QGauss<1> (2));
-  // gradient_fe = new
-  // FESystem<dim-1,dim>(FE_DGQArbitraryNodes<dim-1,dim>(QGauss<1> (2)),dim);
-  // // auto hhh = new FE_DGQArbitraryNodes<dim-1, dim>(QGauss<1> (2));
-  std::string foo = fe->get_name();
-  std::cout << foo << std::endl;
-  // FiniteElement<dim-1,dim> * pippo = FETools::get_fe_by_name<dim-1,
-  // dim>(foo); std::cout<<pippo->get_name()<<std::endl;
 
   dh.distribute_dofs(*fe);
   gradient_dh.distribute_dofs(*gradient_fe);
@@ -487,7 +484,7 @@ BEMProblem<dim>::parse_parameters(ParameterHandler &prm)
 
   prm.enter_subsection("Quadrature rules");
   {
-    quadrature                = std::shared_ptr<Quadrature<dim - 1>>(new QuadratureSelector<dim - 1>(prm.get("Quadrature type"), prm.get_integer("Quadrature order")));
+    quadrature_type           = prm.get("Quadrature type");
     quadrature_order          = prm.get_integer("Quadrature order");
     singular_quadrature_order = prm.get_integer("Singular quadrature order");
   }

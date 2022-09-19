@@ -468,6 +468,7 @@ public:
 private:
   unsigned int scalar_fe_order, vector_fe_order;
   unsigned int mapping_degree;
+  std::string  quadrature_type;
   unsigned int quadrature_order;
 
   unsigned int hbie_radial_quadrature_order  = 4;

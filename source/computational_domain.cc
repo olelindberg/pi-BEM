@@ -4,6 +4,7 @@
 
 #include <deal.II/grid/grid_reordering.h>
 #include <deal.II/grid/grid_tools.h>
+
 #include <boost/algorithm/string.hpp>
 
 // @sect4{ComputationalDomain::ComputationalDomain and
@@ -69,13 +70,9 @@ void
 ComputationalDomain<dim>::declare_parameters(ParameterHandler &prm)
 {
   if (dim == 3)
-    prm.declare_entry("Input grid name",
-                      "../grids/coarse_cube_double_nodes",
-                      Patterns::Anything());
+    prm.declare_entry("Input grid name", "../grids/coarse_cube_double_nodes", Patterns::Anything());
   else
-    prm.declare_entry("Input grid name",
-                      "../grids/circle",
-                      Patterns::Anything());
+    prm.declare_entry("Input grid name", "../grids/circle", Patterns::Anything());
 
 
   prm.declare_entry("Input grid format", "inp", Patterns::Anything());
@@ -88,33 +85,20 @@ ComputationalDomain<dim>::declare_parameters(ParameterHandler &prm)
 
   prm.declare_entry("Use iges surfaces and curves", "false", Patterns::Bool());
 
-  prm.declare_entry("Cad tolerance to projectors tolerance ratio",
-                    "100",
-                    Patterns::Double());
+  prm.declare_entry("Cad tolerance to projectors tolerance ratio", "100", Patterns::Double());
 
-  prm.declare_entry("Surface curvature adaptive refinement",
-                    "false",
-                    Patterns::Bool());
+  prm.declare_entry("Surface curvature adaptive refinement", "false", Patterns::Bool());
 
   prm.declare_entry("Cells per circle", "12", Patterns::Double());
 
-  prm.declare_entry("Maximum number of curvature adaptive refinement cycles",
-                    "5",
-                    Patterns::Integer());
+  prm.declare_entry("Maximum number of curvature adaptive refinement cycles", "5", Patterns::Integer());
 
-  prm.declare_entry(
-    "Number of global refinement to be executed before local refinement cycle",
-    "0",
-    Patterns::Integer());
+  prm.declare_entry("Number of global refinement to be executed before local refinement cycle", "0", Patterns::Integer());
 
   prm.enter_subsection("Boundary Conditions ID Numbers");
   {
-    prm.declare_entry("Dirichlet boundary ids",
-                      "1,110,110",
-                      Patterns::List(Patterns::Integer(0)));
-    prm.declare_entry("Neumann boundary ids",
-                      "0,110,110",
-                      Patterns::List(Patterns::Integer(0)));
+    prm.declare_entry("Dirichlet boundary ids", "1,110,110", Patterns::List(Patterns::Integer(0)));
+    prm.declare_entry("Neumann boundary ids", "0,110,110", Patterns::List(Patterns::Integer(0)));
   }
   prm.leave_subsection();
 
@@ -131,21 +115,17 @@ template <int dim>
 void
 ComputationalDomain<dim>::parse_parameters(ParameterHandler &prm)
 {
-  input_grid_name            = prm.get("Input grid name");
-  input_grid_format          = prm.get("Input grid format");
-  input_cad_path             = prm.get("Input path to CAD files");
-  n_cycles                   = prm.get_integer("Number of cycles");
-  max_element_aspect_ratio   = prm.get_double("Max aspect ratio");
-  use_cad_surface_and_curves = prm.get_bool("Use iges surfaces and curves");
-  surface_curvature_refinement =
-    prm.get_bool("Surface curvature adaptive refinement");
-  cells_per_circle       = prm.get_double("Cells per circle");
-  pre_global_refinements = prm.get_integer(
-    "Number of global refinement to be executed before local refinement cycle");
-  max_curvature_ref_cycles =
-    prm.get_integer("Maximum number of curvature adaptive refinement cycles");
-  cad_to_projectors_tolerance_ratio =
-    prm.get_double("Cad tolerance to projectors tolerance ratio");
+  input_grid_name                   = prm.get("Input grid name");
+  input_grid_format                 = prm.get("Input grid format");
+  input_cad_path                    = prm.get("Input path to CAD files");
+  n_cycles                          = prm.get_integer("Number of cycles");
+  max_element_aspect_ratio          = prm.get_double("Max aspect ratio");
+  use_cad_surface_and_curves        = prm.get_bool("Use iges surfaces and curves");
+  surface_curvature_refinement      = prm.get_bool("Surface curvature adaptive refinement");
+  cells_per_circle                  = prm.get_double("Cells per circle");
+  pre_global_refinements            = prm.get_integer("Number of global refinement to be executed before local refinement cycle");
+  max_curvature_ref_cycles          = prm.get_integer("Maximum number of curvature adaptive refinement cycles");
+  cad_to_projectors_tolerance_ratio = prm.get_double("Cad tolerance to projectors tolerance ratio");
 
 
   spheroid_bool   = prm.get_bool("Use a spheroid");
@@ -155,8 +135,7 @@ ComputationalDomain<dim>::parse_parameters(ParameterHandler &prm)
 
   prm.enter_subsection("Boundary Conditions ID Numbers");
   {
-    std::vector<std::string> dirichlet_string_list =
-      Utilities::split_string_list(prm.get("Dirichlet boundary ids"));
+    std::vector<std::string> dirichlet_string_list = Utilities::split_string_list(prm.get("Dirichlet boundary ids"));
     dirichlet_boundary_ids.resize(dirichlet_string_list.size());
     for (unsigned int i = 0; i < dirichlet_string_list.size(); ++i)
       {
@@ -164,8 +143,7 @@ ComputationalDomain<dim>::parse_parameters(ParameterHandler &prm)
         reader >> dirichlet_boundary_ids[i];
       }
 
-    std::vector<std::string> neumann_string_list =
-      Utilities::split_string_list(prm.get("Neumann boundary ids"));
+    std::vector<std::string> neumann_string_list = Utilities::split_string_list(prm.get("Neumann boundary ids"));
     neumann_boundary_ids.resize(neumann_string_list.size());
     for (unsigned int i = 0; i < neumann_string_list.size(); ++i)
       {
@@ -258,12 +236,8 @@ ComputationalDomain<dim>::read_domain()
   std::cout << input_grid_name << std::endl;
   std::vector<std::string> input_grid_name_split;
   boost::split(input_grid_name_split, input_grid_name, boost::is_any_of("/"));
-    for (int i = 0; i < input_grid_name_split.size(); i++)
-      cout << input_grid_name_split[i] << endl;
 
-  if (input_grid_name_split.back() == "coarse_sphere" ||
-      input_grid_name_split.back() == "coarse_sphere_double_nodes" ||
-      input_grid_name_split.back() == "circle")
+  if (input_grid_name_split.back() == "coarse_sphere" || input_grid_name_split.back() == "coarse_sphere_double_nodes" || input_grid_name_split.back() == "circle")
     {
       manifold = new SphericalManifold<dim - 1, dim>;
       tria.set_all_manifold_ids(0);
@@ -545,8 +519,7 @@ ComputationalDomain<2>::refine_and_resize(const unsigned int refinement_level)
 {
   pcout << "Refining and resizing mesh as required" << std::endl;
   tria.refine_global(refinement_level);
-  pcout << "We have a tria of " << tria.n_active_cells() << " cells."
-        << std::endl;
+  pcout << "We have a tria of " << tria.n_active_cells() << " cells." << std::endl;
   GridTools::partition_triangulation(n_mpi_processes, tria);
   std::string   filename0 = ("meshResult.inp");
   std::ofstream logfile0(filename0.c_str());
@@ -571,14 +544,12 @@ ComputationalDomain<dim>::refine_and_resize(const unsigned int refinement_level)
       bool         go_on = true;
       while (go_on == true)
         {
-          std::string color_filename = (input_cad_path + "Color_" +
-                                        Utilities::int_to_string(ii) + ".iges");
+          std::string color_filename = (input_cad_path + "Color_" + Utilities::int_to_string(ii) + ".iges");
           ifstream    f(color_filename);
           if (f.good())
             {
               pcout << ii << "-th file exists" << endl;
-              TopoDS_Shape surface =
-                OpenCASCADE::read_IGES(color_filename, 1e-3);
+              TopoDS_Shape surface = OpenCASCADE::read_IGES(color_filename, 1e-3);
               cad_surfaces.push_back(surface);
             }
           else
@@ -591,8 +562,7 @@ ComputationalDomain<dim>::refine_and_resize(const unsigned int refinement_level)
       go_on = true;
       while (go_on == true)
         {
-          std::string edge_filename = (input_cad_path + "Curve_" +
-                                       Utilities::int_to_string(ii) + ".iges");
+          std::string edge_filename = (input_cad_path + "Curve_" + Utilities::int_to_string(ii) + ".iges");
           ifstream    f(edge_filename);
           if (f.good())
             {
@@ -609,15 +579,13 @@ ComputationalDomain<dim>::refine_and_resize(const unsigned int refinement_level)
       for (unsigned int i = 0; i < cad_surfaces.size(); ++i)
         {
           pcout << i << endl;
-          max_tol =
-            fmax(max_tol, OpenCASCADE::get_shape_tolerance(cad_surfaces[i]));
+          max_tol = fmax(max_tol, OpenCASCADE::get_shape_tolerance(cad_surfaces[i]));
           pcout << max_tol << endl;
         }
       for (unsigned int i = 0; i < cad_curves.size(); ++i)
         {
           pcout << i + cad_surfaces.size() << endl;
-          max_tol =
-            fmax(max_tol, OpenCASCADE::get_shape_tolerance(cad_curves[i]));
+          max_tol = fmax(max_tol, OpenCASCADE::get_shape_tolerance(cad_curves[i]));
           pcout << max_tol << endl;
         }
 
@@ -628,9 +596,7 @@ ComputationalDomain<dim>::refine_and_resize(const unsigned int refinement_level)
       pcout << "Used tolerance is: " << tolerance << endl;
       for (unsigned int i = 0; i < cad_surfaces.size(); ++i)
         {
-          normal_to_mesh_projectors.push_back(
-            std::make_shared<OpenCASCADE::NormalToMeshProjectionManifold<2, 3>>(
-              cad_surfaces[i], tolerance));
+          normal_to_mesh_projectors.push_back(std::make_shared<OpenCASCADE::NormalToMeshProjectionManifold<2, 3>>(cad_surfaces[i], tolerance));
         }
       // static OpenCASCADE::DirectionalProjectionBoundary<2,3>
       //        directional_projector_lat(cad_surfaces[0],
@@ -640,10 +606,7 @@ ComputationalDomain<dim>::refine_and_resize(const unsigned int refinement_level)
 
       for (unsigned int i = 0; i < cad_curves.size(); ++i)
         {
-          line_projectors.push_back(
-            std::make_shared<
-              OpenCASCADE::ArclengthProjectionLineManifold<2, 3>>(cad_curves[i],
-                                                                  tolerance));
+          line_projectors.push_back(std::make_shared<OpenCASCADE::ArclengthProjectionLineManifold<2, 3>>(cad_curves[i], tolerance));
         }
 
       for (unsigned int i = 0; i < cad_surfaces.size(); ++i)
@@ -688,15 +651,13 @@ ComputationalDomain<dim>::refine_and_resize(const unsigned int refinement_level)
           // is refined
           if (max_extent > max_element_aspect_ratio * min_extent)
             {
-              cell->set_refine_flag(
-                RefinementCase<2>::cut_axis(max_extent_dim));
+              cell->set_refine_flag(RefinementCase<2>::cut_axis(max_extent_dim));
               refinedCellCounter++;
             }
         }
       // the number of cells refined in this cycle is reported before
       // proceeding with the next one
-      pcout << "Aspect Ratio Reduction Cycle: " << cycles_counter << " ("
-            << refinedCellCounter << ")" << endl;
+      pcout << "Aspect Ratio Reduction Cycle: " << cycles_counter << " (" << refinedCellCounter << ")" << endl;
       tria.execute_coarsening_and_refinement();
 
       // the following commented lines are here for debug puroposes: if
@@ -734,8 +695,7 @@ ComputationalDomain<dim>::refine_and_resize(const unsigned int refinement_level)
       // the refinement procedure is recursively repeated until no more cells
       // are flagged for refinement, or until the user specified maximum number
       // of curvature refinement cycles is reached
-      while ((refinedCellCounter) &&
-             (cycles_counter < max_curvature_ref_cycles))
+      while ((refinedCellCounter) && (cycles_counter < max_curvature_ref_cycles))
         {
           // the refined cells counter is zeroed at the start of each cycle
           refinedCellCounter = 0;
@@ -764,21 +724,13 @@ ComputationalDomain<dim>::refine_and_resize(const unsigned int refinement_level)
               // cout<<"t2: "<<t2<<endl;
               // cout<<"t3: "<<t3<<endl;
 
-              Point<3> nn0(t0(1) * t1(2) - t0(2) * t1(1),
-                           t0(2) * t1(0) - t0(0) * t1(2),
-                           t0(0) * t1(1) - t0(1) * t1(0));
+              Point<3> nn0(t0(1) * t1(2) - t0(2) * t1(1), t0(2) * t1(0) - t0(0) * t1(2), t0(0) * t1(1) - t0(1) * t1(0));
               nn0 /= nn0.norm();
-              Point<3> nn1(t1(1) * t3(2) - t1(2) * t3(1),
-                           t1(2) * t3(0) - t1(0) * t3(2),
-                           t1(0) * t3(1) - t1(1) * t3(0));
+              Point<3> nn1(t1(1) * t3(2) - t1(2) * t3(1), t1(2) * t3(0) - t1(0) * t3(2), t1(0) * t3(1) - t1(1) * t3(0));
               nn1 /= nn1.norm();
-              Point<3> nn2(t3(1) * t2(2) - t3(2) * t2(1),
-                           t3(2) * t2(0) - t3(0) * t2(2),
-                           t3(0) * t2(1) - t3(1) * t2(0));
+              Point<3> nn2(t3(1) * t2(2) - t3(2) * t2(1), t3(2) * t2(0) - t3(0) * t2(2), t3(0) * t2(1) - t3(1) * t2(0));
               nn2 /= nn2.norm();
-              Point<3> nn3(t2(1) * t0(2) - t2(2) * t0(1),
-                           t2(2) * t0(0) - t2(0) * t0(2),
-                           t2(0) * t0(1) - t2(1) * t0(0));
+              Point<3> nn3(t2(1) * t0(2) - t2(2) * t0(1), t2(2) * t0(0) - t2(0) * t0(2), t2(0) * t0(1) - t2(1) * t0(0));
               nn3 /= nn3.norm();
               Point<3> n = (nn0 + nn1 + nn2 + nn3) / 4.0;
               n /= n.norm();
@@ -800,21 +752,17 @@ ComputationalDomain<dim>::refine_and_resize(const unsigned int refinement_level)
                 {
                   // if so, the cad_surface associated with the present
                   // manifold_id is identified...
-                  TopoDS_Shape neededShape =
-                    cad_surfaces[int(cell->material_id()) - 1];
+                  TopoDS_Shape neededShape = cad_surfaces[int(cell->material_id()) - 1];
                   // ...and used to set up a line intersection to project the
                   // cell center on the CAD surface along the direction
                   // specified by the previously computed cell normal
-                  Point<3> projection = OpenCASCADE::line_intersection(
-                    neededShape, cell->center(), n, tolerance);
+                  Point<3> projection = OpenCASCADE::line_intersection(neededShape, cell->center(), n, tolerance);
                   // in correspondence with the projected point, we ask all the
                   // surface differential forms
-                  auto tup = OpenCASCADE::closest_point_and_differential_forms(
-                    neededShape, projection, tolerance);
+                  auto tup = OpenCASCADE::closest_point_and_differential_forms(neededShape, projection, tolerance);
                   // among the differential point, we select the maximum
                   // absolute curvature
-                  double max_abs_curv =
-                    fmax(fabs(std::get<2>(tup)), fabs(std::get<3>(tup)));
+                  double max_abs_curv = fmax(fabs(std::get<2>(tup)), fabs(std::get<3>(tup)));
                   // this commented line is just for debug purposes
                   // cout<<"Point: "<<std::get<0>(tup)<<"  Kmin:
                   // "<<std_cxx11::get<2>(tup)<<"  Kmax:
@@ -824,16 +772,14 @@ ComputationalDomain<dim>::refine_and_resize(const unsigned int refinement_level)
                   // the target cell size is selected so that it corresponds to
                   // a cells_per_circle fraction of the circumference
                   // corresponding to the minimum curvature radius
-                  cell_size = 2 * dealii::numbers::PI / cells_per_circle *
-                              curvature_radius;
+                  cell_size = 2 * dealii::numbers::PI / cells_per_circle * curvature_radius;
                 }
               else
                 {
                   // if the cell manifold_id is not associated to a CAD surface,
                   // the target cell_size is set to and extremely high value, so
                   // that the cell is never refined
-                  cell_size =
-                    2 * dealii::numbers::PI / cells_per_circle / tolerance;
+                  cell_size = 2 * dealii::numbers::PI / cells_per_circle / tolerance;
                 }
 
               // the following line si for debug puropses and should be
@@ -845,8 +791,7 @@ ComputationalDomain<dim>::refine_and_resize(const unsigned int refinement_level)
               // if the cell diameter is higher than the target cell size, the
               // refinement flag is set (unless the cell is already very small
               // ---which for us means 10xtolerance)
-              if ((cell->diameter() > cell_size) &&
-                  (cell->diameter() > 10 * tolerance))
+              if ((cell->diameter() > cell_size) && (cell->diameter() > 10 * tolerance))
                 {
                   cell->set_refine_flag();
                   refinedCellCounter++;
@@ -855,8 +800,7 @@ ComputationalDomain<dim>::refine_and_resize(const unsigned int refinement_level)
           // the number of cells to be refined in this cycle is reported, the
           // refinement is carried out and the make_edges_conformal function is
           // called to check no edge presents non comformities
-          pcout << "Curvature Based Local Refinement Cycle: " << cycles_counter
-                << " (" << refinedCellCounter << ")" << endl;
+          pcout << "Curvature Based Local Refinement Cycle: " << cycles_counter << " (" << refinedCellCounter << ")" << endl;
           tria.execute_coarsening_and_refinement();
           make_edges_conformal();
           cycles_counter++;
@@ -879,8 +823,7 @@ ComputationalDomain<dim>::refine_and_resize(const unsigned int refinement_level)
 
 
   tria.refine_global(refinement_level);
-  pcout << "We have a tria of " << tria.n_active_cells() << " cells."
-        << std::endl;
+  pcout << "We have a tria of " << tria.n_active_cells() << " cells." << std::endl;
   GridTools::partition_triangulation(n_mpi_processes, tria);
   std::string   filename0 = ("meshResult.inp");
   std::ofstream logfile0(filename0.c_str());
@@ -894,8 +837,7 @@ ComputationalDomain<dim>::refine_and_resize(const unsigned int refinement_level)
 
 template <int dim>
 void
-ComputationalDomain<dim>::conditional_refine_and_resize(
-  const unsigned int refinement_level)
+ComputationalDomain<dim>::conditional_refine_and_resize(const unsigned int refinement_level)
 {
   pcout << "Conditionally refining and resizing mesh as required" << std::endl;
 
@@ -909,11 +851,9 @@ ComputationalDomain<dim>::conditional_refine_and_resize(
       auto endc = tria.end();
       for (; cell != endc; ++cell)
         {
-          for (unsigned int v = 0; v < GeometryInfo<dim - 1>::vertices_per_cell;
-               ++v)
+          for (unsigned int v = 0; v < GeometryInfo<dim - 1>::vertices_per_cell; ++v)
             {
-              const double distance_from_center =
-                center.distance(cell->vertex(v));
+              const double distance_from_center = center.distance(cell->vertex(v));
               if (std::fabs(distance_from_center) < 1.)
                 {
                   cell->set_refine_flag();
@@ -937,8 +877,7 @@ ComputationalDomain<dim>::update_triangulation()
   make_edges_conformal();
   // tria.execute_coarsening_and_refinement ();
 
-  pcout << "We have a tria of " << tria.n_active_cells() << " cells."
-        << std::endl;
+  pcout << "We have a tria of " << tria.n_active_cells() << " cells." << std::endl;
   GridTools::partition_triangulation(n_mpi_processes, tria);
   std::string   filename0 = ("meshResult.inp");
   std::ofstream logfile0(filename0.c_str());
@@ -958,9 +897,7 @@ ComputationalDomain<dim>::update_triangulation()
   std::vector<unsigned int> partition_int(tria.n_active_cells());
   GridTools::get_subdomain_association(tria, partition_int);
   const Vector<double> partitioning(partition_int.begin(), partition_int.end());
-  data_out.add_data_vector(partitioning,
-                           "partitioning",
-                           DataOut<dim - 1, dim>::type_cell_data);
+  data_out.add_data_vector(partitioning, "partitioning", DataOut<dim - 1, dim>::type_cell_data);
   data_out.build_patches();
   data_out.write_vtu(output);
 
@@ -970,20 +907,15 @@ ComputationalDomain<dim>::update_triangulation()
 
 template <>
 void
-ComputationalDomain<2>::make_edges_conformal(
-  const bool with_double_nodes,
-  const bool isotropic_ref_on_opposite_side)
+ComputationalDomain<2>::make_edges_conformal(const bool with_double_nodes, const bool isotropic_ref_on_opposite_side)
 {
-  if (with_double_nodes || !with_double_nodes ||
-      isotropic_ref_on_opposite_side || !isotropic_ref_on_opposite_side)
+  if (with_double_nodes || !with_double_nodes || isotropic_ref_on_opposite_side || !isotropic_ref_on_opposite_side)
     AssertThrow(true, ExcMessage("Make  edges conformal only works in 3D"));
 }
 
 template <int dim>
 void
-ComputationalDomain<dim>::make_edges_conformal(
-  const bool with_double_nodes,
-  const bool isotropic_ref_on_opposite_side)
+ComputationalDomain<dim>::make_edges_conformal(const bool with_double_nodes, const bool isotropic_ref_on_opposite_side)
 {
   if (with_double_nodes == false)
     {
@@ -993,19 +925,15 @@ ComputationalDomain<dim>::make_edges_conformal(
       for (cell = tria.begin_active(); cell != endc; ++cell)
         {
           for (unsigned int f = 0; f < GeometryInfo<2>::faces_per_cell; ++f)
-            if (
-              cell->face(f)
-                ->at_boundary()) // material_id()!=numbers::invalid_material_id)//dovrei
-                                 // essere su un buondary
+            if (cell->face(f)->at_boundary()) // material_id()!=numbers::invalid_material_id)//dovrei
+                                              // essere su un buondary
               {
                 // TriaIterator<CellAccessor<dim-1,dim> > cell_neigh =
                 // cell->neighbor(f);
                 if (cell->neighbor_is_coarser(f))
                   {
-                    TriaIterator<CellAccessor<dim - 1, dim>> cell_neigh =
-                      cell->neighbor(f);
-                    cell_neigh->set_refine_flag(
-                      RefinementCase<dim - 1>::isotropic_refinement);
+                    TriaIterator<CellAccessor<dim - 1, dim>> cell_neigh = cell->neighbor(f);
+                    cell_neigh->set_refine_flag(RefinementCase<dim - 1>::isotropic_refinement);
                     // std::cout<<"mammina..."<<std::endl;
                   }
               }
@@ -1032,33 +960,23 @@ ComputationalDomain<dim>::make_edges_conformal(
           pcout << to_restore << std::endl;
           for (types::global_dof_index i = 0; i < n_vertex; ++i)
             {
-              if (vertex_on_boundary[i] == true &&
-                  double_vertex_vector[i].size() == 1)
+              if (vertex_on_boundary[i] == true && double_vertex_vector[i].size() == 1)
                 {
-                  std::vector<Point<dim>> nodes(
-                    GeometryInfo<dim - 1>::vertices_per_face);
-                  for (types::global_dof_index kk = 0;
-                       kk < vert_to_elems[i].size();
-                       ++kk) // ogni faccia ha due estremi
+                  std::vector<Point<dim>> nodes(GeometryInfo<dim - 1>::vertices_per_face);
+                  for (types::global_dof_index kk = 0; kk < vert_to_elems[i].size(); ++kk) // ogni faccia ha due estremi
                     {
-                      auto cell =
-                        vert_to_elems[i][kk]; // mi riconduco alla cella con il
-                                              // nodo non conforme
-                      for (unsigned int f = 0;
-                           f < GeometryInfo<dim - 1>::faces_per_cell;
-                           ++f)
+                      auto cell = vert_to_elems[i][kk]; // mi riconduco alla cella con il
+                                                        // nodo non conforme
+                      for (unsigned int f = 0; f < GeometryInfo<dim - 1>::faces_per_cell; ++f)
                         {
-                          if (cell->face(f)
-                                ->at_boundary()) // ritrovo la faccia con l'edge
-                                                 // non doppio
+                          if (cell->face(f)->at_boundary()) // ritrovo la faccia con l'edge
+                                                            // non doppio
                             {
                               // std::cout<<cell->face(f)->vertex(1)<<"
                               // "<<cell->face(f)->vertex(0)<<std::endl;
-                              if (all_vertices[i].distance(
-                                    cell->face(f)->vertex(0)) < tol)
+                              if (all_vertices[i].distance(cell->face(f)->vertex(0)) < tol)
                                 nodes[kk] = cell->face(f)->vertex(1);
-                              else if (all_vertices[i].distance(
-                                         cell->face(f)->vertex(1)) < tol)
+                              else if (all_vertices[i].distance(cell->face(f)->vertex(1)) < tol)
                                 nodes[kk] = cell->face(f)->vertex(0);
                             }
                         }
@@ -1068,19 +986,13 @@ ComputationalDomain<dim>::make_edges_conformal(
                   // "<<nodes[1]<<std::endl;
                   // we can now compute the center of the parent cell face
                   Point<3> parent_face_center = 0.5 * (nodes[0] + nodes[1]);
-                  for (auto jt = edge_cells.begin(); jt != edge_cells.end();
-                       ++jt)
-                    for (unsigned int d = 0;
-                         d < GeometryInfo<2>::faces_per_cell;
-                         ++d)
+                  for (auto jt = edge_cells.begin(); jt != edge_cells.end(); ++jt)
+                    for (unsigned int d = 0; d < GeometryInfo<2>::faces_per_cell; ++d)
                       if ((*jt)->face(d)->at_boundary())
                         {
                           // cout<<parent_face_center.distance((*jt)->face(d)->center())<<"
                           // "<<tol<<endl;
-                          if (parent_face_center.distance(
-                                ((*jt)->face(d)->vertex(0) +
-                                 (*jt)->face(d)->vertex(1)) /
-                                2) < tol)
+                          if (parent_face_center.distance(((*jt)->face(d)->vertex(0) + (*jt)->face(d)->vertex(1)) / 2) < tol)
                             {
                               if (isotropic_ref_on_opposite_side)
                                 {
@@ -1092,11 +1004,9 @@ ComputationalDomain<dim>::make_edges_conformal(
                               else
                                 {
                                   if ((d == 0) || (d == 1))
-                                    (*jt)->set_refine_flag(
-                                      RefinementCase<2>::cut_axis(1));
+                                    (*jt)->set_refine_flag(RefinementCase<2>::cut_axis(1));
                                   else
-                                    (*jt)->set_refine_flag(
-                                      RefinementCase<2>::cut_axis(0));
+                                    (*jt)->set_refine_flag(RefinementCase<2>::cut_axis(0));
                                   to_restore = true;
                                 }
                             }
@@ -1108,8 +1018,7 @@ ComputationalDomain<dim>::make_edges_conformal(
             {
               tria.prepare_coarsening_and_refinement();
               tria.execute_coarsening_and_refinement();
-              pcout << "found non conformity, new cell number : "
-                    << tria.n_active_cells() << std::endl;
+              pcout << "found non conformity, new cell number : " << tria.n_active_cells() << std::endl;
             }
           // pcout<<"pippo"<<std::endl;
         }
@@ -1152,11 +1061,9 @@ ComputationalDomain<dim>::compute_double_vertex_cache()
 
   for (cell = tria.begin_active(); cell != endc; ++cell)
     {
-      std::vector<Point<dim>> cell_vertices(
-        GeometryInfo<dim - 1>::vertices_per_cell);
+      std::vector<Point<dim>> cell_vertices(GeometryInfo<dim - 1>::vertices_per_cell);
 
-      for (unsigned int v = 0; v < GeometryInfo<dim - 1>::vertices_per_cell;
-           ++v)
+      for (unsigned int v = 0; v < GeometryInfo<dim - 1>::vertices_per_cell; ++v)
         {
           vert_to_elems[cell->vertex_index(v)].push_back(cell);
           cell_vertices[v] = cell->vertex(v);
@@ -1167,14 +1074,11 @@ ComputationalDomain<dim>::compute_double_vertex_cache()
         {
           edge_cells.insert(cell);
 
-          for (unsigned int f = 0; f < GeometryInfo<dim - 1>::faces_per_cell;
-               ++f)
+          for (unsigned int f = 0; f < GeometryInfo<dim - 1>::faces_per_cell; ++f)
             {
               if (cell->face(f)->at_boundary())
                 {
-                  for (unsigned int v = 0;
-                       v < GeometryInfo<dim - 1>::vertices_per_cell;
-                       ++v)
+                  for (unsigned int v = 0; v < GeometryInfo<dim - 1>::vertices_per_cell; ++v)
                     {
                       if (cell->face(f)->vertex(0) == cell_vertices[v])
                         vertex_on_boundary[cell->vertex_index(v)] = true;
