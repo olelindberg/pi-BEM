@@ -9,6 +9,8 @@
 \newcommand{\V}[1]{\boldsymbol{#1}}
 \newcommand{\nn}{\nonumber}
 \newcommand{\D}[2]{\frac{\partial #1}{\partial #2}}
+\newcommand{\eballx}{B_{\epsilon}(\V{x})}
+\newcommand{\espherex}{S_{\epsilon}(\V{x})}
 \begin{document}
 
 \maketitle
@@ -229,20 +231,31 @@ leading to the following total static force and moment
 
 The velocity potential $\phi(\V{x})$ at the point $\V{x} = \left[x,y,z\right]^T$ is, according to Greens second identity, 
 \begin{equation}
-	\phi(\V{x}) = 
-	 \frac{1}{4 \pi} \int_{S} \sigma (\V{x}_0) \left(\frac{1}{r} \right) dS
-	- \frac{1}{4 \pi} \int_{S} \mu(\V{x}_0)  \frac{\partial }{\partial n} \left( \frac{1}{r}\right) dS, \quad \V{x} \in V,
+	\delta_{V}(\V{x})\phi(\V{x}) = 
+	 \frac{1}{4 \pi} \int_{S} \sigma (\V{y}) \left(\frac{1}{r} \right) dS
+	- \frac{1}{4 \pi} \int_{S} \mu(\V{y})  \frac{\partial }{\partial n} \left( \frac{1}{r}\right) dS,
 \label{eqCBIE}
 \end{equation}
-where $\sigma(\V{x}_0),~ \V{x}_0 \in S,$ is the source strength, $\mu(\V{x}_0),~ \V{x}_0 \in S,$ is the doublet strength and $r$ is the distance from $\V{x}_0 = \left[x_0,y_0,z_0\right] \in S$ to $\V{x} = \left[x,y,z\right] \in V$
+where
 \begin{equation}
-r = \sqrt{(x-x_0)^2 + (y-y_0)^2 + (z-z_0)^2}.
+\delta_{V}(\V{x}) =\biggl\{ \bigl.
+\begin{array}{ll}
+1,\quad \V{x} \in V \\
+0,\quad \V{x} \not\in V \cup S \\
+\end{array}
 \end{equation}
+and $\sigma(\V{y}),~ \V{y} \in S,$ is the source strength, $\mu(\V{y}),~ \V{y} \in S,$ is the doublet strength and $r$ is the distance $r = ||\V{y}-\V{x}||$.
+
 From \ref{eqCBIE} we can calculate the potential $\phi(\V{x})$ anywhere in the fluid volume $V$ if the source, $\sigma$, and dipole, $\mu$, strengths are known on the surface $S$. However, the kernels $1/r$ and $ \partial (1/r)/\partial n$ in \ref{eqCBIE} are weakly singular and strongly singular, respectively. For the singular integral, we can calculate the Cauchy Principal Value (CPV) and the  boundary integral equation become
 \begin{equation}
 \alpha (\V{x}) \phi(\V{x}) = 
-\frac{1}{4 \pi} \int_{S} \sigma (\V{x}_0) \left(\frac{1}{r} \right) dS
-- \frac{1}{4 \pi} \int_{S}^{PV} \mu(\V{x}_0)  \frac{\partial }{\partial n} \left( \frac{1}{r}\right) dS, \quad \V{x} \in S,
+\frac{1}{4 \pi} \int_{S} \sigma (\V{y}) \left(\frac{1}{r} \right) dS
+- \frac{1}{4 \pi} \int_{S}^{PV} \mu(\V{y})  \frac{\partial }{\partial n} \left( \frac{1}{r}\right) dS, \quad \V{x} \in S,
+\label{eqCBIE_CPV}
+\end{equation}
+To calculate the scalar coefficient $\alpha(\V{x})$ and the vector of coefficients $\nabla \alpha(\V{x})$, we can use the unit solution $\phi = 1$ for the potential and $\nabla \phi = \V{0}$. Inserting this solution, with $\sigma = \D{\phi}{n}$ and $\mu = \phi$, in \eqref{eqCBIE_CPV} gives the following equation for the scalar coefficient
+\begin{equation}
+\alpha (\V{x}) = - \frac{1}{4 \pi} \int_{S}^{PV} \frac{\partial }{\partial n} \left( \frac{1}{r}\right) dS, \quad \V{x} \in S.
 \label{eqCBIE_CPV}
 \end{equation}
 
@@ -250,31 +263,57 @@ From \ref{eqCBIE} we can calculate the potential $\phi(\V{x})$ anywhere in the f
 \subsection{Hypersingular boundary integral equations, HBIE}
 Taking the gradient of \eqref{eqCBIE} gives the flow velocity due to the source $\sigma$ and doublet $\mu$ distributions 
 \begin{equation}
-\nabla \phi(\V{x}) = 
- \frac{1}{4 \pi} \int_{S} \sigma (\V{x}_0) \nabla\left(\frac{1}{r} \right) dS
-- \frac{1}{4 \pi} \int_{S} \mu(\V{x}_0) \nabla \frac{\partial }{\partial n} \left( \frac{1}{r}\right) dS, \quad \V{x} \in V
+\delta_{V}(\V{x})\nabla \phi(\V{x}) = 
+ \frac{1}{4 \pi} \int_{S} \sigma (\V{y}) \nabla\left(\frac{1}{r} \right) dS
+- \frac{1}{4 \pi} \int_{S} \mu(\V{y}) \nabla \frac{\partial }{\partial n} \left( \frac{1}{r}\right) dS,
 \label{eqHBIE}
 \end{equation}
-where the kernel $\nabla \frac{\partial }{\partial n} \left( \frac{1}{r}\right)$ in \eqref{eqHBIE} is hypersingular.
-
-
-
-
-When taking the gradient of this equation we get 
+where the kernel $\nabla \frac{\partial }{\partial n} \left( \frac{1}{r}\right)$ in \eqref{eqHBIE} is hypersingular. The singularity is removed by introduction of a \emph{vanishing exclusion zone} around the point $\V{x} \in S$. The exclusion zone is the $\epsilon$-ball $B_{\epsilon} = \{ \V{y} ~|~ ||\V{y} - \V{x}||< \epsilon \}$ and its boundary is the $\epsilon$-sphere $S_{\epsilon} = \{ \V{y} ~|~ ||\V{y} - \V{x}||= \epsilon \}$. When the $\epsilon$-ball $B_{\epsilon}(\V{x})$ is removed from the volume $V$, the point $\V{x}$ is exterior to the remaining domain and the hypersingular integral \eqref{eqHBIE} becomes
 \begin{align}
-\phi(\V{x})\nabla \alpha(\V{x})+\alpha(\V{x})\nabla \phi(\V{x}) = & \frac{1}{4 \pi} \int_{S}^{PV} \sigma (\V{x}_0) \nabla\left(\frac{1}{r} \right) dS \nonumber \\
-&- \frac{1}{4 \pi} \int_{S}^{PV} \mu(\V{x}_0) \nabla \frac{\partial }{\partial n} \left( \frac{1}{r}\right) dS, \quad \V{x} \in S,
-\label{eqHBIE_CPV}
+&\frac{1}{4 \pi} \int_{\espherex \cap V} \sigma (\V{y}) \nabla\left(\frac{1}{r} \right) - \mu(\V{y}) \nabla \frac{\partial }{\partial n} \left( \frac{1}{r}\right) dS \nn\\
++& \frac{1}{4 \pi} \int_{S - \eballx} \sigma (\V{y}) \nabla\left(\frac{1}{r} \right) - \mu(\V{y}) \nabla \frac{\partial }{\partial n} \left( \frac{1}{r}\right) dS = \V{0},
+\label{eqHBIEballed}
+\end{align}
+Now the first integral of \eqref{eqHBIEballed} is examined by means of an asymptotic analysis based on the following expansions of the potential
+\begin{align}
+	\phi(\V{y}) = 	\phi(\V{x}) + \V{r} \cdot \nabla \phi(\V{x}) + \mathcal{O}(r^{1+\alpha???}),
+\end{align}
+and the normal derivative of the potential 
+\begin{align}
+\D{\phi}{n}(\V{y}) = \V{n}(\V{y}) \cdot \nabla \phi(\V{x}) + \mathcal{O}(r^{\alpha???}).
+\end{align}
+insertion of these expansions in the first integral of \eqref{eqHBIEballed} gives
+\begin{align}
+&\frac{1}{4 \pi} \int_{\espherex \cap V} \sigma (\V{y}) \nabla\left(\frac{1}{r} \right) - \mu(\V{y}) \nabla \frac{\partial }{\partial n} \left( \frac{1}{r}\right) dS =\nn\\
+&\frac{1}{4 \pi} \int_{\espherex \cap V} \nabla\left(\frac{1}{r} \right)\V{n}(\V{y}) - \nabla \frac{\partial }{\partial n} \left( \frac{1}{r}\right)\V{r} dS \cdot \nabla \phi(\V{x}) \nn\\
+&-\frac{1}{4 \pi} \int_{\espherex \cap V}   \nabla \frac{\partial }{\partial n} \left( \frac{1}{r}\right)  dS\phi(\V{x}) \nn\\
+&+\frac{1}{4 \pi} \int_{\espherex \cap V} \nabla\left(\frac{1}{r} \right)\mathcal{O}(r^{\alpha???}) - \nabla \frac{\partial }{\partial n} \left( \frac{1}{r}\right) \mathcal{O}(r^{1+\alpha???})  dS.
+\end{align}
+We can write the first integral on the right hand side as 
+\begin{align}
+\V{C}(\V{x}) \nabla \phi,
+\end{align}
+where the $\V{C}(\V{x})$ matrix is
+\begin{align}
+\V{C}(\V{x}) = \frac{d}{\omega_d} \int_{S_1(\V{x},V)} \V{r} \V{r}^T d\omega(\V{y})
+\end{align}
+and the second integral on the right hand side as 
+\begin{align}
+\V{b}(\V{x}) \phi,
+\end{align}
+where the $\V{b}(\V{x})$ vector is
+\begin{align}
+\V{b}(\V{x}) = \frac{1}{4 \pi} \sum_{e=1}^{m_e} \int_{\nu_0^{(e)}}^{\nu_1^{(e)}} \kappa^{(e)} \V{r} d\nu(\V{y}), \quad \V{y} \in S_1(\V{x},S).
+\end{align}
+Finally the HBIE is
+\begin{align}
+\V{C}(\V{x})\nabla \phi(\V{x}) + \V{b}(\V{x})\phi(\V{x})  = & \frac{1}{4 \pi} \int_{S}^{PV} \sigma (\V{y}) \nabla\left(\frac{1}{r} \right) - \mu(\V{y}) \nabla \frac{\partial }{\partial n} \left( \frac{1}{r}\right) dS, \quad \V{x} \in S,
+\label{eqHBIE_Final}
 \end{align}
 
-To calculate the scalar coefficient $\alpha(\V{x})$ and the vector of coefficients $\nabla \alpha(\V{x})$, we can use the unit solution $\phi = 1$ for the potential and $\nabla \phi = \V{0}$. Inserting this solution, with $\sigma = \D{\phi}{n}$ and $\mu = \phi$, in \eqref{eqCBIE_CPV} gives the following equation for the scalar coefficient
-\begin{equation}
-\alpha (\V{x}) = - \frac{1}{4 \pi} \int_{S}^{PV} \frac{\partial }{\partial n} \left( \frac{1}{r}\right) dS, \quad \V{x} \in S,
-\label{eqCBIE_CPV}
-\end{equation}
-and this equation for the vector coefficient
+To calculate the vector of coefficients $\V{b}(\V{x})$ we use the unit solution $\phi = 1$ for the potential and $\nabla \phi = \V{0}$ for the gradient. Inserting this solution, with $\sigma = \D{\phi}{n}$ and $\mu = \phi$, in \eqref{eqHBIE_Final} gives
 \begin{align}
-\nabla \alpha(\V{x}) =- \frac{1}{4 \pi} \int_{S}^{PV} \nabla \frac{\partial }{\partial n} \left( \frac{1}{r}\right) dS, \quad \V{x} \in S.
+\V{b}(\V{x}) =- \frac{1}{4 \pi} \int_{S}^{PV} \nabla \frac{\partial }{\partial n} \left( \frac{1}{r}\right) dS, \quad \V{x} \in S.
 \label{eqHBIE_CPV}
 \end{align}
 
@@ -286,8 +325,8 @@ No flux boundary condition
 \end{equation}
 insertion of \ref{eqGreen} in the no flux boundary condition gives
 \begin{equation}
- 	- \frac{1}{4 \pi}  \int_{S_B} \sigma (\V{x}_0) \frac{\partial }{\partial n}\left(\frac{1}{r} \right) dS
-+ \frac{1}{4 \pi} \int_{S_B + S_W} \mu(\V{x}_0) \frac{\partial }{\partial n} \left(  \frac{\partial }{\partial n} \left( \frac{1}{r}\right) \right) dS	
+ 	- \frac{1}{4 \pi}  \int_{S_B} \sigma (\V{y}) \frac{\partial }{\partial n}\left(\frac{1}{r} \right) dS
++ \frac{1}{4 \pi} \int_{S_B + S_W} \mu(\V{y}) \frac{\partial }{\partial n} \left(  \frac{\partial }{\partial n} \left( \frac{1}{r}\right) \right) dS	
 + \frac{\partial \phi_{\infty} }{\partial n} = 0, \quad \V{x} \in S_B.
 \end{equation}
 Distribute surface elements over the body $S_B$
@@ -300,18 +339,18 @@ S_W = \bigcup_{i=1}^{N_{W}} S_{W,i}
 \end{equation}
 Sum over all the surface integrals
 \begin{align}
-&- \frac{1}{4 \pi} \sum_{i=1}^{N_B}  \int_{S_B,i} \sigma (\V{x}_0) \frac{\partial }{\partial n}\left(\frac{1}{r} \right) dS \nn \\
-&+ \frac{1}{4 \pi} \sum_{i=1}^{N_B}\int_{S_B,i} \mu(\V{x}_0) \frac{\partial }{\partial n} \left(  \frac{\partial }{\partial n} \left( \frac{1}{r}\right) \right) dS \nn \\
-&+ \frac{1}{4 \pi} \sum_{i=1}^{N_W}\int_{S_W,i} \mu(\V{x}_0) \frac{\partial }{\partial n} \left(  \frac{\partial }{\partial n} \left( \frac{1}{r}\right) \right) dS \nn	\\
+&- \frac{1}{4 \pi} \sum_{i=1}^{N_B}  \int_{S_B,i} \sigma (\V{y}) \frac{\partial }{\partial n}\left(\frac{1}{r} \right) dS \nn \\
+&+ \frac{1}{4 \pi} \sum_{i=1}^{N_B}\int_{S_B,i} \mu(\V{y}) \frac{\partial }{\partial n} \left(  \frac{\partial }{\partial n} \left( \frac{1}{r}\right) \right) dS \nn \\
+&+ \frac{1}{4 \pi} \sum_{i=1}^{N_W}\int_{S_W,i} \mu(\V{y}) \frac{\partial }{\partial n} \left(  \frac{\partial }{\partial n} \left( \frac{1}{r}\right) \right) dS \nn	\\
 &+ \frac{\partial \phi_{\infty} }{\partial n} = 0, \quad \V{x} \in S_B.
 \end{align}
 Source distributions only
 \begin{align}
-- \frac{1}{4 \pi} \sum_{i=1}^{N_B}  \int_{S_B,i} \sigma (\V{x}_0) \frac{\partial }{\partial n}\left(\frac{1}{r} \right) dS \nn + \frac{\partial \phi_{\infty} }{\partial n} = 0, \quad \V{x} \in S_B.
+- \frac{1}{4 \pi} \sum_{i=1}^{N_B}  \int_{S_B,i} \sigma (\V{y}) \frac{\partial }{\partial n}\left(\frac{1}{r} \right) dS \nn + \frac{\partial \phi_{\infty} }{\partial n} = 0, \quad \V{x} \in S_B.
 \end{align}
 Satisfy in $N_P$ collocation points
 \begin{align}
-- \frac{1}{4 \pi} \sum_{j=1}^{N_B}  \int_{S_B,j} \sigma (\V{x}_0) \frac{\partial }{\partial n}\left(\frac{1}{r} \right) dS \nn + \frac{\partial \phi_{\infty} }{\partial n} = 0, \quad \V{x}= \V{x}_i,  ~i=1,\ldots,Np
+- \frac{1}{4 \pi} \sum_{j=1}^{N_B}  \int_{S_B,j} \sigma (\V{y}) \frac{\partial }{\partial n}\left(\frac{1}{r} \right) dS \nn + \frac{\partial \phi_{\infty} }{\partial n} = 0, \quad \V{x}= \V{x}_i,  ~i=1,\ldots,Np
 \end{align}
 	
 
