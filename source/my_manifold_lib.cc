@@ -62,219 +62,299 @@ using namespace OpenCASCADE;
 
 /*============================== MyNormalToMeshProjectionManifold
  * ==============================*/
-template <int dim, int spacedim> MyNormalToMeshProjectionManifold<dim, spacedim>::MyNormalToMeshProjectionManifold (const TopoDS_Shape &sh, const double tolerance) : sh (sh), tolerance (tolerance)
+template <int dim, int spacedim>
+MyNormalToMeshProjectionManifold<dim, spacedim>::MyNormalToMeshProjectionManifold(
+  const TopoDS_Shape &sh,
+  const double        tolerance)
+  : sh(sh)
+  , tolerance(tolerance)
 {
-  Assert (spacedim == 3, ExcNotImplemented ());
-  Assert (std::get<0> (count_elements (sh)) > 0, ExcMessage ("MyNormalToMeshProjectionManifold needs a shape containing faces to operate."));
+  Assert(spacedim == 3, ExcNotImplemented());
+  Assert(std::get<0>(count_elements(sh)) > 0,
+         ExcMessage("MyNormalToMeshProjectionManifold needs a shape containing faces to operate."));
   Standard_Real aDeflection = 0.0001, deflection;
   Standard_Real aXmin, aYmin, aZmin, aXmax, aYmax, aZmax;
   Bnd_Box       box;
-  BRepBndLib::Add (sh, box);
-  box.Get (aXmin, aYmin, aZmin, aXmax, aYmax, aZmax);
-  deflection = sqrt (pow (aXmax - aXmin, 2) + pow (aYmax - aYmin, 2) + pow (aZmax - aZmin, 2)) * aDeflection;
-  BRepMesh_IncrementalMesh Inc (sh, deflection);
+  BRepBndLib::Add(sh, box);
+  box.Get(aXmin, aYmin, aZmin, aXmax, aYmax, aZmax);
+  deflection =
+    sqrt(pow(aXmax - aXmin, 2) + pow(aYmax - aYmin, 2) + pow(aZmax - aZmin, 2)) * aDeflection;
+  BRepMesh_IncrementalMesh Inc(sh, deflection);
 }
 
 template <int dim, int spacedim>
-std::unique_ptr<Manifold<dim, spacedim> >
-MyNormalToMeshProjectionManifold<dim, spacedim>::clone () const
+std::unique_ptr<Manifold<dim, spacedim>>
+MyNormalToMeshProjectionManifold<dim, spacedim>::clone() const
 {
-  return std::unique_ptr<Manifold<dim, spacedim> > (new MyNormalToMeshProjectionManifold<dim, spacedim> (sh, tolerance));
+  return std::unique_ptr<Manifold<dim, spacedim>>(
+    new MyNormalToMeshProjectionManifold<dim, spacedim>(sh, tolerance));
 }
 
 #include "Teuchos_TimeMonitor.hpp"
 
-Teuchos::RCP<Teuchos::Time> project_to_manifold_all         = Teuchos::TimeMonitor::getNewTimer ("project_to_manifold all");
-Teuchos::RCP<Teuchos::Time> project_to_manifold_line_inters = Teuchos::TimeMonitor::getNewTimer ("project_to_manifold line inters");
+Teuchos::RCP<Teuchos::Time> project_to_manifold_all =
+  Teuchos::TimeMonitor::getNewTimer("project_to_manifold all");
+Teuchos::RCP<Teuchos::Time> project_to_manifold_line_inters =
+  Teuchos::TimeMonitor::getNewTimer("project_to_manifold line inters");
 
-Teuchos::RCP<Teuchos::Time> project_to_manifold1   = Teuchos::TimeMonitor::getNewTimer ("project_to_manifold1");
-Teuchos::RCP<Teuchos::Time> project_to_manifold2   = Teuchos::TimeMonitor::getNewTimer ("project_to_manifold2");
-Teuchos::RCP<Teuchos::Time> project_to_manifold3   = Teuchos::TimeMonitor::getNewTimer ("project_to_manifold3");
-Teuchos::RCP<Teuchos::Time> project_to_manifold31  = Teuchos::TimeMonitor::getNewTimer ("project_to_manifold31");
-Teuchos::RCP<Teuchos::Time> project_to_manifold311 = Teuchos::TimeMonitor::getNewTimer ("project_to_manifold311");
-Teuchos::RCP<Teuchos::Time> project_to_manifold32  = Teuchos::TimeMonitor::getNewTimer ("project_to_manifold32");
-Teuchos::RCP<Teuchos::Time> project_to_manifold4   = Teuchos::TimeMonitor::getNewTimer ("project_to_manifold4");
-Teuchos::RCP<Teuchos::Time> project_to_manifold5   = Teuchos::TimeMonitor::getNewTimer ("project_to_manifold5");
+Teuchos::RCP<Teuchos::Time> project_to_manifold1 =
+  Teuchos::TimeMonitor::getNewTimer("project_to_manifold1");
+Teuchos::RCP<Teuchos::Time> project_to_manifold2 =
+  Teuchos::TimeMonitor::getNewTimer("project_to_manifold2");
+Teuchos::RCP<Teuchos::Time> project_to_manifold3 =
+  Teuchos::TimeMonitor::getNewTimer("project_to_manifold3");
+Teuchos::RCP<Teuchos::Time> project_to_manifold31 =
+  Teuchos::TimeMonitor::getNewTimer("project_to_manifold31");
+Teuchos::RCP<Teuchos::Time> project_to_manifold311 =
+  Teuchos::TimeMonitor::getNewTimer("project_to_manifold311");
+Teuchos::RCP<Teuchos::Time> project_to_manifold32 =
+  Teuchos::TimeMonitor::getNewTimer("project_to_manifold32");
+Teuchos::RCP<Teuchos::Time> project_to_manifold4 =
+  Teuchos::TimeMonitor::getNewTimer("project_to_manifold4");
+Teuchos::RCP<Teuchos::Time> project_to_manifold5 =
+  Teuchos::TimeMonitor::getNewTimer("project_to_manifold5");
 
 template <int spacedim>
 std::string
-point_to_string (const Point<spacedim> &point)
+point_to_string(const Point<spacedim> &point)
 {
-  std::string result = std::to_string (point[0]);
+  std::string result = std::to_string(point[0]);
   for (unsigned int i = 1; i < spacedim; ++i)
-    result = result + std::to_string (point[i]);
+    result = result + std::to_string(point[i]);
   return result;
 }
 
 template <int spacedim>
 Point<spacedim>
-internal_project_to_manifold (std::unordered_map<std::size_t, Tensor<1, spacedim> > &, const TopoDS_Shape &, const double, const ArrayView<const Point<spacedim> > &, const Point<spacedim> &)
+internal_project_to_manifold(std::unordered_map<std::size_t, Tensor<1, spacedim>> &,
+                             const TopoDS_Shape &,
+                             const double,
+                             const ArrayView<const Point<spacedim>> &,
+                             const Point<spacedim> &)
 {
-  Assert (false, ExcNotImplemented ());
+  Assert(false, ExcNotImplemented());
   return {};
 }
 
-Tensor<1, 3> triangleNormalVector(const Point<3>& p1,const Point<3>& p2,const Point<3>& p3)
+template <int spacedim>
+Point<spacedim>
+internal_project_to_manifold_vertical(std::unordered_map<std::size_t, Tensor<1, spacedim>> &,
+                                      const TopoDS_Shape &,
+                                      const double,
+                                      const ArrayView<const Point<spacedim>> &,
+                                      const Point<spacedim> &)
 {
-      Tensor<1, 3>         e1            = p2 - p1;
-      Tensor<1, 3>         e2            = p3 - p1;
-      const double         n1_coords[3] = { e1[1] * e2[2] - e1[2] * e2[1], e1[2] * e2[0] - e1[0] * e2[2], e1[0] * e2[1] - e1[1] * e2[0] };
-      Tensor<1, 3>         n1 (n1_coords);
-      n1                        = n1 / n1.norm ();
-      return n1;
+  Assert(false, ExcNotImplemented());
+  return {};
+}
+
+Tensor<1, 3>
+triangleNormalVector(const Point<3> &p1, const Point<3> &p2, const Point<3> &p3)
+{
+  Tensor<1, 3> e1           = p2 - p1;
+  Tensor<1, 3> e2           = p3 - p1;
+  const double n1_coords[3] = {e1[1] * e2[2] - e1[2] * e2[1],
+                               e1[2] * e2[0] - e1[0] * e2[2],
+                               e1[0] * e2[1] - e1[1] * e2[0]};
+  Tensor<1, 3> n1(n1_coords);
+  n1 = n1 / n1.norm();
+  return n1;
 }
 
 template <>
 Point<3>
-internal_project_to_manifold (std::unordered_map<std::size_t, Tensor<1, 3> > &projections_cache, const TopoDS_Shape &sh, const double tolerance, const ArrayView<const Point<3> > &surrounding_points,
-                              const Point<3> &candidate)
+internal_project_to_manifold(std::unordered_map<std::size_t, Tensor<1, 3>> &projections_cache,
+                             const TopoDS_Shape &                           sh,
+                             const double                                   tolerance,
+                             const ArrayView<const Point<3>> &              surrounding_points,
+                             const Point<3> &                               candidate)
 {
-  // std::cout << "MyNormalToMeshProjectionManifold<dim, spacedim>::project_to_manifold\n";
-  Teuchos::TimeMonitor localTimer1 (*project_to_manifold_all);
+  std::cout << "internal_project_to_manifold\n";
+  Teuchos::TimeMonitor localTimer1(*project_to_manifold_all);
 
   TopoDS_Shape out_shape;
   Tensor<1, 3> average_normal;
 
   double cell_size = 0.0;
-  for (unsigned int i = 0; i < surrounding_points.size (); ++i)
+  for (unsigned int i = 0; i < surrounding_points.size(); ++i)
   {
-    cell_size += (candidate - surrounding_points[i]).norm () / surrounding_points.size ();
+    cell_size += (candidate - surrounding_points[i]).norm() / surrounding_points.size();
   }
   cell_size *= 2.0;
 
 #ifdef DEBUG
   {
-    Teuchos::TimeMonitor localTimer11 (*project_to_manifold1);
-    for (unsigned int i = 0; i < surrounding_points.size (); ++i)
+    Teuchos::TimeMonitor localTimer11(*project_to_manifold1);
+    for (unsigned int i = 0; i < surrounding_points.size(); ++i)
     {
-      Assert (closest_point (sh, surrounding_points[i], tolerance).distance (surrounding_points[i]) < std::max (tolerance * surrounding_points[i].norm (), tolerance),
-              ExcPointNotOnManifold<3> (surrounding_points[i]));
+      Assert(closest_point(sh, surrounding_points[i], tolerance).distance(surrounding_points[i]) <
+               std::max(tolerance * surrounding_points[i].norm(), tolerance),
+             ExcPointNotOnManifold<3>(surrounding_points[i]));
     }
   }
 #endif
   {
-    Teuchos::TimeMonitor localTimer12 (*project_to_manifold2);
+    Teuchos::TimeMonitor localTimer12(*project_to_manifold2);
 
 
-    switch (surrounding_points.size ())
+    switch (surrounding_points.size())
     {
-    case 2:
-    {
-
-      Teuchos::TimeMonitor localTimer13 (*project_to_manifold3);
-      {
-        Teuchos::TimeMonitor localTimer131 (*project_to_manifold31);
-        for (unsigned int i = 0; i < surrounding_points.size (); ++i)
+      case 2: {
+        std::cout << "internal_project_to_manifold 2\n";
+        Teuchos::TimeMonitor localTimer13(*project_to_manifold3);
         {
-          Tensor<1, 3> surface_normal;
-          auto         key  = std::hash<std::string> () (point_to_string (surrounding_points[i]));
-          auto         it_1 = projections_cache.find (key);
-          if (it_1 != projections_cache.end ())
+          Teuchos::TimeMonitor localTimer131(*project_to_manifold31);
+          for (unsigned int i = 0; i < surrounding_points.size(); ++i)
           {
-            surface_normal = it_1->second;
+            Tensor<1, 3> surface_normal;
+            auto         key  = std::hash<std::string>()(point_to_string(surrounding_points[i]));
+            auto         it_1 = projections_cache.find(key);
+            if (it_1 != projections_cache.end())
+            {
+              surface_normal = it_1->second;
+            }
+            else
+            {
+              Teuchos::TimeMonitor localTimer1311(*project_to_manifold311);
+              std::tuple<Point<3>, Tensor<1, 3>, double, double> tmp =
+                my_closest_point_and_differential_forms(sh, surrounding_points[i], tolerance);
+              surface_normal = std::get<1>(tmp);
+              projections_cache.insert({key, surface_normal});
+            }
+            average_normal += surface_normal;
           }
-          else
-          {
-            Teuchos::TimeMonitor                               localTimer1311 (*project_to_manifold311);
-            std::tuple<Point<3>, Tensor<1, 3>, double, double> tmp = my_closest_point_and_differential_forms (sh, surrounding_points[i], tolerance);
-            surface_normal                                         = std::get<1> (tmp);
-            projections_cache.insert ({ key, surface_normal });
-          }
-          average_normal += surface_normal;
         }
+        {
+          Teuchos::TimeMonitor localTimer132(*project_to_manifold32);
+          average_normal /= 2.0;
+
+          Assert(
+            average_normal.norm() > 1e-4,
+            ExcMessage(
+              "Failed to refine cell: the average of the surface normals at the surrounding edge turns out to be a null vector, making the projection direction undetermined."));
+
+          Tensor<1, 3> T = surrounding_points[0] - surrounding_points[1];
+          T /= T.norm();
+          average_normal = average_normal - (average_normal * T) * T;
+          average_normal /= average_normal.norm();
+        }
+        break;
       }
-      {
-        Teuchos::TimeMonitor localTimer132 (*project_to_manifold32);
-        average_normal /= 2.0;
+      case 4: {
+        std::cout << "internal_project_to_manifold 4\n";
+        Teuchos::TimeMonitor localTimer14(*project_to_manifold4);
 
-        Assert (average_normal.norm () > 1e-4,
-                ExcMessage ("Failed to refine cell: the average of the surface normals at the surrounding edge turns out to be a null vector, making the projection direction undetermined."));
+        Tensor<1, 3> u            = surrounding_points[1] - surrounding_points[0];
+        Tensor<1, 3> v            = surrounding_points[2] - surrounding_points[0];
+        const double n1_coords[3] = {u[1] * v[2] - u[2] * v[1],
+                                     u[2] * v[0] - u[0] * v[2],
+                                     u[0] * v[1] - u[1] * v[0]};
+        Tensor<1, 3> n1(n1_coords);
+        n1 = n1 / n1.norm();
 
-        Tensor<1, 3> T = surrounding_points[0] - surrounding_points[1];
-        T /= T.norm ();
-        average_normal = average_normal - (average_normal * T) * T;
-        average_normal /= average_normal.norm ();
+        u                         = surrounding_points[2] - surrounding_points[3];
+        v                         = surrounding_points[1] - surrounding_points[3];
+        const double n2_coords[3] = {u[1] * v[2] - u[2] * v[1],
+                                     u[2] * v[0] - u[0] * v[2],
+                                     u[0] * v[1] - u[1] * v[0]};
+        Tensor<1, 3> n2(n2_coords);
+        n2 = n2 / n2.norm();
+
+        average_normal = (n1 + n2) / 2.0;
+
+        Assert(
+          average_normal.norm() > tolerance,
+          ExcMessage(
+            "Failed to refine cell: the normal estimated via the surrounding points turns out to be a null vector, making the projection direction undetermined."));
+
+        average_normal /= average_normal.norm();
+        break;
       }
-      break;
-    }
-    case 4:
-    {
-      Teuchos::TimeMonitor localTimer14 (*project_to_manifold4);
+      case 8: {
+        std::cout << "internal_project_to_manifold 8\n";
 
-      Tensor<1, 3>         u            = surrounding_points[1] - surrounding_points[0];
-      Tensor<1, 3>         v            = surrounding_points[2] - surrounding_points[0];
-      const double         n1_coords[3] = { u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0] };
-      Tensor<1, 3>         n1 (n1_coords);
-      n1                        = n1 / n1.norm ();
-      
-      u                         = surrounding_points[2] - surrounding_points[3];
-      v                         = surrounding_points[1] - surrounding_points[3];
-      const double n2_coords[3] = { u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0] };
-      Tensor<1, 3> n2 (n2_coords);
-      n2 = n2 / n2.norm ();
+        //-----------------------------------------------------------------------
+        // Arrangement of surrounding points and candidate (c):
+        //
+        //     0 ---- 6 ---- 1
+        //     |      |      |
+        //     4 ---- c ---- 5
+        //     |      |      |
+        //     2 ---- 7 ---- 3
+        //
+        //-----------------------------------------------------------------------
 
-      average_normal = (n1 + n2) / 2.0;
-
-      Assert (average_normal.norm () > tolerance,
-              ExcMessage ("Failed to refine cell: the normal estimated via the surrounding points turns out to be a null vector, making the projection direction undetermined."));
-
-      average_normal /= average_normal.norm ();
-      break;
-    }
-    case 8:
-    {
-
-      //-----------------------------------------------------------------------
-      // Arrangement of surrounding points and candidate (c):
-      //
-      //     0 ---- 6 ---- 1
-      //     |      |      |
-      //     4 ---- c ---- 5
-      //     |      |      |
-      //     2 ---- 7 ---- 3
-      //
-      //-----------------------------------------------------------------------
-
-      Teuchos::TimeMonitor localTimer15 (*project_to_manifold5);
+        Teuchos::TimeMonitor localTimer15(*project_to_manifold5);
 
 
 
-      auto n0 = triangleNormalVector(candidate,surrounding_points[0],surrounding_points[4]);
-      auto n1 = triangleNormalVector(candidate,surrounding_points[4],surrounding_points[2]);
-      auto n2 = triangleNormalVector(candidate,surrounding_points[2],surrounding_points[7]);
-      auto n3 = triangleNormalVector(candidate,surrounding_points[7],surrounding_points[3]);
-      auto n4 = triangleNormalVector(candidate,surrounding_points[3],surrounding_points[5]);
-      auto n5 = triangleNormalVector(candidate,surrounding_points[5],surrounding_points[1]);
-      auto n6 = triangleNormalVector(candidate,surrounding_points[1],surrounding_points[6]);
-      auto n7 = triangleNormalVector(candidate,surrounding_points[6],surrounding_points[0]);
+        auto n0 = triangleNormalVector(candidate, surrounding_points[0], surrounding_points[4]);
+        auto n1 = triangleNormalVector(candidate, surrounding_points[4], surrounding_points[2]);
+        auto n2 = triangleNormalVector(candidate, surrounding_points[2], surrounding_points[7]);
+        auto n3 = triangleNormalVector(candidate, surrounding_points[7], surrounding_points[3]);
+        auto n4 = triangleNormalVector(candidate, surrounding_points[3], surrounding_points[5]);
+        auto n5 = triangleNormalVector(candidate, surrounding_points[5], surrounding_points[1]);
+        auto n6 = triangleNormalVector(candidate, surrounding_points[1], surrounding_points[6]);
+        auto n7 = triangleNormalVector(candidate, surrounding_points[6], surrounding_points[0]);
 
-      average_normal = (n0 + n1 + n2 + n3 + n4 + n5 + n6 + n7) / 8.0;
+        average_normal = (n0 + n1 + n2 + n3 + n4 + n5 + n6 + n7) / 8.0;
 
-      Assert (average_normal.norm () > tolerance,
-              ExcMessage ("Failed to refine cell: the normal estimated via the surrounding points turns out to be a null vector, making the projection direction undetermined."));
+        Assert(
+          average_normal.norm() > tolerance,
+          ExcMessage(
+            "Failed to refine cell: the normal estimated via the surrounding points turns out to be a null vector, making the projection direction undetermined."));
 
-      average_normal /= average_normal.norm ();
-      break;
-    }
-    default:
-    {
-      AssertThrow (false, ExcNotImplemented ());
-      break;
-    }
+        average_normal /= average_normal.norm();
+        break;
+      }
+      default: {
+        AssertThrow(false, ExcNotImplemented());
+        break;
+      }
     }
   }
 
-  
-  Teuchos::TimeMonitor localTimer2 (*project_to_manifold_line_inters);
-  auto point = my_line_intersection (sh, candidate, average_normal, tolerance);
+
+  Teuchos::TimeMonitor localTimer2(*project_to_manifold_line_inters);
+  auto                 point = my_line_intersection(sh, candidate, average_normal, tolerance);
   return point;
 }
 
+template <>
+Point<3>
+internal_project_to_manifold_vertical(
+  std::unordered_map<std::size_t, Tensor<1, 3>> &projections_cache,
+  const TopoDS_Shape &                           sh,
+  const double                                   tolerance,
+  const ArrayView<const Point<3>> &              surrounding_points,
+  const Point<3> &                               candidate)
+{
+  std::cout << "internal_project_to_manifold_vertical\n";
+  Teuchos::TimeMonitor localTimer1(*project_to_manifold_all);
+
+  TopoDS_Shape out_shape;
+  Tensor<1, 3> average_normal;
+  average_normal[0] = 0.0;
+  average_normal[1] = 0.0;
+  average_normal[2] = -1.0;
+
+  Teuchos::TimeMonitor localTimer2(*project_to_manifold_line_inters);
+  auto                 point = my_line_intersection(sh, candidate, average_normal, tolerance);
+  return point;
+}
+
+
 template <int dim, int spacedim>
 Point<spacedim>
-MyNormalToMeshProjectionManifold<dim, spacedim>::project_to_manifold (const ArrayView<const Point<spacedim> > &surrounding_points, const Point<spacedim> &candidate) const
+MyNormalToMeshProjectionManifold<dim, spacedim>::project_to_manifold(
+  const ArrayView<const Point<spacedim>> &surrounding_points,
+  const Point<spacedim> &                 candidate) const
 {
-  return internal_project_to_manifold (projections_cache, sh, tolerance, surrounding_points, candidate);
+  std::cout << "MyNormalToMeshProjectionManifold\n";
+  return internal_project_to_manifold_vertical(
+    projections_cache, sh, tolerance, surrounding_points, candidate);
+  //  return internal_project_to_manifold(
+  //    projections_cache, sh, tolerance, surrounding_points, candidate);
 }
 // Explicit instantiations
 // template class MyNormalToMeshProjectionManifold<3, 3>;

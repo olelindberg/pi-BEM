@@ -1,6 +1,7 @@
 
 
 #include "../include/my_utilities.h"
+#include "../include/ErrorMessage.h"
 
 #include <BRepAdaptor_Curve.hxx>
 #include <BRepAdaptor_HCompCurve.hxx>
@@ -22,6 +23,9 @@
 #include <TopoDS_Edge.hxx>
 #include <TopoDS_Face.hxx>
 #include <TopoDS_Shape.hxx>
+
+#include <sstream>
+#include <stdexcept>
 
 DEAL_II_NAMESPACE_OPEN
 
@@ -261,8 +265,13 @@ my_closest_point_and_differential_forms(const TopoDS_Shape &in_shape,
 
   TopoDS_Shape &out_shape = std::get<1>(shape_and_params);
   if (out_shape.IsNull())
-    std::cout << "out shape is null" << std::endl;
-
+  {
+    std::stringstream msg;
+    msg << "Out shape is null\n";
+    msg << "origin:    " << origin << "\n";
+    msg << "tolerance: " << tolerance << "\n";
+    throw std::runtime_error(ErrorMessage::message(__FILE__, __LINE__, msg.str()));
+  }
 
   double &u = std::get<2>(shape_and_params);
   double &v = std::get<3>(shape_and_params);
