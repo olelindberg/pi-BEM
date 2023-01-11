@@ -303,9 +303,7 @@ public:
   //    normal_to_mesh_projectors;
 
 
-
   std::vector<std::shared_ptr<MyNormalToMeshProjectionManifold<2, 3>>> normal_to_mesh_projectors;
-
   std::vector<std::shared_ptr<OpenCASCADE::ArclengthProjectionLineManifold<2, 3>>> line_projectors;
 
 private:

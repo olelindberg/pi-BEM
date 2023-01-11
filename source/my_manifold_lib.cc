@@ -351,10 +351,16 @@ MyNormalToMeshProjectionManifold<dim, spacedim>::project_to_manifold(
   const Point<spacedim> &                 candidate) const
 {
   std::cout << "MyNormalToMeshProjectionManifold\n";
-  return internal_project_to_manifold_vertical(
-    projections_cache, sh, tolerance, surrounding_points, candidate);
-  //  return internal_project_to_manifold(
-  //    projections_cache, sh, tolerance, surrounding_points, candidate);
+  if (manifold_type == 0)
+  {
+    return internal_project_to_manifold(
+      projections_cache, sh, tolerance, surrounding_points, candidate);
+  }
+  else
+  {
+    return internal_project_to_manifold_vertical(
+      projections_cache, sh, tolerance, surrounding_points, candidate);
+  }
 }
 // Explicit instantiations
 // template class MyNormalToMeshProjectionManifold<3, 3>;

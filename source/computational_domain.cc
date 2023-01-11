@@ -6,6 +6,7 @@
 
 #include <deal.II/grid/grid_reordering.h>
 #include <deal.II/grid/grid_tools.h>
+#include <deal.II/grid/manifold_lib.h>
 
 #include <boost/filesystem.hpp>
 
@@ -362,6 +363,10 @@ ComputationalDomain<dim>::assign_manifold_projectors(double tolerance)
     normal_to_mesh_projectors.push_back(
       std::make_shared<MyNormalToMeshProjectionManifold<2, 3>>(cad_surfaces[i], tolerance));
   }
+
+  // FUUUUUUUUUUUUUSSSSSSSSSSSSK
+  //  normal_to_mesh_projectors[cad_surfaces.size() - 1]->manifold_type = 1;
+
   for (unsigned int i = 0; i < cad_curves.size(); ++i)
   {
     pcout << "Creating arc length projection line manifold " << i << "\n";
@@ -369,6 +374,8 @@ ComputationalDomain<dim>::assign_manifold_projectors(double tolerance)
       std::make_shared<OpenCASCADE::ArclengthProjectionLineManifold<2, 3>>(cad_curves[i],
                                                                            tolerance));
   }
+
+
 
   for (unsigned int i = 0; i < cad_surfaces.size(); ++i)
   {
@@ -379,6 +386,15 @@ ComputationalDomain<dim>::assign_manifold_projectors(double tolerance)
   {
     tria.set_manifold(11 + i, *line_projectors[i]);
   }
+
+  // for (unsigned int i = 1; i < 2; ++i)
+  // {
+  //   tfi_manifolds.push_back(std::make_shared<TransfiniteInterpolationManifold<2, 3>>());
+  //   tfi_manifolds.back()->initialize(tria);
+  //   tria.set_manifold(1 + i, *tfi_manifolds.back());
+  // }
+  //  for (auto &tfi : tfi_manifolds)
+  //    tfi->initialize(tria);
 }
 
 
