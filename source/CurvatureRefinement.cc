@@ -84,8 +84,8 @@ CurvatureRefinement::refine(dealii::Triangulation<2, 3> &    tria,
           double min_curvature = 0.0;
           double max_curvature = 0.0;
           {
-            dealii::OpenCASCADE::surface_curvature(
-              neededShape, projection, tolerance, min_curvature, max_curvature);
+//            dealii::OpenCASCADE::surface_curvature(
+//              neededShape, projection, tolerance, min_curvature, max_curvature); // FIXME
           }
           // among the differential point, we select the maximum
           // absolute curvature
