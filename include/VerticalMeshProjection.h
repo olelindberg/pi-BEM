@@ -14,8 +14,8 @@
 // ---------------------------------------------------------------------
 
 
-#ifndef dealii_occ_my_manifold_lib_h
-#define dealii_occ_my_manifold_lib_h
+#ifndef VERTICAL_MESH_PROJECTION_H
+#define VERTICAL_MESH_PROJECTION_H
 
 #include <deal.II/base/config.h>
 
@@ -78,7 +78,7 @@ DEAL_II_NAMESPACE_OPEN
  * @author Luca Heltai, Andrea Mola, 2011--2014.
  */
 template <int dim, int spacedim>
-class MyNormalToMeshProjectionManifold : public FlatManifold<dim, spacedim>
+class VerticalMeshProjection : public FlatManifold<dim, spacedim>
 {
 public:
   /**
@@ -86,7 +86,7 @@ public:
    * TopoDS_Shape @p sh, along a direction which is approximately normal to
    * the mesh cell.
    */
-  MyNormalToMeshProjectionManifold(const TopoDS_Shape &sh, const double tolerance = 1e-7);
+  VerticalMeshProjection(const TopoDS_Shape &sh, const double tolerance = 1e-7);
 
   /**
    * Clone the current Manifold.
@@ -103,17 +103,6 @@ public:
   virtual Point<spacedim>
   project_to_manifold(const ArrayView<const Point<spacedim>> &surrounding_points,
                       const Point<spacedim> &                 candidate) const override;
-
-  void
-  set_manifold_type(int val)
-  {
-    _manifold_type = val;
-  }
-  int
-  get_manifold_type()
-  {
-    return _manifold_type;
-  }
 
 protected:
   mutable std::unordered_map<std::size_t, Tensor<1, spacedim>> projections_cache;
@@ -136,7 +125,6 @@ protected:
   const double tolerance;
 
 private:
-  int _manifold_type = 0;
 };
 
 

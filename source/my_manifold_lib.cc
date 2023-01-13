@@ -351,7 +351,8 @@ MyNormalToMeshProjectionManifold<dim, spacedim>::project_to_manifold(
   const Point<spacedim> &                 candidate) const
 {
   std::cout << "MyNormalToMeshProjectionManifold\n";
-  if (manifold_type == 0)
+  std::cout << _manifold_type << std::endl;
+  if (_manifold_type == 0)
   {
     return internal_project_to_manifold(
       projections_cache, sh, tolerance, surrounding_points, candidate);
