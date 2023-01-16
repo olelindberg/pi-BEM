@@ -18,6 +18,8 @@
 #ifndef computational_domain_h
 #define computational_domain_h
 
+#include <IPhysicalDomain.h>
+
 #include <deal.II/base/conditional_ostream.h>
 #include <deal.II/base/convergence_table.h>
 #include <deal.II/base/parsed_function.h>
@@ -95,60 +97,73 @@ using namespace deal2lkit;
  *  - it reads the domain from an external file.
  */
 template <int dim>
-class ComputationalDomain : public deal2lkit::ParameterAcceptor
+class ComputationalDomain : public deal2lkit::ParameterAcceptor, public IPhysicalDomain<dim>
 {
 public:
-  /// constructor: since this is the
-  /// class containing all the geometry and
-  /// the base instruments needed by all the
-  /// other classes, it is created first and
-  /// the constructor does not need
-  /// arguments.
-  /// For the same reason, most of the class
-  /// attributes are public: we can leter
-  /// make them public end introduce suitable
-  /// Get and Set methods, if needed
-
   ComputationalDomain(MPI_Comm comm = MPI_COMM_WORLD);
-
-
   ~ComputationalDomain();
+
+  virtual const Triangulation<dim - 1, dim> &getTria() const override
+  {
+    return tria;
+  }
+
+  virtual Triangulation<dim - 1, dim> &getTria() override
+  {
+    return tria;
+  }
+
+  virtual std::vector<unsigned int> get_dirichlet_boundary_ids() override
+  {
+    return dirichlet_boundary_ids;
+  };
+
+  virtual std::vector<unsigned int> get_neumann_boundary_ids() override
+  {
+    return neumann_boundary_ids;
+  };
+
+  /// alternative method to read initial mesh
+  /// from file
+  virtual void read_domain(std::string input_path = "") override;
+
+  virtual void refine_and_resize(std::string input_path = "") override;
+
+  virtual void update_triangulation() override;
+
+private:
+  /// the material ID numbers in the mesh
+  /// input file, for the dirichlet_nodes
+  std::vector<unsigned int> dirichlet_boundary_ids;
+
+  /// the material ID numbers in the mesh
+  /// input file, for the neumann_nodes
+  std::vector<unsigned int> neumann_boundary_ids;
+
+
 
   /// method to declare the parameters
   /// to be read from the parameters file
 
-  virtual void
-  declare_parameters(ParameterHandler &prm);
+  virtual void declare_parameters(ParameterHandler &prm);
 
   /// method to parse the needed parameters
   /// from the parameters file
 
-  virtual void
-  parse_parameters(ParameterHandler &prm);
+  virtual void parse_parameters(ParameterHandler &prm);
 
-  /// alternative method to read initial mesh
-  /// from file
-  void
-  read_domain(std::string input_path = "");
 
   /// method to refine the imported mesh
   /// according to the level requested in
   /// the parameters file
 
-  bool
-  read_cad_files(std::string input_path = "");
+  bool read_cad_files(std::string input_path = "");
 
-  void
-  assign_manifold_projectors(double tolerance);
+  void assign_manifold_projectors(double tolerance);
 
-  double
-  read_cad_files_and_assign_manifold_projectors(std::string input_path);
+  double read_cad_files_and_assign_manifold_projectors(std::string input_path);
 
-  void
-  refine_and_resize(std::string input_path = "");
 
-  void
-  update_triangulation();
   /// Here are the members of the class:
   /// they are all public, as the upper level
   /// classes (bem_problem, bem_fma,
@@ -189,25 +204,14 @@ public:
   /// across the edge. That is why, it should be called
   /// after every single refinement cycle that is carried out
   /// in the program execution.
-  void
-  make_edges_conformal(const bool with_double_nodes              = true,
-                       const bool isotropic_ref_on_opposite_side = false);
+  void make_edges_conformal(const bool with_double_nodes              = true,
+                            const bool isotropic_ref_on_opposite_side = false);
 
-  void
-  compute_double_vertex_cache();
+  void compute_double_vertex_cache();
   // const unsigned int fe_degree;
   // const unsigned int mapping_degree;
 
-  const Triangulation<dim - 1, dim> &
-  getTria() const
-  {
-    return tria;
-  }
-  Triangulation<dim - 1, dim> &
-  getTria()
-  {
-    return tria;
-  }
+
 
   Triangulation<dim - 1, dim> tria; // \todo Move to private!!!
 
@@ -263,12 +267,6 @@ public:
   std::string input_grid_format;
   std::string input_cad_path;
 
-  /// the material ID numbers in the mesh
-  /// input file, for the dirichlet_nodes
-  std::vector<unsigned int> dirichlet_boundary_ids;
-  /// the material ID numbers in the mesh
-  /// input file, for the neumann_nodes
-  std::vector<unsigned int> neumann_boundary_ids;
 
 
   MPI_Comm mpi_communicator;

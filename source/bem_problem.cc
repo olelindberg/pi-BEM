@@ -71,15 +71,15 @@ RCP<Time> ReinitTime          = Teuchos::TimeMonitor::getNewTimer("BEM Reinitial
 // is static, and has no knowledge of
 // the number of components.
 template <>
-BEMProblem<3>::BEMProblem(ComputationalDomain<3> &comp_dom,
+BEMProblem<3>::BEMProblem(std::shared_ptr<IPhysicalDomain<3>> &comp_dom,
                           // const unsigned int fe_degree,
                           MPI_Comm comm)
   : pcout(std::cout)
   , comp_dom(comp_dom)
   , parsed_fe("Scalar FE", "FE_Q(1)")
   , parsed_gradient_fe("Vector FE", "FESystem[FE_Q(1)^3]", "u,u,u", 3)
-  , dh(comp_dom.tria)
-  , gradient_dh(comp_dom.tria)
+  , dh(comp_dom->getTria())
+  , gradient_dh(comp_dom->getTria())
   , mpi_communicator(comm)
   , n_mpi_processes(Utilities::MPI::n_mpi_processes(mpi_communicator))
   , this_mpi_process(Utilities::MPI::this_mpi_process(mpi_communicator))
@@ -89,8 +89,7 @@ BEMProblem<3>::BEMProblem(ComputationalDomain<3> &comp_dom,
 }
 
 template <int dim>
-void
-BEMProblem<dim>::reinit()
+void BEMProblem<dim>::reinit()
 {
   // ENTRY
   Teuchos::TimeMonitor LocalTimer(*ReinitTime);
@@ -215,8 +214,7 @@ BEMProblem<dim>::reinit()
 }
 
 template <>
-const Quadrature<2> &
-BEMProblem<3>::get_singular_quadrature(const unsigned int index) const
+const Quadrature<2> &BEMProblem<3>::get_singular_quadrature(const unsigned int index) const
 {
   Assert(index < fe->dofs_per_cell, ExcIndexRange(0, fe->dofs_per_cell, index));
 
@@ -234,8 +232,7 @@ BEMProblem<3>::get_singular_quadrature(const unsigned int index) const
 }
 
 template <>
-const Quadrature<1> &
-BEMProblem<2>::get_singular_quadrature(const unsigned int index) const
+const Quadrature<1> &BEMProblem<2>::get_singular_quadrature(const unsigned int index) const
 {
   Assert(index < fe->dofs_per_cell, ExcIndexRange(0, fe->dofs_per_cell, index));
 
@@ -250,8 +247,7 @@ BEMProblem<2>::get_singular_quadrature(const unsigned int index) const
 }
 
 template <int dim>
-void
-BEMProblem<dim>::declare_parameters(ParameterHandler &prm)
+void BEMProblem<dim>::declare_parameters(ParameterHandler &prm)
 {
   // In the solver section, we set
   // all SolverControl
@@ -289,8 +285,7 @@ BEMProblem<dim>::declare_parameters(ParameterHandler &prm)
 }
 
 template <int dim>
-void
-BEMProblem<dim>::parse_parameters(ParameterHandler &prm)
+void BEMProblem<dim>::parse_parameters(ParameterHandler &prm)
 {
   prm.enter_subsection("Solver");
   solver_control.parse_parameters(prm);
@@ -320,8 +315,7 @@ BEMProblem<dim>::parse_parameters(ParameterHandler &prm)
 }
 
 template <int dim>
-void
-BEMProblem<dim>::compute_dirichlet_and_neumann_dofs_vectors()
+void BEMProblem<dim>::compute_dirichlet_and_neumann_dofs_vectors()
 {
   have_dirichlet_bc = false;
 
@@ -339,7 +333,7 @@ BEMProblem<dim>::compute_dirichlet_and_neumann_dofs_vectors()
     if (cell->subdomain_id() == this_mpi_process)
     {
       bool dirichlet = false;
-      for (auto dummy : comp_dom.dirichlet_boundary_ids)
+      for (auto dummy : comp_dom->get_dirichlet_boundary_ids())
       {
         if (dummy == cell->material_id())
         {
@@ -420,8 +414,7 @@ BEMProblem<dim>::compute_dirichlet_and_neumann_dofs_vectors()
 }
 
 template <int dim>
-void
-BEMProblem<dim>::compute_double_nodes_set()
+void BEMProblem<dim>::compute_double_nodes_set()
 {
   double tol = 1e-10;
   double_nodes_set.clear();
@@ -464,8 +457,7 @@ BEMProblem<dim>::compute_double_nodes_set()
 }
 
 template <int dim>
-void
-BEMProblem<dim>::compute_reordering_vectors()
+void BEMProblem<dim>::compute_reordering_vectors()
 {
   original_to_sub_wise.resize(dh.n_dofs());
   sub_wise_to_original.resize(dh.n_dofs());
@@ -486,8 +478,7 @@ BEMProblem<dim>::compute_reordering_vectors()
 }
 
 template <int dim>
-void
-BEMProblem<dim>::assemble_system()
+void BEMProblem<dim>::assemble_system()
 {
   Teuchos::TimeMonitor LocalTimer(*AssembleTime);
   pcout << "(Directly) Assembling system matrices" << std::endl;
@@ -968,8 +959,7 @@ BEMProblem<dim>::assemble_system()
 // {}
 
 template <int dim>
-void
-BEMProblem<dim>::_assemble_system_double_body(double z0)
+void BEMProblem<dim>::_assemble_system_double_body(double z0)
 {
   Teuchos::TimeMonitor LocalTimer(*AssembleTime);
   pcout << "(Directly) Assembling system double body matrices " << z0 << std::endl;
@@ -1151,8 +1141,7 @@ BEMProblem<dim>::_assemble_system_double_body(double z0)
 
 
 template <int dim>
-void
-BEMProblem<dim>::compute_alpha()
+void BEMProblem<dim>::compute_alpha()
 {
   static TrilinosWrappers::MPI::Vector ones, zeros, dummy;
   if (ones.size() != dh.n_dofs())
@@ -1178,9 +1167,8 @@ BEMProblem<dim>::compute_alpha()
 }
 
 template <int dim>
-void
-BEMProblem<dim>::vmult(TrilinosWrappers::MPI::Vector &      dst,
-                       const TrilinosWrappers::MPI::Vector &src) const
+void BEMProblem<dim>::vmult(TrilinosWrappers::MPI::Vector &      dst,
+                            const TrilinosWrappers::MPI::Vector &src) const
 {
   serv_phi = src;
   if (!have_dirichlet_bc)
@@ -1234,9 +1222,8 @@ BEMProblem<dim>::vmult(TrilinosWrappers::MPI::Vector &      dst,
 }
 
 template <int dim>
-void
-BEMProblem<dim>::compute_rhs(TrilinosWrappers::MPI::Vector &      dst,
-                             const TrilinosWrappers::MPI::Vector &src) const
+void BEMProblem<dim>::compute_rhs(TrilinosWrappers::MPI::Vector &      dst,
+                                  const TrilinosWrappers::MPI::Vector &src) const
 {
   serv_phi     = src;
   serv_dphi_dn = src;
@@ -1282,10 +1269,9 @@ BEMProblem<dim>::compute_rhs(TrilinosWrappers::MPI::Vector &      dst,
 // The next function simply solves
 // the linear system.
 template <int dim>
-void
-BEMProblem<dim>::solve_system(TrilinosWrappers::MPI::Vector &      phi,
-                              TrilinosWrappers::MPI::Vector &      dphi_dn,
-                              const TrilinosWrappers::MPI::Vector &tmp_rhs)
+void BEMProblem<dim>::solve_system(TrilinosWrappers::MPI::Vector &      phi,
+                                   TrilinosWrappers::MPI::Vector &      dphi_dn,
+                                   const TrilinosWrappers::MPI::Vector &tmp_rhs)
 {
   Teuchos::TimeMonitor                       LocalTimer(*LacSolveTime);
   SolverGMRES<TrilinosWrappers::MPI::Vector> solver(
@@ -1368,10 +1354,9 @@ BEMProblem<dim>::solve_system(TrilinosWrappers::MPI::Vector &      phi,
 // This method performs a Bem resolution,
 // either in a direct or multipole method
 template <int dim>
-void
-BEMProblem<dim>::solve(TrilinosWrappers::MPI::Vector &      phi,
-                       TrilinosWrappers::MPI::Vector &      dphi_dn,
-                       const TrilinosWrappers::MPI::Vector &tmp_rhs)
+void BEMProblem<dim>::solve(TrilinosWrappers::MPI::Vector &      phi,
+                            TrilinosWrappers::MPI::Vector &      dphi_dn,
+                            const TrilinosWrappers::MPI::Vector &tmp_rhs)
 {
   if (solution_method == "Direct")
   {
@@ -1394,10 +1379,9 @@ BEMProblem<dim>::solve(TrilinosWrappers::MPI::Vector &      phi,
 }
 
 template <int dim>
-void
-BEMProblem<dim>::compute_constraints(IndexSet &                           c_cpu_set,
-                                     AffineConstraints<double> &          c,
-                                     const TrilinosWrappers::MPI::Vector &tmp_rhs)
+void BEMProblem<dim>::compute_constraints(IndexSet &                           c_cpu_set,
+                                          AffineConstraints<double> &          c,
+                                          const TrilinosWrappers::MPI::Vector &tmp_rhs)
 
 {
   Teuchos::TimeMonitor LocalTimer(*ConstraintsTime);
@@ -1674,8 +1658,7 @@ BEMProblem<dim>::compute_constraints(IndexSet &                           c_cpu_
 }
 
 template <int dim>
-void
-BEMProblem<dim>::assemble_preconditioner()
+void BEMProblem<dim>::assemble_preconditioner()
 {
   if (is_preconditioner_initialized == false)
   {
@@ -1766,9 +1749,8 @@ BEMProblem<dim>::assemble_preconditioner()
 }
 
 template <int dim>
-void
-BEMProblem<dim>::compute_gradients(const TrilinosWrappers::MPI::Vector &glob_phi,
-                                   const TrilinosWrappers::MPI::Vector &glob_dphi_dn)
+void BEMProblem<dim>::compute_gradients(const TrilinosWrappers::MPI::Vector &glob_phi,
+                                        const TrilinosWrappers::MPI::Vector &glob_dphi_dn)
 {
   pcout << "BEMProblem<dim>::compute_gradients" << std::endl;
 
@@ -1901,8 +1883,7 @@ BEMProblem<dim>::compute_gradients(const TrilinosWrappers::MPI::Vector &glob_phi
 }
 
 template <int dim>
-void
-BEMProblem<dim>::compute_surface_gradients(const TrilinosWrappers::MPI::Vector &tmp_rhs)
+void BEMProblem<dim>::compute_surface_gradients(const TrilinosWrappers::MPI::Vector &tmp_rhs)
 {
   pcout << "BEMProblem<dim>::compute_surface_gradients" << std::endl;
 
@@ -2023,8 +2004,7 @@ BEMProblem<dim>::compute_surface_gradients(const TrilinosWrappers::MPI::Vector &
 }
 
 template <int dim>
-void
-BEMProblem<dim>::compute_normals()
+void BEMProblem<dim>::compute_normals()
 {
   pcout << "Computing boundary normals ...\n";
 
@@ -2110,11 +2090,10 @@ BEMProblem<dim>::compute_normals()
 }
 
 template <int dim>
-void
-BEMProblem<dim>::hydrostatic_pressure(double                         gravity,
-                                      double                         density,
-                                      double                         z0,
-                                      TrilinosWrappers::MPI::Vector &pressure)
+void BEMProblem<dim>::hydrostatic_pressure(double                         gravity,
+                                           double                         density,
+                                           double                         z0,
+                                           TrilinosWrappers::MPI::Vector &pressure)
 {
   Teuchos::TimeMonitor LocalTimer(*AssembleTime);
 
@@ -2149,10 +2128,9 @@ BEMProblem<dim>::hydrostatic_pressure(double                         gravity,
 
 
 template <int dim>
-void
-BEMProblem<dim>::hydrodynamic_pressure(double                                density,
-                                       const Functions::ParsedFunction<dim> &wind,
-                                       TrilinosWrappers::MPI::Vector &       pressure)
+void BEMProblem<dim>::hydrodynamic_pressure(double                                density,
+                                            const Functions::ParsedFunction<dim> &wind,
+                                            TrilinosWrappers::MPI::Vector &       pressure)
 {
   Teuchos::TimeMonitor LocalTimer(*AssembleTime);
 
@@ -2200,10 +2178,9 @@ BEMProblem<dim>::hydrodynamic_pressure(double                                den
 
 
 template <int dim>
-void
-BEMProblem<dim>::center_of_pressure(const Body &                         body,
-                                    const TrilinosWrappers::MPI::Vector &pressure,
-                                    Tensor<1, dim> &                     pressure_center)
+void BEMProblem<dim>::center_of_pressure(const Body &                         body,
+                                         const TrilinosWrappers::MPI::Vector &pressure,
+                                         Tensor<1, dim> &                     pressure_center)
 {
   FEValues<dim - 1, dim> fe_v(*mapping,
                               *fe,
@@ -2253,11 +2230,10 @@ BEMProblem<dim>::center_of_pressure(const Body &                         body,
 
 
 template <int dim>
-void
-BEMProblem<dim>::pressure_force_and_moment(const Body &                         body,
-                                           const TrilinosWrappers::MPI::Vector &pressure,
-                                           Tensor<1, dim> &                     force,
-                                           Tensor<1, dim> &                     moment)
+void BEMProblem<dim>::pressure_force_and_moment(const Body &                         body,
+                                                const TrilinosWrappers::MPI::Vector &pressure,
+                                                Tensor<1, dim> &                     force,
+                                                Tensor<1, dim> &                     moment)
 {
   Teuchos::TimeMonitor LocalTimer(*AssembleTime);
 
@@ -2307,8 +2283,7 @@ BEMProblem<dim>::pressure_force_and_moment(const Body &                         
 }
 
 template <int dim>
-Tensor<1, dim>
-BEMProblem<dim>::volume_integral(const Body &body)
+Tensor<1, dim> BEMProblem<dim>::volume_integral(const Body &body)
 {
   Teuchos::TimeMonitor LocalTimer(*AssembleTime);
 
@@ -2345,12 +2320,11 @@ BEMProblem<dim>::volume_integral(const Body &body)
 }
 
 template <int dim>
-void
-BEMProblem<dim>::free_surface_elevation(double                               gravity,
-                                        double                               density,
-                                        const Body &                         body,
-                                        const TrilinosWrappers::MPI::Vector &pressure,
-                                        std::vector<Point<dim>> &            elevation)
+void BEMProblem<dim>::free_surface_elevation(double                               gravity,
+                                             double                               density,
+                                             const Body &                         body,
+                                             const TrilinosWrappers::MPI::Vector &pressure,
+                                             std::vector<Point<dim>> &            elevation)
 {
   dealii::Vector<double> pressure_local(pressure);
 

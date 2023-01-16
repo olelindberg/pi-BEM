@@ -81,9 +81,9 @@ template <int dim>
 class BoundaryConditions : public deal2lkit::ParameterAcceptor
 {
 public:
-  BoundaryConditions(ComputationalDomain<dim> &comp_dom,
-                     BEMProblem<dim> &         bem,
-                     const MPI_Comm            comm = MPI_COMM_WORLD)
+  BoundaryConditions(std::shared_ptr<IPhysicalDomain<dim>> &comp_dom,
+                     BEMProblem<dim> &                      bem,
+                     const MPI_Comm                         comm = MPI_COMM_WORLD)
     : wind(dim)
     , comp_dom(comp_dom)
     , bem(bem)
@@ -100,57 +100,44 @@ public:
 
   typedef typename DoFHandler<dim - 1, dim>::active_cell_iterator cell_it;
 
-  virtual void
-  declare_parameters(ParameterHandler &prm);
+  virtual void declare_parameters(ParameterHandler &prm);
 
-  virtual void
-  parse_parameters(ParameterHandler &prm);
+  virtual void parse_parameters(ParameterHandler &prm);
 
-  void
-  prepare_bem_vectors(const Body &body);
+  void prepare_bem_vectors(const Body &body);
 
-  void
-  solve_problem(const Body &body);
+  void solve_problem(const Body &body);
 
-  void
-  output_results(const std::string filename);
+  void output_results(const std::string filename);
 
-  void
-  compute_errors(std::string output_path = "");
+  void compute_errors(std::string output_path = "");
 
-  const TrilinosWrappers::MPI::Vector &
-  get_phi();
+  const TrilinosWrappers::MPI::Vector &get_phi();
 
-  const TrilinosWrappers::MPI::Vector &
-  get_dphi_dn();
+  const TrilinosWrappers::MPI::Vector &get_dphi_dn();
 
 
   std::string output_file_name;
 
-  const Functions::ParsedFunction<dim> &
-  get_wind() const
+  const Functions::ParsedFunction<dim> &get_wind() const
   {
     return wind;
   }
 
-  TrilinosWrappers::MPI::Vector &
-  get_hydrostatic_pressure()
+  TrilinosWrappers::MPI::Vector &get_hydrostatic_pressure()
   {
     return hydrostatic_pressure;
   }
-  const TrilinosWrappers::MPI::Vector &
-  get_hydrostatic_pressure() const
+  const TrilinosWrappers::MPI::Vector &get_hydrostatic_pressure() const
   {
     return hydrostatic_pressure;
   }
-  TrilinosWrappers::MPI::Vector &
-  get_hydrodynamic_pressure()
+  TrilinosWrappers::MPI::Vector &get_hydrodynamic_pressure()
   {
     return hydrodynamic_pressure;
   }
 
-  const TrilinosWrappers::MPI::Vector &
-  get_hydrodynamic_pressure() const
+  const TrilinosWrappers::MPI::Vector &get_hydrodynamic_pressure() const
   {
     return hydrodynamic_pressure;
   }
@@ -164,7 +151,8 @@ protected:
 
   SolverControl solver_control;
 
-  ComputationalDomain<dim> &comp_dom;
+  std::shared_ptr<IPhysicalDomain<dim>> comp_dom;
+
 
   BEMProblem<dim> &bem;
 

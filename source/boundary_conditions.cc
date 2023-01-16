@@ -18,8 +18,7 @@ public:
   FilteredDataOut(const unsigned int subdomain_id)
     : subdomain_id(subdomain_id)
   {}
-  virtual typename DataOut<dim, DH>::cell_iterator
-  first_cell()
+  virtual typename DataOut<dim, DH>::cell_iterator first_cell()
   {
     typename DataOut<dim, DH>::active_cell_iterator cell = this->dofs->begin_active();
     while ((cell != this->dofs->end()) && (cell->subdomain_id() != subdomain_id))
@@ -54,8 +53,7 @@ RCP<Time> ErrorsTime  = Teuchos::TimeMonitor::getNewTimer("Errors");
 RCP<Time> OutputTimer = Teuchos::TimeMonitor::getNewTimer("Output");
 
 template <int dim>
-void
-BoundaryConditions<dim>::declare_parameters(ParameterHandler &prm)
+void BoundaryConditions<dim>::declare_parameters(ParameterHandler &prm)
 {
   prm.declare_entry("Output file name", "result", Patterns::Anything());
 
@@ -89,8 +87,7 @@ BoundaryConditions<dim>::declare_parameters(ParameterHandler &prm)
 }
 
 template <int dim>
-void
-BoundaryConditions<dim>::parse_parameters(ParameterHandler &prm)
+void BoundaryConditions<dim>::parse_parameters(ParameterHandler &prm)
 {
   output_file_name = prm.get("Output file name");
 
@@ -112,8 +109,7 @@ BoundaryConditions<dim>::parse_parameters(ParameterHandler &prm)
 
 
 template <int dim>
-void
-BoundaryConditions<dim>::solve_problem(const Body &body)
+void BoundaryConditions<dim>::solve_problem(const Body &body)
 {
   pcout << "Solving boundary conditions ...\n";
 
@@ -155,22 +151,19 @@ BoundaryConditions<dim>::solve_problem(const Body &body)
 }
 
 template <int dim>
-const TrilinosWrappers::MPI::Vector &
-BoundaryConditions<dim>::get_phi()
+const TrilinosWrappers::MPI::Vector &BoundaryConditions<dim>::get_phi()
 {
   return phi;
 }
 
 template <int dim>
-const TrilinosWrappers::MPI::Vector &
-BoundaryConditions<dim>::get_dphi_dn()
+const TrilinosWrappers::MPI::Vector &BoundaryConditions<dim>::get_dphi_dn()
 {
   return dphi_dn;
 }
 
 template <int dim>
-void
-BoundaryConditions<dim>::prepare_bem_vectors(const Body &body)
+void BoundaryConditions<dim>::prepare_bem_vectors(const Body &body)
 {
   Teuchos::TimeMonitor LocalTimer(*PrepareTime);
   // bem.compute_normals();
@@ -208,7 +201,7 @@ BoundaryConditions<dim>::prepare_bem_vectors(const Body &body)
         bool dirichlet = false;
         bool neumann   = false;
 
-        for (auto dbound : comp_dom.dirichlet_boundary_ids)
+        for (auto dbound : comp_dom->get_dirichlet_boundary_ids())
         {
           if (cell->material_id() == dbound)
           {
@@ -224,7 +217,7 @@ BoundaryConditions<dim>::prepare_bem_vectors(const Body &body)
         }
         else
         {
-          for (auto nbound : comp_dom.neumann_boundary_ids)
+          for (auto nbound : comp_dom->get_neumann_boundary_ids())
             if (cell->material_id() == nbound)
             {
               neumann = true;
@@ -268,8 +261,7 @@ BoundaryConditions<dim>::prepare_bem_vectors(const Body &body)
 }
 
 template <int dim>
-void
-BoundaryConditions<dim>::compute_errors(std::string output_path)
+void BoundaryConditions<dim>::compute_errors(std::string output_path)
 {
   Teuchos::TimeMonitor LocalTimer(*ErrorsTime);
 
@@ -286,10 +278,10 @@ BoundaryConditions<dim>::compute_errors(std::string output_path)
   {
     pcout << "computing errors on P0" << std::endl;
 
-    Vector<double>          grad_difference_per_cell(comp_dom.tria.n_active_cells());
+    Vector<double>          grad_difference_per_cell(comp_dom->getTria().n_active_cells());
     std::vector<Point<dim>> support_points(bem.dh.n_dofs());
     double                  phi_max_error; // = localized_phi.linfty_norm();
-    Vector<double>          difference_per_cell(comp_dom.tria.n_active_cells());
+    Vector<double>          difference_per_cell(comp_dom->getTria().n_active_cells());
     DoFTools::map_dofs_to_support_points<dim - 1, dim>(*bem.mapping, bem.dh, support_points);
 
 
@@ -350,7 +342,7 @@ BoundaryConditions<dim>::compute_errors(std::string output_path)
     dphi_dn_node_error *= -1.0;
     dphi_dn_node_error.add(1., localized_dphi_dn);
 
-    Vector<double> difference_per_cell_2(comp_dom.tria.n_active_cells());
+    Vector<double> difference_per_cell_2(comp_dom->getTria().n_active_cells());
     VectorTools::integrate_difference(*bem.mapping,
                                       bem.dh,
                                       dphi_dn_node_error,
@@ -361,7 +353,7 @@ BoundaryConditions<dim>::compute_errors(std::string output_path)
     const double dphi_dn_L2_error = difference_per_cell_2.l2_norm();
 
     const double                  grad_phi_max_error = vector_gradients_node_error.linfty_norm();
-    const types::global_dof_index n_active_cells     = comp_dom.tria.n_active_cells();
+    const types::global_dof_index n_active_cells     = comp_dom->getTria().n_active_cells();
     const types::global_dof_index n_dofs             = bem.dh.n_dofs();
 
     pcout << "   Number of active cells:       " << n_active_cells << std::endl
@@ -413,8 +405,7 @@ BoundaryConditions<dim>::compute_errors(std::string output_path)
 }
 
 template <int dim>
-void
-BoundaryConditions<dim>::output_results(const std::string filename)
+void BoundaryConditions<dim>::output_results(const std::string filename)
 {
   Teuchos::TimeMonitor LocalTimer(*OutputTimer);
   // At the time being the output is not running in parallel with saks

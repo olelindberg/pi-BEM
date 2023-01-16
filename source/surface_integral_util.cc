@@ -21,8 +21,8 @@ surface_integral_util<3>::surface_integral_util(ComputationalDomain<3> &comp_dom
   : comp_dom(comp_dom)
   , parsed_fe("Scalar FE", "FE_Q(1)")
   , parsed_gradient_fe("Vector FE", "FESystem[FE_Q(1)^3]", "u,u,u", 3)
-  , dh(comp_dom.tria)
-  , gradient_dh(comp_dom.tria)
+  , dh(comp_dom.getTria())
+  , gradient_dh(comp_dom.getTria())
   , _mpi_communicator(comm)
 {}
 
@@ -50,11 +50,6 @@ surface_integral_util<dim>::reinit()
 
   if (!mapping)
   {
-    if (comp_dom.spheroid_bool && comp_dom.used_spherical_manifold)
-    {
-      for (types::global_dof_index ii = 0; ii < gradient_dh.n_dofs() / dim; ++ii)
-      {}
-    }
     if (mapping_type == "FE")
       mapping = std::make_shared<MappingFEField<dim - 1, dim>>(gradient_dh, map_vector);
     else

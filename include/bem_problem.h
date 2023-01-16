@@ -20,6 +20,7 @@
 // of include files that we will use in the
 // various parts of the program.
 
+#include "IPhysicalDomain.h"
 
 #include <deal.II/base/conditional_ostream.h>
 #include <deal.II/base/convergence_table.h>
@@ -125,12 +126,11 @@ public:
   typedef typename DoFHandler<dim - 1, dim>::active_cell_iterator cell_it;
   typedef typename DoFHandler<dim - 1, dim>::active_line_iterator line_it;
 
-  BEMProblem(ComputationalDomain<dim> &comp_dom, const MPI_Comm comm = MPI_COMM_WORLD);
+  BEMProblem(std::shared_ptr<IPhysicalDomain<dim>> &comp_dom, const MPI_Comm comm = MPI_COMM_WORLD);
 
-  void
-  solve(TrilinosWrappers::MPI::Vector &      phi,
-        TrilinosWrappers::MPI::Vector &      dphi_dn,
-        const TrilinosWrappers::MPI::Vector &tmp_rhs);
+  void solve(TrilinosWrappers::MPI::Vector &      phi,
+             TrilinosWrappers::MPI::Vector &      dphi_dn,
+             const TrilinosWrappers::MPI::Vector &tmp_rhs);
 
   /// This function takes care of the proper initialization of all the elements
   /// needed by the bem problem class. Since we need to sum elements associated
@@ -139,11 +139,9 @@ public:
   /// consistent. Without this enforcing we are getting in trouble with ghost
   /// elements. We set up the two TrilinosSparsityPattern to be used in our
   /// computations (assemble system and compute_normals-gradients).
-  void
-  reinit();
+  void reinit();
 
-  const Quadrature<dim - 1> &
-  get_singular_quadrature(const unsigned int index) const;
+  const Quadrature<dim - 1> &get_singular_quadrature(const unsigned int index) const;
 
   /// This function compute a very specific case, a double node that has a
   /// dirichlet-dirichlet condition. In this case there is a constraint for
@@ -152,10 +150,9 @@ public:
   /// for these constraints. Since we need to know all the double nodes set we
   /// have kept this function serial. We stress that it needs to be called only
   /// once.
-  void
-  compute_constraints(IndexSet &                           c_cpu_set,
-                      AffineConstraints<double> &          constraints,
-                      const TrilinosWrappers::MPI::Vector &tmp_rhs);
+  void compute_constraints(IndexSet &                           c_cpu_set,
+                           AffineConstraints<double> &          constraints,
+                           const TrilinosWrappers::MPI::Vector &tmp_rhs);
 
   //  private:
 
@@ -163,63 +160,53 @@ public:
   /// deal.ii SwissArmyKnife library. The parameters will be read from a file if
   /// it is existent or a file will be created. The class need a controller for
   /// the GMRES solver, quadrature rules, resolution strategy (direct or fma).
-  virtual void
-  declare_parameters(ParameterHandler &prm);
+  virtual void declare_parameters(ParameterHandler &prm);
 
   /// We declare the parameters needed by the class. We made good use of the
   /// deal.ii SwissArmyKnife library.
-  virtual void
-  parse_parameters(ParameterHandler &prm);
+  virtual void parse_parameters(ParameterHandler &prm);
 
 
   /// This function computes the fraction of solid angles seen by our domain. We
   /// use the Double Layer Operator (through the Neumann matrix) to determine
   /// it.
-  void
-  compute_alpha();
+  void compute_alpha();
 
   /// This function assembles the full distributed matrices needed by the direct
   /// method. We compute both the Double Layer Operator (Neumann matrix) and
   /// Single Layer Operator (Dirichlet matrix). Then we have to use dirichlet
   /// and neumann vector to assemble properly the system matrix and its right
   /// hand side.
-  void
-  assemble_system();
+  void assemble_system();
 
 
-  void
-  hydrostatic_pressure(double                         gravity,
-                       double                         density,
-                       double                         z0,
-                       TrilinosWrappers::MPI::Vector &pressure);
+  void hydrostatic_pressure(double                         gravity,
+                            double                         density,
+                            double                         z0,
+                            TrilinosWrappers::MPI::Vector &pressure);
 
-  void
-  hydrodynamic_pressure(double                                density,
-                        const Functions::ParsedFunction<dim> &wind,
-                        TrilinosWrappers::MPI::Vector &       pressure);
+  void hydrodynamic_pressure(double                                density,
+                             const Functions::ParsedFunction<dim> &wind,
+                             TrilinosWrappers::MPI::Vector &       pressure);
 
-  void
-  pressure_force_and_moment(const Body &                         body,
-                            const TrilinosWrappers::MPI::Vector &pressure,
-                            Tensor<1, dim> &                     force,
-                            Tensor<1, dim> &                     moment);
+  void pressure_force_and_moment(const Body &                         body,
+                                 const TrilinosWrappers::MPI::Vector &pressure,
+                                 Tensor<1, dim> &                     force,
+                                 Tensor<1, dim> &                     moment);
 
 
-  void
-  center_of_pressure(const Body &                         body,
-                     const TrilinosWrappers::MPI::Vector &pressure,
-                     Tensor<1, dim> &                     pressure_center);
+  void center_of_pressure(const Body &                         body,
+                          const TrilinosWrappers::MPI::Vector &pressure,
+                          Tensor<1, dim> &                     pressure_center);
 
 
-  Tensor<1, dim>
-  volume_integral(const Body &body);
+  Tensor<1, dim> volume_integral(const Body &body);
 
-  void
-  free_surface_elevation(double                               gravity,
-                         double                               density,
-                         const Body &                         body,
-                         const TrilinosWrappers::MPI::Vector &pressure,
-                         std::vector<Point<dim>> &            elevation);
+  void free_surface_elevation(double                               gravity,
+                              double                               density,
+                              const Body &                         body,
+                              const TrilinosWrappers::MPI::Vector &pressure,
+                              std::vector<Point<dim>> &            elevation);
 
   /// The next three methods are
   /// needed by the GMRES solver:
@@ -229,15 +216,14 @@ public:
   /// and Dirichlet matrices) by the
   /// vector src. The result is stored
   /// in the vector dst.
-  void
-  vmult(TrilinosWrappers::MPI::Vector &dst, const TrilinosWrappers::MPI::Vector &src) const;
+  void vmult(TrilinosWrappers::MPI::Vector &dst, const TrilinosWrappers::MPI::Vector &src) const;
 
   /// The second method computes the
   /// right hand side vector of the
   /// system.
 
-  void
-  compute_rhs(TrilinosWrappers::MPI::Vector &dst, const TrilinosWrappers::MPI::Vector &src) const;
+  void compute_rhs(TrilinosWrappers::MPI::Vector &      dst,
+                   const TrilinosWrappers::MPI::Vector &src) const;
 
   /// The third method computes the
   /// product between the solution vector
@@ -246,28 +232,24 @@ public:
 
   /// This function assembles in parallel the band preconditioner to be used in
   /// the direct resolution method.
-  void
-  assemble_preconditioner();
+  void assemble_preconditioner();
 
   /// This is the function that guides the execution of the BEM problem.
   /// Depending on the resolution stategy we go whether for the direct or fma
   /// strategy.
-  void
-  solve_system(TrilinosWrappers::MPI::Vector &      phi,
-               TrilinosWrappers::MPI::Vector &      dphi_dn,
-               const TrilinosWrappers::MPI::Vector &tmp_rhs);
+  void solve_system(TrilinosWrappers::MPI::Vector &      phi,
+                    TrilinosWrappers::MPI::Vector &      dphi_dn,
+                    const TrilinosWrappers::MPI::Vector &tmp_rhs);
 
 
-  void
-  output_results(const std::string);
+  void output_results(const std::string);
 
   /// We have parallelised the computation of the surface gradients. We need a
   /// solution vector that has also ghost cells. for this reason we made use of
   /// a ghosted IndexSet that we have computed in the reinit function. After
   /// this we simply make use of deal.ii and its TrilinosWrappers to built and
   /// solve a mass matrix system.
-  void
-  compute_surface_gradients(const TrilinosWrappers::MPI::Vector &tmp_rhs);
+  void compute_surface_gradients(const TrilinosWrappers::MPI::Vector &tmp_rhs);
 
   /// We have parallelised the computation of gradients. We need a
   /// solution vector that has also ghost cells. for this reason we made use of
@@ -276,9 +258,8 @@ public:
   /// solve a mass matrix system. We want the gradients to be continuos so we
   /// need  to make good use of both surface gradients and the normal
   /// derivative.
-  void
-  compute_gradients(const TrilinosWrappers::MPI::Vector &phi,
-                    const TrilinosWrappers::MPI::Vector &dphi_dn);
+  void compute_gradients(const TrilinosWrappers::MPI::Vector &phi,
+                         const TrilinosWrappers::MPI::Vector &dphi_dn);
 
   /// We have parallelised the computation of the L2 projection of the normal
   /// vector. We need a solution vector that has also ghost cells. for this
@@ -286,15 +267,13 @@ public:
   /// reinit function. After this we simply make use of deal.ii and its
   /// TrilinosWrappers to built and solve a mass matrix system. In this function
   /// we don't need any vector with ghost cells.
-  void
-  compute_normals();
+  void compute_normals();
 
   /// this method is needed to
   /// separate Dirichlet dofs from
   /// Neumann nodes.
 
-  void
-  compute_dirichlet_and_neumann_dofs_vectors();
+  void compute_dirichlet_and_neumann_dofs_vectors();
 
 
   /// in the imported mesh, the nodes on the
@@ -305,15 +284,13 @@ public:
   /// all processors we can let every processors to compute_normals
   /// the overall double nodes set.
 
-  void
-  compute_double_nodes_set();
+  void compute_double_nodes_set();
 
-  void
-  compute_reordering_vectors();
+  void compute_reordering_vectors();
 
 
-  ConditionalOStream        pcout;
-  ComputationalDomain<dim> &comp_dom;
+  ConditionalOStream                    pcout;
+  std::shared_ptr<IPhysicalDomain<dim>> comp_dom;
 
 
   ParsedFiniteElement<dim - 1, dim>            parsed_fe;
@@ -464,8 +441,7 @@ private:
   };
   BEM_PROBLEM _bem_problem_type = BEM_PROBLEM::DOUBLE_BODY;
 
-  void
-         _assemble_system_double_body(double z0 = 0.0);
+  void   _assemble_system_double_body(double z0 = 0.0);
   double _symmetry_plane_z_level = 0.0;
 };
 

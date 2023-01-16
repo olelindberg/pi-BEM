@@ -78,7 +78,9 @@
 #include "bem_fma.h"
 #include "bem_problem.h"
 #include "boundary_conditions.h"
-#include "computational_domain.h"
+
+#include "IPhysicalDomain.h"
+
 using namespace dealii;
 
 // using namespace TrilinosWrappers::MPI::Vector;
@@ -99,25 +101,24 @@ public:
   /// method to declare the parameters
   /// to be read from the parameters file
 
-  virtual void
-  declare_parameters(ParameterHandler &prm);
+  virtual void declare_parameters(ParameterHandler &prm);
 
   /// method to parse the needed parameters
   /// from the parameters file
 
-  virtual void
-  parse_parameters(ParameterHandler &prm);
+  virtual void parse_parameters(ParameterHandler &prm);
 
 
-  void
-  run(std::string input_path = "", std::string output_path = "");
+  void run(std::string input_path = "", std::string output_path = "");
 
 protected:
   ConditionalOStream pcout;
 
   MPI_Comm mpi_communicator;
 
-  ComputationalDomain<3> computational_domain;
+  //  ComputationalDomain<3> computational_domain;
+  std::shared_ptr<IPhysicalDomain<3>> _physical_domain;
+
 
   BEMProblem<3> bem_problem;
 

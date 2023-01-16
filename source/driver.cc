@@ -4,6 +4,7 @@
 
 #include <sys/time.h>
 
+#include "computational_domain.h"
 #include <fstream>
 
 #include "../include/AdaptiveRefinement.h"
@@ -34,9 +35,9 @@ template <int dim>
 Driver<dim>::Driver()
   : pcout(std::cout)
   , mpi_communicator(MPI_COMM_WORLD)
-  , computational_domain(mpi_communicator)
-  , bem_problem(computational_domain, mpi_communicator)
-  , boundary_conditions(computational_domain, bem_problem)
+  , _physical_domain(std::make_shared<ComputationalDomain<dim>>(mpi_communicator))
+  , bem_problem(_physical_domain, mpi_communicator)
+  , boundary_conditions(_physical_domain, bem_problem)
   , prm()
   , n_mpi_processes(Utilities::MPI::n_mpi_processes(mpi_communicator))
   , this_mpi_process(Utilities::MPI::this_mpi_process(mpi_communicator))
@@ -49,22 +50,19 @@ Driver<dim>::~Driver()
 {}
 
 template <int dim>
-void
-Driver<dim>::declare_parameters(ParameterHandler &prm)
+void Driver<dim>::declare_parameters(ParameterHandler &prm)
 {
   prm.declare_entry("Set Global Refinement", "true", Patterns::Bool());
 }
 
 template <int dim>
-void
-Driver<dim>::parse_parameters(ParameterHandler &prm)
+void Driver<dim>::parse_parameters(ParameterHandler &prm)
 {
   global_refinement = prm.get_bool("Set Global Refinement");
 }
 
 template <int dim>
-void
-Driver<dim>::run(std::string input_path, std::string output_path)
+void Driver<dim>::run(std::string input_path, std::string output_path)
 {
   try
   {
@@ -94,9 +92,9 @@ Driver<dim>::run(std::string input_path, std::string output_path)
     {
       std::cout << "Global refinement ...\n";
       Teuchos::TimeMonitor LocalTimer(*TotalTime);
-      computational_domain.read_domain(input_path);
-      computational_domain.refine_and_resize(input_path);
-      computational_domain.update_triangulation();
+      _physical_domain->read_domain(input_path);
+      _physical_domain->refine_and_resize(input_path);
+      _physical_domain->update_triangulation();
       bem_problem.reinit();
       boundary_conditions.solve_problem(body);
     }
@@ -104,9 +102,9 @@ Driver<dim>::run(std::string input_path, std::string output_path)
     {
       pcout << "Adaptive refinement ...\n";
       Teuchos::TimeMonitor LocalTimer(*TotalTime);
-      computational_domain.read_domain(input_path);
-      computational_domain.refine_and_resize(input_path);
-      computational_domain.update_triangulation();
+      _physical_domain->read_domain(input_path);
+      _physical_domain->refine_and_resize(input_path);
+      _physical_domain->update_triangulation();
       bem_problem.reinit();
       boundary_conditions.solve_problem(body);
 
@@ -132,7 +130,7 @@ Driver<dim>::run(std::string input_path, std::string output_path)
                                        bem_problem.gradient_dh,
                                        boundary_conditions.get_phi(),
                                        bem_problem.vector_gradients_solution,
-                                       computational_domain.tria))
+                                       _physical_domain->getTria()))
         {
           break;
         }
@@ -176,7 +174,7 @@ Driver<dim>::run(std::string input_path, std::string output_path)
         }
         pcout << "Degrees of Freedom: DOF = " << bem_problem.dh.n_dofs() << std::endl;
 
-        computational_domain.update_triangulation();
+        _physical_domain->update_triangulation();
         pcout << "Degrees of Freedom: DOF = " << bem_problem.dh.n_dofs() << std::endl;
 
         bem_problem.reinit();
@@ -238,29 +236,29 @@ Driver<dim>::run(std::string input_path, std::string output_path)
       std::cout << "Static pressure center :     " << hydrostatic_pressure_center << "\n";
       std::cout << "Dynamic pressure center:     " << hydrodynamic_pressure_center << "\n";
 
-      if (false)
-      {
-        BRepBuilderAPI_MakeWire wirebuilder;
-        for (auto id : body.getWaterlineIndices())
-          wirebuilder.Add(TopoDS::Wire(computational_domain.cad_curves[id - 11]));
-        if (wirebuilder.IsDone())
-        {
-          double         x0 = body.getCenterOfGravity()[0];
-          double         y0 = body.getCenterOfGravity()[1];
-          SurfaceMoments sm(x0, y0);
-          if (!WireUtil::surfaceMoments(wirebuilder.Wire(), sm))
-            pcout << "Surface moments failed ..." << std::endl;
+      // if (false)
+      // {
+      //   BRepBuilderAPI_MakeWire wirebuilder;
+      //   for (auto id : body.getWaterlineIndices())
+      //     wirebuilder.Add(TopoDS::Wire(_physical_domain->cad_curves[id - 11]));
+      //   if (wirebuilder.IsDone())
+      //   {
+      //     double         x0 = body.getCenterOfGravity()[0];
+      //     double         y0 = body.getCenterOfGravity()[1];
+      //     SurfaceMoments sm(x0, y0);
+      //     if (!WireUtil::surfaceMoments(wirebuilder.Wire(), sm))
+      //       pcout << "Surface moments failed ..." << std::endl;
 
-          pcout << "x0  : " << sm.getx0() << std::endl;
-          pcout << "y0  : " << sm.gety0() << std::endl;
-          pcout << "S0  : " << sm.getS0() << std::endl;
-          pcout << "Sx  : " << sm.getSx() << std::endl;
-          pcout << "Sy  : " << sm.getSy() << std::endl;
-          pcout << "Sxx : " << sm.getSxx() << std::endl;
-          pcout << "Sxy : " << sm.getSxy() << std::endl;
-          pcout << "Syy : " << sm.getSyy() << std::endl;
-        }
-      }
+      //     pcout << "x0  : " << sm.getx0() << std::endl;
+      //     pcout << "y0  : " << sm.gety0() << std::endl;
+      //     pcout << "S0  : " << sm.getS0() << std::endl;
+      //     pcout << "Sx  : " << sm.getSx() << std::endl;
+      //     pcout << "Sy  : " << sm.getSy() << std::endl;
+      //     pcout << "Sxx : " << sm.getSxx() << std::endl;
+      //     pcout << "Sxy : " << sm.getSxy() << std::endl;
+      //     pcout << "Syy : " << sm.getSyy() << std::endl;
+      //   }
+      // }
       // dealii::Point<3> tmp;
       // for (int i = 0; i < 3; ++i)
       //   tmp[i] = hydrostatic_pressure_center[i];
