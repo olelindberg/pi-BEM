@@ -116,13 +116,9 @@ protected:
 
   MPI_Comm mpi_communicator;
 
-  //  ComputationalDomain<3> computational_domain;
-  std::shared_ptr<IPhysicalDomain<3>> _physical_domain;
-
-
-  BEMProblem<3> bem_problem;
-
-  BoundaryConditions<3> boundary_conditions;
+  std::shared_ptr<IPhysicalDomain<3>>    _physical_domain;
+  std::shared_ptr<BEMProblem<3>>         bem_problem;
+  std::shared_ptr<BoundaryConditions<3>> boundary_conditions;
 
   ParameterHandler prm;
 

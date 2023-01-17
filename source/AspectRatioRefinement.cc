@@ -1,9 +1,7 @@
 #include "../include/AspectRatioRefinement.h"
 
 
-void
-AspectRatioRefinement::refine(dealii::Triangulation<2, 3> &    tria,
-                              const std::vector<TopoDS_Shape> &cad_surfaces)
+void AspectRatioRefinement::refine(dealii::Triangulation<2, 3> &tria)
 {
   unsigned int refinedCellCounter = 1;
   unsigned int cycles_counter     = 0;

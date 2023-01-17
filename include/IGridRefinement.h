@@ -14,8 +14,7 @@ public:
   virtual ~IGridRefinement()
   {}
 
-  virtual void
-  refine(dealii::Triangulation<2, 3> &tria, const std::vector<TopoDS_Shape> &cad_surfaces) = 0;
+  virtual void refine(dealii::Triangulation<2, 3> &tria) = 0;
 };
 
 #endif // IGRID_REFINEMENT_H

@@ -91,14 +91,12 @@ public:
   }
 
 
-  virtual std::vector<GeometryInput>
-  mesh_inputs() override
+  virtual std::vector<GeometryInput> mesh_inputs() override
   {
     return _mesh_inputs;
   }
 
-  virtual std::vector<ShapeInput>
-  shape_inputs() override
+  virtual std::vector<ShapeInput> shape_inputs() override
   {
     return _shape_inputs;
   }

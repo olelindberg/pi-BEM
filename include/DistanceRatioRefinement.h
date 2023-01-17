@@ -10,14 +10,13 @@ class DistanceRatioRefinement : public GridRefinement
 public:
   DistanceRatioRefinement(dealii::ConditionalOStream pcout,
                           const Bnd_Box &            box,
-                          double aspectRatioMax,
+                          double                     aspectRatioMax,
                           unsigned int               manifold_id_,
                           int                        levels_,
                           double                     distanceRatioMax);
   virtual ~DistanceRatioRefinement(){};
 
-  virtual void
-  refine(dealii::Triangulation<2, 3> &tria, const std::vector<TopoDS_Shape> &cad_surfaces) override;
+  virtual void refine(dealii::Triangulation<2, 3> &tria) override;
 
 private:
   Bnd_Box _box;

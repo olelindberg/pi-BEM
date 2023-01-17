@@ -7,13 +7,13 @@
 
 DistanceRatioRefinement::DistanceRatioRefinement(dealii::ConditionalOStream pcout,
                                                  const Bnd_Box &            box,
-                          double aspectRatioMax,
+                                                 double                     aspectRatioMax,
                                                  unsigned int               manifold_id_,
                                                  int                        levels_,
                                                  double                     distanceRatioMax)
   : GridRefinement(pcout)
   , _box(box)
-    , _aspectRatioMax(aspectRatioMax)
+  , _aspectRatioMax(aspectRatioMax)
   , manifold_id(manifold_id_)
   , levels(levels_)
   , _distanceRatioMax(distanceRatioMax)
@@ -23,9 +23,7 @@ DistanceRatioRefinement::DistanceRatioRefinement(dealii::ConditionalOStream pcou
 }
 
 
-void
-DistanceRatioRefinement::refine(dealii::Triangulation<2, 3> &    tria,
-                                const std::vector<TopoDS_Shape> &cad_surfaces)
+void DistanceRatioRefinement::refine(dealii::Triangulation<2, 3> &tria)
 {
   _pcout << "Distance refinement ... \n";
 

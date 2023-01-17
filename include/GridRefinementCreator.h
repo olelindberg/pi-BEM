@@ -19,10 +19,7 @@ class GridRefinementCreator
 {
 public:
   static std::vector<std::shared_ptr<IGridRefinement>>
-  create(const std::string &              filename,
-         dealii::ConditionalOStream       pcout,
-         double                           tolerance,
-         const std::vector<TopoDS_Shape> &cad_surfaces);
+  create(const std::string &filename, dealii::ConditionalOStream pcout, double tolerance);
 
 private:
 };

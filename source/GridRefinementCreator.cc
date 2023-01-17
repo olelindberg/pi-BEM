@@ -1,9 +1,9 @@
 #include "../include/GridRefinementCreator.h"
 
 #include "../include/AspectRatioRefinement.h"
+#include "../include/BoxRefinement.h"
 #include "../include/CurvatureRefinement.h"
 #include "../include/DistanceRatioRefinement.h"
-#include "../include/BoxRefinement.h"
 #include "../include/HeightRatioRefinement.h"
 #include "../include/ManifoldRefinement.h"
 
@@ -15,10 +15,9 @@
 #include <boost/property_tree/ptree.hpp>
 
 std::vector<std::shared_ptr<IGridRefinement>>
-GridRefinementCreator::create(const std::string &              filename,
-                              dealii::ConditionalOStream       pcout,
-                              double                           tolerance,
-                              const std::vector<TopoDS_Shape> &cad_surfaces)
+GridRefinementCreator::create(const std::string &        filename,
+                              dealii::ConditionalOStream pcout,
+                              double                     tolerance)
 {
   std::vector<std::shared_ptr<IGridRefinement>> gridrefinement;
 
@@ -67,15 +66,27 @@ GridRefinementCreator::create(const std::string &              filename,
     if (!child.empty())
     {
       pcout << "Creating distance refinement ...\n";
-      Bnd_Box box;
-      for (const auto &shape : cad_surfaces)
-        BRepBndLib::Add(shape, box);
       int    manifold_id        = child.get<int>("manifold_id");
       int    refinement_levels  = child.get<int>("refinement_levels");
       double distance_ratio_max = child.get<double>("distance_ratio_max");
-      double aspectRatioMax = child.get<double>("aspectRatioMax");
+      double aspectRatioMax     = child.get<double>("aspectRatioMax");
+      double xmin               = child.get<double>("xmin");
+      double xmax               = child.get<double>("xmax");
+      double ymin               = child.get<double>("ymin");
+      double ymax               = child.get<double>("ymax");
+      double zmin               = child.get<double>("zmin");
+      double zmax               = child.get<double>("zmax");
+
+      gp_Pnt pmin(xmin, ymin, zmin);
+      gp_Pnt pmax(xmax, ymax, zmax);
+
+      Bnd_Box box;
+      box.Add(pmin);
+      box.Add(pmax);
+
+
       gridrefinement.push_back(std::make_shared<DistanceRatioRefinement>(
-        pcout, box,aspectRatioMax, manifold_id, refinement_levels, distance_ratio_max));
+        pcout, box, aspectRatioMax, manifold_id, refinement_levels, distance_ratio_max));
     }
   }
   catch (const std::exception &e)
@@ -92,10 +103,10 @@ GridRefinementCreator::create(const std::string &              filename,
       pcout << "Creating box refinement ...\n";
 
 
-      int    manifold_id        = child.get<int>("manifold_id");
-      int    refinement_levels  = child.get<int>("refinement_levels");
-      double aspectRatioMax     = child.get<double>("aspectRatioMax");
-      double cellSizeMin        = child.get<double>("cellSizeMin");
+      int    manifold_id       = child.get<int>("manifold_id");
+      int    refinement_levels = child.get<int>("refinement_levels");
+      double aspectRatioMax    = child.get<double>("aspectRatioMax");
+      double cellSizeMin       = child.get<double>("cellSizeMin");
 
       double xmin = child.get<double>("xmin");
       double xmax = child.get<double>("xmax");
@@ -104,15 +115,15 @@ GridRefinementCreator::create(const std::string &              filename,
       double zmin = child.get<double>("zmin");
       double zmax = child.get<double>("zmax");
 
-      gp_Pnt pmin(xmin,ymin,zmin);
-      gp_Pnt pmax(xmax,ymax,zmax);
+      gp_Pnt pmin(xmin, ymin, zmin);
+      gp_Pnt pmax(xmax, ymax, zmax);
 
       Bnd_Box box;
       box.Add(pmin);
       box.Add(pmax);
 
       gridrefinement.push_back(std::make_shared<BoxRefinement>(
-        pcout, box,aspectRatioMax,cellSizeMin, manifold_id, refinement_levels));
+        pcout, box, aspectRatioMax, cellSizeMin, manifold_id, refinement_levels));
     }
   }
   catch (const std::exception &e)

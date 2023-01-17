@@ -4,24 +4,21 @@
 #include <gp_Pnt.hxx>
 
 BoxRefinement::BoxRefinement(dealii::ConditionalOStream pcout,
-                          const Bnd_Box &            box,
-                          double aspectRatioMax,
-                            double cellSizeMin,
-                                                 unsigned int               manifold_id_,
-                                                 int                        levels_)
+                             const Bnd_Box &            box,
+                             double                     aspectRatioMax,
+                             double                     cellSizeMin,
+                             unsigned int               manifold_id_,
+                             int                        levels_)
   : GridRefinement(pcout)
   , _box(box)
   , _aspectRatioMax(aspectRatioMax)
-, _cellSizeMin(cellSizeMin)
+  , _cellSizeMin(cellSizeMin)
   , manifold_id(manifold_id_)
   , levels(levels_)
-{
-}
+{}
 
 
-void
-BoxRefinement::refine(dealii::Triangulation<2, 3> &    tria,
-                                const std::vector<TopoDS_Shape> &cad_surfaces)
+void BoxRefinement::refine(dealii::Triangulation<2, 3> &tria)
 {
   _pcout << "Box refinement ... \n";
 
@@ -31,12 +28,11 @@ BoxRefinement::refine(dealii::Triangulation<2, 3> &    tria,
          cell != tria.end();
          ++cell)
     {
-              double l1 = cell->extent_in_direction(0);
-        double l2 = cell->extent_in_direction(1);
-        double lmin = std::min(l1,l2);
-      if (lmin>_cellSizeMin && cell->manifold_id() == manifold_id)
+      double l1   = cell->extent_in_direction(0);
+      double l2   = cell->extent_in_direction(1);
+      double lmin = std::min(l1, l2);
+      if (lmin > _cellSizeMin && cell->manifold_id() == manifold_id)
       {
-
         Bnd_Box boxx;
         for (int i = 0; i < 4; ++i)
         {
@@ -52,5 +48,6 @@ BoxRefinement::refine(dealii::Triangulation<2, 3> &    tria,
     tria.execute_coarsening_and_refinement();
   }
 
-  std::cout << "Number of active cells after box refinement: " << tria.n_active_cells() << std::endl;
+  std::cout << "Number of active cells after box refinement: " << tria.n_active_cells()
+            << std::endl;
 }

@@ -4,6 +4,7 @@
 
 #include <sys/time.h>
 
+#include "MultiMeshDomain.h"
 #include "computational_domain.h"
 #include <fstream>
 
@@ -35,14 +36,20 @@ template <int dim>
 Driver<dim>::Driver()
   : pcout(std::cout)
   , mpi_communicator(MPI_COMM_WORLD)
-  , _physical_domain(std::make_shared<ComputationalDomain<dim>>(mpi_communicator))
-  , bem_problem(_physical_domain, mpi_communicator)
-  , boundary_conditions(_physical_domain, bem_problem)
   , prm()
   , n_mpi_processes(Utilities::MPI::n_mpi_processes(mpi_communicator))
   , this_mpi_process(Utilities::MPI::this_mpi_process(mpi_communicator))
 {
   pcout.set_condition(this_mpi_process == 0);
+
+  unsigned int domain_id = 0;
+  if (domain_id = 0)
+    _physical_domain = std::make_shared<ComputationalDomain<dim>>(mpi_communicator);
+  else
+    _physical_domain = std::make_shared<MultiMeshDomain<dim>>(mpi_communicator);
+
+  bem_problem         = std::make_shared<BEMProblem<3>>(_physical_domain, mpi_communicator);
+  boundary_conditions = std::make_shared<BoundaryConditions<3>>(_physical_domain, *bem_problem);
 }
 
 template <int dim>
@@ -95,8 +102,8 @@ void Driver<dim>::run(std::string input_path, std::string output_path)
       _physical_domain->read_domain(input_path);
       _physical_domain->refine_and_resize(input_path);
       _physical_domain->update_triangulation();
-      bem_problem.reinit();
-      boundary_conditions.solve_problem(body);
+      bem_problem->reinit();
+      boundary_conditions->solve_problem(body);
     }
     else // adaptive refinement
     {
@@ -105,8 +112,8 @@ void Driver<dim>::run(std::string input_path, std::string output_path)
       _physical_domain->read_domain(input_path);
       _physical_domain->refine_and_resize(input_path);
       _physical_domain->update_triangulation();
-      bem_problem.reinit();
-      boundary_conditions.solve_problem(body);
+      bem_problem->reinit();
+      boundary_conditions->solve_problem(body);
 
       AdaptiveRefinement adaptiveRefinement(pcout,
                                             mpi_communicator,
@@ -123,18 +130,18 @@ void Driver<dim>::run(std::string input_path, std::string output_path)
 
 
         if (!adaptiveRefinement.refine(n_mpi_processes,
-                                       bem_problem.this_mpi_process,
-                                       *bem_problem.fe,
-                                       *bem_problem.gradient_fe,
-                                       bem_problem.dh,
-                                       bem_problem.gradient_dh,
-                                       boundary_conditions.get_phi(),
-                                       bem_problem.vector_gradients_solution,
+                                       bem_problem->this_mpi_process,
+                                       *bem_problem->fe,
+                                       *bem_problem->gradient_fe,
+                                       bem_problem->dh,
+                                       bem_problem->gradient_dh,
+                                       boundary_conditions->get_phi(),
+                                       bem_problem->vector_gradients_solution,
                                        _physical_domain->getTria()))
         {
           break;
         }
-        pcout << "Degrees of Freedom: DOF = " << bem_problem.dh.n_dofs() << std::endl;
+        pcout << "Degrees of Freedom: DOF = " << bem_problem->dh.n_dofs() << std::endl;
 
 
 
@@ -154,7 +161,7 @@ void Driver<dim>::run(std::string input_path, std::string output_path)
             file.close();
           }
         }
-        pcout << "Degrees of Freedom: DOF = " << bem_problem.dh.n_dofs() << std::endl;
+        pcout << "Degrees of Freedom: DOF = " << bem_problem->dh.n_dofs() << std::endl;
 
         if (this_mpi_process == 0)
         {
@@ -172,23 +179,23 @@ void Driver<dim>::run(std::string input_path, std::string output_path)
             file.close();
           }
         }
-        pcout << "Degrees of Freedom: DOF = " << bem_problem.dh.n_dofs() << std::endl;
+        pcout << "Degrees of Freedom: DOF = " << bem_problem->dh.n_dofs() << std::endl;
 
         _physical_domain->update_triangulation();
-        pcout << "Degrees of Freedom: DOF = " << bem_problem.dh.n_dofs() << std::endl;
+        pcout << "Degrees of Freedom: DOF = " << bem_problem->dh.n_dofs() << std::endl;
 
-        bem_problem.reinit();
-        pcout << "Degrees of Freedom: DOF = " << bem_problem.dh.n_dofs() << std::endl;
+        bem_problem->reinit();
+        pcout << "Degrees of Freedom: DOF = " << bem_problem->dh.n_dofs() << std::endl;
 
         Writer writer;
         writer.addScalarField("error_estimator",
                               adaptiveRefinement.get_error_estimator_potential());
         writer.saveScalarFields(std::string(input_path).append("/scalars.vtu"),
-                                bem_problem.dh,
-                                bem_problem.mapping,
-                                bem_problem.mapping_degree);
+                                bem_problem->dh,
+                                bem_problem->mapping,
+                                bem_problem->mapping_degree);
 
-        boundary_conditions.solve_problem(body);
+        boundary_conditions->solve_problem(body);
       }
     }
 
@@ -204,33 +211,33 @@ void Driver<dim>::run(std::string input_path, std::string output_path)
       //-------------------------------------------------------------------------
       // Waterplane area and displacement:
       //-------------------------------------------------------------------------
-      auto volume = bem_problem.volume_integral(body);
+      auto volume = bem_problem->volume_integral(body);
 
       //-------------------------------------------------------------------------
       // Hydrostatic and hydrodynamic pressures:
       //-------------------------------------------------------------------------
-      bem_problem.hydrostatic_pressure(pibemSettings.gravity,
-                                       pibemSettings.density,
-                                       body.getDraft(),
-                                       boundary_conditions.get_hydrostatic_pressure());
+      bem_problem->hydrostatic_pressure(pibemSettings.gravity,
+                                        pibemSettings.density,
+                                        body.getDraft(),
+                                        boundary_conditions->get_hydrostatic_pressure());
 
-      bem_problem.hydrodynamic_pressure(pibemSettings.density,
-                                        boundary_conditions.get_wind(),
-                                        boundary_conditions.get_hydrodynamic_pressure());
+      bem_problem->hydrodynamic_pressure(pibemSettings.density,
+                                         boundary_conditions->get_wind(),
+                                         boundary_conditions->get_hydrodynamic_pressure());
 
 
       //-------------------------------------------------------------------------
       // Pressure centers:
       //-------------------------------------------------------------------------
       Tensor<1, dim, double> hydrostatic_pressure_center;
-      bem_problem.center_of_pressure(body,
-                                     boundary_conditions.get_hydrostatic_pressure(),
-                                     hydrostatic_pressure_center);
+      bem_problem->center_of_pressure(body,
+                                      boundary_conditions->get_hydrostatic_pressure(),
+                                      hydrostatic_pressure_center);
 
       Tensor<1, dim, double> hydrodynamic_pressure_center;
-      bem_problem.center_of_pressure(body,
-                                     boundary_conditions.get_hydrodynamic_pressure(),
-                                     hydrodynamic_pressure_center);
+      bem_problem->center_of_pressure(body,
+                                      boundary_conditions->get_hydrodynamic_pressure(),
+                                      hydrodynamic_pressure_center);
 
       std::cout << "Displacement           : V = " << volume << "\n";
       std::cout << "Static pressure center :     " << hydrostatic_pressure_center << "\n";
@@ -262,7 +269,7 @@ void Driver<dim>::run(std::string input_path, std::string output_path)
       // dealii::Point<3> tmp;
       // for (int i = 0; i < 3; ++i)
       //   tmp[i] = hydrostatic_pressure_center[i];
-      // WaterPlaneMoments wpm = bem_problem.water_plane_moments(body, tmp);
+      // WaterPlaneMoments wpm = bem_problem->water_plane_moments(body, tmp);
 
       // std::cout << "S0  = " << wpm.getS0() << "\n";
       // std::cout << "Sx  = " << wpm.getSx() << "\n";
@@ -278,25 +285,25 @@ void Driver<dim>::run(std::string input_path, std::string output_path)
       //-------------------------------------------------------------------------
       Tensor<1, dim, double> hydrostaticForce;
       Tensor<1, dim, double> hydrostaticMoment;
-      bem_problem.pressure_force_and_moment(body,
-                                            boundary_conditions.get_hydrostatic_pressure(),
-                                            hydrostaticForce,
-                                            hydrostaticMoment);
+      bem_problem->pressure_force_and_moment(body,
+                                             boundary_conditions->get_hydrostatic_pressure(),
+                                             hydrostaticForce,
+                                             hydrostaticMoment);
 
       Tensor<1, dim, double> hydrodynamicForce;
       Tensor<1, dim, double> hydrodynamicMoment;
-      bem_problem.pressure_force_and_moment(body,
-                                            boundary_conditions.get_hydrodynamic_pressure(),
-                                            hydrodynamicForce,
-                                            hydrodynamicMoment);
+      bem_problem->pressure_force_and_moment(body,
+                                             boundary_conditions->get_hydrodynamic_pressure(),
+                                             hydrodynamicForce,
+                                             hydrodynamicMoment);
 
 
       std::vector<Point<dim>> elevation;
-      bem_problem.free_surface_elevation(pibemSettings.gravity,
-                                         pibemSettings.density,
-                                         body,
-                                         boundary_conditions.get_hydrodynamic_pressure(),
-                                         elevation);
+      bem_problem->free_surface_elevation(pibemSettings.gravity,
+                                          pibemSettings.density,
+                                          body,
+                                          boundary_conditions->get_hydrodynamic_pressure(),
+                                          elevation);
 
       if (this_mpi_process == 0)
       {
@@ -337,17 +344,17 @@ void Driver<dim>::run(std::string input_path, std::string output_path)
         }
       }
       std::string filename =
-        boost::filesystem::path(output_path).append(boundary_conditions.output_file_name).string();
-      boundary_conditions.output_results(filename); // \todo change to Writer in Writer.h
+        boost::filesystem::path(output_path).append(boundary_conditions->output_file_name).string();
+      boundary_conditions->output_results(filename); // \todo change to Writer in Writer.h
     }
   }
   catch (std::exception &e)
   {
     std::string filename =
       boost::filesystem::path(output_path)
-        .append(std::string("error_dump_").append(boundary_conditions.output_file_name))
+        .append(std::string("error_dump_").append(boundary_conditions->output_file_name))
         .string();
-    boundary_conditions.output_results(filename); // \todo change to Writer in Writer.h
+    boundary_conditions->output_results(filename); // \todo change to Writer in Writer.h
     std::cout << e.what() << std::endl;
     return;
   }
