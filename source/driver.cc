@@ -36,20 +36,16 @@ template <int dim>
 Driver<dim>::Driver()
   : pcout(std::cout)
   , mpi_communicator(MPI_COMM_WORLD)
-  , prm()
   , n_mpi_processes(Utilities::MPI::n_mpi_processes(mpi_communicator))
   , this_mpi_process(Utilities::MPI::this_mpi_process(mpi_communicator))
+  //, _physical_domain(std::make_shared<ComputationalDomain<dim>>(mpi_communicator))
+  , _physical_domain(std::make_shared<MultiMeshDomain<dim>>(mpi_communicator))
+  , bem_problem(std::make_shared<BEMProblem<3>>(_physical_domain, mpi_communicator))
+  , boundary_conditions(std::make_shared<BoundaryConditions<3>>(_physical_domain, *bem_problem))
+  , prm()
+
 {
   pcout.set_condition(this_mpi_process == 0);
-
-  unsigned int domain_id = 0;
-  if (domain_id = 0)
-    _physical_domain = std::make_shared<ComputationalDomain<dim>>(mpi_communicator);
-  else
-    _physical_domain = std::make_shared<MultiMeshDomain<dim>>(mpi_communicator);
-
-  bem_problem         = std::make_shared<BEMProblem<3>>(_physical_domain, mpi_communicator);
-  boundary_conditions = std::make_shared<BoundaryConditions<3>>(_physical_domain, *bem_problem);
 }
 
 template <int dim>

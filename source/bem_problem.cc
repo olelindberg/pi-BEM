@@ -84,7 +84,7 @@ BEMProblem<3>::BEMProblem(std::shared_ptr<IPhysicalDomain<3>> &comp_dom,
   , n_mpi_processes(Utilities::MPI::n_mpi_processes(mpi_communicator))
   , this_mpi_process(Utilities::MPI::this_mpi_process(mpi_communicator))
 {
-  // Only output on first processor.
+  pcout << "Constructing BEMProblem\n";
   pcout.set_condition(this_mpi_process == 0);
 }
 

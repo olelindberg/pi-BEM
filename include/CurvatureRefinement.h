@@ -31,8 +31,7 @@ public:
   virtual ~CurvatureRefinement()
   {}
 
-  virtual void
-  refine(dealii::Triangulation<2, 3> &tria, const std::vector<TopoDS_Shape> &cad_surfaces) override;
+  virtual void refine(dealii::Triangulation<2, 3> &tria) override;
 
 private:
   bool         use_cad_surface_and_curves        = true;

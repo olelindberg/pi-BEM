@@ -93,8 +93,7 @@ ComputationalDomain<dim>::~ComputationalDomain()
 }
 
 template <int dim>
-void
-ComputationalDomain<dim>::declare_parameters(ParameterHandler &prm)
+void ComputationalDomain<dim>::declare_parameters(ParameterHandler &prm)
 {
   if (dim == 3)
     prm.declare_entry("Input grid name", "../grids/coarse_cube_double_nodes", Patterns::Anything());
@@ -145,8 +144,7 @@ ComputationalDomain<dim>::declare_parameters(ParameterHandler &prm)
 }
 
 template <int dim>
-void
-ComputationalDomain<dim>::parse_parameters(ParameterHandler &prm)
+void ComputationalDomain<dim>::parse_parameters(ParameterHandler &prm)
 {
   input_grid_name              = prm.get("Input grid name");
   input_grid_format            = prm.get("Input grid format");
@@ -254,8 +252,7 @@ ComputationalDomain<dim>::parse_parameters(ParameterHandler &prm)
 // object to which it is attached.
 
 template <int dim>
-void
-ComputationalDomain<dim>::read_domain(std::string input_path)
+void ComputationalDomain<dim>::read_domain(std::string input_path)
 {
   Teuchos::TimeMonitor localTimer(*readDomainTime);
   pcout << "Reading domain ...\n";
@@ -281,8 +278,7 @@ ComputationalDomain<dim>::read_domain(std::string input_path)
 }
 
 template <int dim>
-bool
-ComputationalDomain<dim>::read_cad_files(std::string input_path)
+bool ComputationalDomain<dim>::read_cad_files(std::string input_path)
 {
   pcout << "Color Files" << std::endl;
   unsigned int ii    = 1;
@@ -354,8 +350,7 @@ ComputationalDomain<dim>::read_cad_files(std::string input_path)
 
 
 template <int dim>
-void
-ComputationalDomain<dim>::assign_manifold_projectors(double tolerance)
+void ComputationalDomain<dim>::assign_manifold_projectors(double tolerance)
 {
   for (unsigned int i = 0; i < cad_surfaces.size(); ++i)
   {
@@ -423,17 +418,13 @@ ComputationalDomain<dim>::read_cad_files_and_assign_manifold_projectors(std::str
 #include <memory>
 
 template <int dim>
-void
-ComputationalDomain<dim>::refine_and_resize(std::string input_path)
+void ComputationalDomain<dim>::refine_and_resize(std::string input_path)
 {
   Teuchos::TimeMonitor localTimer(*refineAndResizeTime);
 
   pcout << "Refining and resizing ... " << std::endl;
   auto filename       = boost::filesystem::path(input_path).append("refinement.json").string();
-  auto gridrefinement = GridRefinementCreator::create(filename,
-                                                      pcout,
-                                                      cad_to_projectors_tolerance_ratio * _max_tol,
-                                                      cad_surfaces);
+  auto gridrefinement = GridRefinementCreator::create(filename, pcout);
 
   Writer writer;
   writer.save("/home/ole/dev/temp/trimeshinit.vtu", tria);
@@ -442,7 +433,7 @@ ComputationalDomain<dim>::refine_and_resize(std::string input_path)
   int cnt = 0;
   for (const auto &refinement : gridrefinement)
   {
-    refinement->refine(tria, cad_surfaces);
+    refinement->refine(tria);
     writer.save(
       std::string("/home/ole/dev/temp/trimeshrefine").append(std::to_string(cnt)).append(".vtu"),
       tria);
@@ -452,8 +443,7 @@ ComputationalDomain<dim>::refine_and_resize(std::string input_path)
 
 
 template <int dim>
-void
-ComputationalDomain<dim>::update_triangulation()
+void ComputationalDomain<dim>::update_triangulation()
 {
   // compute_double_vertex_cache();
   // OLE 25/3/2021 make_edges_conformal();
@@ -462,9 +452,8 @@ ComputationalDomain<dim>::update_triangulation()
 }
 
 template <int dim>
-void
-ComputationalDomain<dim>::make_edges_conformal(const bool with_double_nodes,
-                                               const bool isotropic_ref_on_opposite_side)
+void ComputationalDomain<dim>::make_edges_conformal(const bool with_double_nodes,
+                                                    const bool isotropic_ref_on_opposite_side)
 {
   if (with_double_nodes == false)
   {
@@ -569,8 +558,7 @@ ComputationalDomain<dim>::make_edges_conformal(const bool with_double_nodes,
 } // make_edges_conformal
 
 template <int dim>
-void
-ComputationalDomain<dim>::compute_double_vertex_cache()
+void ComputationalDomain<dim>::compute_double_vertex_cache()
 {
   pcout << "Computing infos for the double_vertex" << std::endl;
   double toll = 1e-7;

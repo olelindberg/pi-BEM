@@ -15,10 +15,9 @@
 #include <boost/property_tree/ptree.hpp>
 
 std::vector<std::shared_ptr<IGridRefinement>>
-GridRefinementCreator::create(const std::string &        filename,
-                              dealii::ConditionalOStream pcout,
-                              double                     tolerance)
+GridRefinementCreator::create(const std::string &filename, dealii::ConditionalOStream pcout)
 {
+  pcout << "Creating grid refinement ...\n";
   std::vector<std::shared_ptr<IGridRefinement>> gridrefinement;
 
   namespace pt = boost::property_tree;
@@ -33,6 +32,7 @@ GridRefinementCreator::create(const std::string &        filename,
     return gridrefinement;
   }
 
+  try
   {
     auto child = root.get_child("aspectRatioRefinement");
     if (!child.empty())
@@ -45,9 +45,16 @@ GridRefinementCreator::create(const std::string &        filename,
       double refinement_levels = child.get<double>("refinement_levels");
       gridrefinement.push_back(std::make_shared<AspectRatioRefinement>(
         pcout, manifold_ids, refinement_levels, aspect_ratio_max));
+      pcout << "Creating aspect ratio refinement, done\n";
     }
   }
+  catch (const std::exception &e)
+  {
+    pcout << e.what() << std::endl;
+  }
+  pcout << "Creating grid refinement2 ...\n";
 
+  try
   {
     auto child = root.get_child("heightRatioRefinement");
     if (!child.empty())
@@ -55,10 +62,15 @@ GridRefinementCreator::create(const std::string &        filename,
       pcout << "Creating height ratio refinement ...\n";
       double height_ratio_max  = child.get<double>("height_ratio_max");
       double refinement_levels = child.get<double>("refinement_levels");
-      gridrefinement.push_back(std::make_shared<HeightRatioRefinement>(
-        pcout, refinement_levels, height_ratio_max, tolerance));
+      gridrefinement.push_back(
+        std::make_shared<HeightRatioRefinement>(pcout, refinement_levels, height_ratio_max));
     }
   }
+  catch (const std::exception &e)
+  {
+    pcout << e.what() << std::endl;
+  }
+  pcout << "Creating grid refinement3 ...\n";
 
   try
   {
@@ -93,6 +105,7 @@ GridRefinementCreator::create(const std::string &        filename,
   {
     pcout << e.what() << std::endl;
   }
+  pcout << "Creating grid refinement4 ...\n";
 
 
   try
@@ -131,6 +144,7 @@ GridRefinementCreator::create(const std::string &        filename,
     pcout << e.what() << std::endl;
   }
 
+  pcout << "Creating grid refinement, done\n";
 
   return gridrefinement;
 }

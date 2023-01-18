@@ -115,8 +115,7 @@ Teuchos::RCP<Teuchos::Time> project_to_manifold5 =
   Teuchos::TimeMonitor::getNewTimer("project_to_manifold5");
 
 template <int spacedim>
-std::string
-point_to_string(const Point<spacedim> &point)
+std::string point_to_string(const Point<spacedim> &point)
 {
   std::string result = std::to_string(point[0]);
   for (unsigned int i = 1; i < spacedim; ++i)
@@ -125,12 +124,11 @@ point_to_string(const Point<spacedim> &point)
 }
 
 template <int spacedim>
-Point<spacedim>
-internal_project_to_manifold(std::unordered_map<std::size_t, Tensor<1, spacedim>> &,
-                             const TopoDS_Shape &,
-                             const double,
-                             const ArrayView<const Point<spacedim>> &,
-                             const Point<spacedim> &)
+Point<spacedim> internal_project_to_manifold(std::unordered_map<std::size_t, Tensor<1, spacedim>> &,
+                                             const TopoDS_Shape &,
+                                             const double,
+                                             const ArrayView<const Point<spacedim>> &,
+                                             const Point<spacedim> &)
 {
   Assert(false, ExcNotImplemented());
   return {};
@@ -148,8 +146,7 @@ internal_project_to_manifold_vertical(std::unordered_map<std::size_t, Tensor<1, 
   return {};
 }
 
-Tensor<1, 3>
-triangleNormalVector(const Point<3> &p1, const Point<3> &p2, const Point<3> &p3)
+Tensor<1, 3> triangleNormalVector(const Point<3> &p1, const Point<3> &p2, const Point<3> &p3)
 {
   Tensor<1, 3> e1           = p2 - p1;
   Tensor<1, 3> e2           = p3 - p1;
@@ -169,7 +166,6 @@ internal_project_to_manifold(std::unordered_map<std::size_t, Tensor<1, 3>> &proj
                              const ArrayView<const Point<3>> &              surrounding_points,
                              const Point<3> &                               candidate)
 {
-  std::cout << "internal_project_to_manifold\n";
   Teuchos::TimeMonitor localTimer1(*project_to_manifold_all);
 
   TopoDS_Shape out_shape;
@@ -200,7 +196,6 @@ internal_project_to_manifold(std::unordered_map<std::size_t, Tensor<1, 3>> &proj
     switch (surrounding_points.size())
     {
       case 2: {
-        std::cout << "internal_project_to_manifold 2\n";
         Teuchos::TimeMonitor localTimer13(*project_to_manifold3);
         {
           Teuchos::TimeMonitor localTimer131(*project_to_manifold31);
@@ -241,7 +236,6 @@ internal_project_to_manifold(std::unordered_map<std::size_t, Tensor<1, 3>> &proj
         break;
       }
       case 4: {
-        std::cout << "internal_project_to_manifold 4\n";
         Teuchos::TimeMonitor localTimer14(*project_to_manifold4);
 
         Tensor<1, 3> u            = surrounding_points[1] - surrounding_points[0];
@@ -271,8 +265,6 @@ internal_project_to_manifold(std::unordered_map<std::size_t, Tensor<1, 3>> &proj
         break;
       }
       case 8: {
-        std::cout << "internal_project_to_manifold 8\n";
-
         //-----------------------------------------------------------------------
         // Arrangement of surrounding points and candidate (c):
         //
@@ -320,54 +312,15 @@ internal_project_to_manifold(std::unordered_map<std::size_t, Tensor<1, 3>> &proj
   return point;
 }
 
-template <>
-Point<3>
-internal_project_to_manifold_vertical(
-  std::unordered_map<std::size_t, Tensor<1, 3>> &projections_cache,
-  const TopoDS_Shape &                           sh,
-  const double                                   tolerance,
-  const ArrayView<const Point<3>> &              surrounding_points,
-  const Point<3> &                               candidate)
-{
-  std::cout << "internal_project_to_manifold_vertical\n";
-  Teuchos::TimeMonitor localTimer1(*project_to_manifold_all);
-
-  TopoDS_Shape out_shape;
-  Tensor<1, 3> average_normal;
-  average_normal[0] = 0.0;
-  average_normal[1] = 0.0;
-  average_normal[2] = -1.0;
-
-  Teuchos::TimeMonitor localTimer2(*project_to_manifold_line_inters);
-  auto                 point = my_line_intersection(sh, candidate, average_normal, tolerance);
-  return point;
-}
-
-
 template <int dim, int spacedim>
-Point<spacedim>
-MyNormalToMeshProjectionManifold<dim, spacedim>::project_to_manifold(
+Point<spacedim> MyNormalToMeshProjectionManifold<dim, spacedim>::project_to_manifold(
   const ArrayView<const Point<spacedim>> &surrounding_points,
   const Point<spacedim> &                 candidate) const
 {
-  std::cout << "MyNormalToMeshProjectionManifold\n";
-  std::cout << _manifold_type << std::endl;
-  if (_manifold_type == 0)
-  {
-    return internal_project_to_manifold(
-      projections_cache, sh, tolerance, surrounding_points, candidate);
-  }
-  else
-  {
-    return internal_project_to_manifold_vertical(
-      projections_cache, sh, tolerance, surrounding_points, candidate);
-  }
+  return internal_project_to_manifold(
+    projections_cache, sh, tolerance, surrounding_points, candidate);
 }
 // Explicit instantiations
-// template class MyNormalToMeshProjectionManifold<3, 3>;
-template class MyNormalToMeshProjectionManifold<1, 2>;
 template class MyNormalToMeshProjectionManifold<2, 3>;
-// template class MyNormalToMeshProjectionManifold<2, 2>;
-// template class MyNormalToMeshProjectionManifold<1, 2>;
 
 DEAL_II_NAMESPACE_CLOSE

@@ -3,6 +3,7 @@
 
 #include <IPhysicalDomain.h>
 #include <deal.II/base/conditional_ostream.h>
+#include <deal.II/grid/manifold_lib.h>
 
 template <int dim>
 class MultiMeshDomain : public IPhysicalDomain<dim>
@@ -19,12 +20,12 @@ public:
 
   virtual const dealii::Triangulation<dim - 1, dim> &getTria() const override
   {
-    return tria;
+    return *_mesh;
   }
 
   virtual dealii::Triangulation<dim - 1, dim> &getTria() override
   {
-    return tria;
+    return *_mesh;
   }
 
   virtual std::vector<unsigned int> get_dirichlet_boundary_ids() override
@@ -43,10 +44,11 @@ private:
   unsigned int n_mpi_processes;
   unsigned int this_mpi_process;
 
+  std::shared_ptr<dealii::Triangulation<2, 3>> _mesh;
+  std::vector<unsigned int>                    dirichlet_boundary_ids;
+  std::vector<unsigned int>                    neumann_boundary_ids;
 
-  dealii::Triangulation<dim - 1, dim> tria;
-  std::vector<unsigned int>           dirichlet_boundary_ids;
-  std::vector<unsigned int>           neumann_boundary_ids;
+  std::shared_ptr<dealii::TransfiniteInterpolationManifold<2, 3>> inner_manifold;
 
   dealii::ConditionalOStream pcout;
 };

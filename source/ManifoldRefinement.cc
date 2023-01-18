@@ -1,7 +1,6 @@
 #include "../include/ManifoldRefinement.h"
 
-void ManifoldRefinement::refine(dealii::Triangulation<2, 3> &tria,
-                                const std::vector<TopoDS_Shape> &)
+void ManifoldRefinement::refine(dealii::Triangulation<2, 3> &tria)
 {
   for (int refineId = 0; refineId < levels; ++refineId)
   {

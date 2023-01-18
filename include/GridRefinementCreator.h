@@ -18,8 +18,8 @@
 class GridRefinementCreator
 {
 public:
-  static std::vector<std::shared_ptr<IGridRefinement>>
-  create(const std::string &filename, dealii::ConditionalOStream pcout, double tolerance);
+  static std::vector<std::shared_ptr<IGridRefinement>> create(const std::string &        filename,
+                                                              dealii::ConditionalOStream pcout);
 
 private:
 };

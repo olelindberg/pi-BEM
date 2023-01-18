@@ -26,16 +26,15 @@ AdaptiveRefinement::AdaptiveRefinement(dealii::ConditionalOStream pcout,
   , _iterMax(iterMax)
 {}
 
-bool
-AdaptiveRefinement::refine(unsigned int                                 np,
-                           unsigned int                                 pid,
-                           const dealii::FiniteElement<2, 3> &          fe,
-                           const dealii::FiniteElement<2, 3> &          gradient_fe,
-                           dealii::DoFHandler<2, 3> &                   dh,
-                           dealii::DoFHandler<2, 3> &                   gradient_dh,
-                           const dealii::TrilinosWrappers::MPI::Vector &potential,
-                           const dealii::TrilinosWrappers::MPI::Vector &velocity,
-                           dealii::Triangulation<2, 3> &                tria)
+bool AdaptiveRefinement::refine(unsigned int                                 np,
+                                unsigned int                                 pid,
+                                const dealii::FiniteElement<2, 3> &          fe,
+                                const dealii::FiniteElement<2, 3> &          gradient_fe,
+                                dealii::DoFHandler<2, 3> &                   dh,
+                                dealii::DoFHandler<2, 3> &                   gradient_dh,
+                                const dealii::TrilinosWrappers::MPI::Vector &potential,
+                                const dealii::TrilinosWrappers::MPI::Vector &velocity,
+                                dealii::Triangulation<2, 3> &                tria)
 {
   double cellSizeMin = std::numeric_limits<double>::max();
   for (cell_it cell = dh.begin_active(); cell != dh.end(); ++cell)
@@ -53,6 +52,7 @@ AdaptiveRefinement::refine(unsigned int                                 np,
   // Parallel calculation of velocity magnitude:
   //---------------------------------------------------------------------------
   dealii::TrilinosWrappers::MPI::Vector velocity_magnitude(potential);
+
   velocity_magnitude = 0.0;
   std::vector<dealii::types::global_dof_index> scalar_indices(fe.dofs_per_cell);
   std::vector<dealii::types::global_dof_index> vector_indices(gradient_fe.dofs_per_cell);
@@ -115,11 +115,17 @@ AdaptiveRefinement::refine(unsigned int                                 np,
 
     dealii::SolutionTransfer<2, dealii::Vector<double>, dealii::DoFHandler<2, 3>> scalarInterp(dh);
 
+    _pcout << "mesh preparing ...\n";
     tria.prepare_coarsening_and_refinement();
+    _pcout << "mesh preparing, done\n";
 
+    _pcout << "interp preparing ...\n";
     scalarInterp.prepare_for_pure_refinement();
+    _pcout << "interp preparing, done\n";
 
+    _pcout << "mesh refining ...\n";
     tria.execute_coarsening_and_refinement();
+    _pcout << "mesh refining, done\n";
 
     dealii::GridTools::partition_triangulation(np, tria);
 

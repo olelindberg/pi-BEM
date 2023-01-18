@@ -14,8 +14,7 @@ public:
   virtual ~ManifoldRefinement()
   {}
 
-  virtual void
-  refine(dealii::Triangulation<2, 3> &tria, const std::vector<TopoDS_Shape> &cad_surfaces) override;
+  virtual void refine(dealii::Triangulation<2, 3> &tria) override;
 
 private:
   unsigned int manifoldId = 0;

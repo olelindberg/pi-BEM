@@ -9,14 +9,10 @@
 class HeightRatioRefinement : public GridRefinement
 {
 public:
-  HeightRatioRefinement(dealii::ConditionalOStream pcout,
-                        int                        itermax_,
-                        double                     height_ratio_max_,
-                        double                     tolerance_)
+  HeightRatioRefinement(dealii::ConditionalOStream pcout, int itermax_, double height_ratio_max_)
     : GridRefinement(pcout)
     , itermax(itermax_)
     , height_ratio_max(height_ratio_max_)
-    , tolerance(tolerance_)
   {}
 
   virtual ~HeightRatioRefinement()
@@ -27,7 +23,6 @@ public:
 private:
   int    itermax          = 0;
   double height_ratio_max = 0.0;
-  double tolerance        = 0.0;
 };
 
 #endif // HEIGHT_RATIO_REFINEMENT_H

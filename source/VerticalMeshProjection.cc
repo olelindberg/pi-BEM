@@ -81,20 +81,16 @@ VerticalMeshProjection<dim, spacedim>::VerticalMeshProjection(const TopoDS_Shape
 }
 
 template <int dim, int spacedim>
-std::unique_ptr<Manifold<dim, spacedim>>
-VerticalMeshProjection<dim, spacedim>::clone() const
+std::unique_ptr<Manifold<dim, spacedim>> VerticalMeshProjection<dim, spacedim>::clone() const
 {
   return std::unique_ptr<Manifold<dim, spacedim>>(
     new VerticalMeshProjection<dim, spacedim>(sh, tolerance));
 }
 
-Point<3>
-internal_project_to_manifold_vertical(const TopoDS_Shape &sh,
-                                      const double        tolerance,
-                                      const Point<3> &    candidate)
+Point<3> internal_project_to_manifold_vertical(const TopoDS_Shape &sh,
+                                               const double        tolerance,
+                                               const Point<3> &    candidate)
 {
-  std::cout << "internal_project_to_manifold_vertical\n";
-
   Tensor<1, 3> average_normal;
   average_normal[0] = 0.0;
   average_normal[1] = 0.0;
@@ -107,12 +103,10 @@ internal_project_to_manifold_vertical(const TopoDS_Shape &sh,
 
 
 template <int dim, int spacedim>
-Point<spacedim>
-VerticalMeshProjection<dim, spacedim>::project_to_manifold(
+Point<spacedim> VerticalMeshProjection<dim, spacedim>::project_to_manifold(
   const ArrayView<const Point<spacedim>> &surrounding_points,
   const Point<spacedim> &                 candidate) const
 {
-  std::cout << "VerticalMeshProjection\n";
   return internal_project_to_manifold_vertical(sh, tolerance, candidate);
 }
 
