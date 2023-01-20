@@ -108,7 +108,7 @@ public:
 
   void solve_problem(const Body &body);
 
-  void output_results(const std::string filename);
+  void output_results(const std::string filename, int cnt);
 
   void compute_errors(std::string output_path = "");
 

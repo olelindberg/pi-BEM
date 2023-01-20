@@ -5,11 +5,11 @@
             1,
             2
         ],
-        "refinement_levels": 1000
+        "refinement_levels": 0
     },
     "heightRatioRefinement": {
         "height_ratio_max": 0.3,
-        "refinement_levels": 1
+        "refinement_levels": 0
     },
     "distanceRatioRefinement": {
         "distance_ratio_max": 1.0,
@@ -21,12 +21,12 @@
         "ymax": 16.1,
         "zmin": -1000,
         "zmax": 1000,
-        "refinement_levels": 1000
+        "refinement_levels": 0
     },
     "boxRefinement": {
         "manifold_id": 3,
         "aspectRatioMax": 5.0,
-        "cellSizeMin": 11.5,
+        "cellSizeMin": 200.0,
         "xmin": 0,
         "xmax": 230,
         "ymin": -16.1,

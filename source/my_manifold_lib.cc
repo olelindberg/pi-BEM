@@ -308,7 +308,8 @@ internal_project_to_manifold(std::unordered_map<std::size_t, Tensor<1, 3>> &proj
 
 
   Teuchos::TimeMonitor localTimer2(*project_to_manifold_line_inters);
-  auto                 point = my_line_intersection(sh, candidate, average_normal, tolerance);
+  Point<3>             point;
+  my_line_intersection(sh, candidate, average_normal, tolerance, point);
   return point;
 }
 

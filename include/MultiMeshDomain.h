@@ -2,8 +2,14 @@
 #define MULTI_MESH_DOMAIN_H
 
 #include <IPhysicalDomain.h>
+#include <Shape.h>
+
 #include <deal.II/base/conditional_ostream.h>
 #include <deal.II/grid/manifold_lib.h>
+#include <deal.II/grid/tria.h>
+
+#include <memory>
+
 
 template <int dim>
 class MultiMeshDomain : public IPhysicalDomain<dim>
@@ -38,6 +44,7 @@ public:
     return neumann_boundary_ids;
   };
 
+  virtual void update_domain(double positionx, double positiony, double rotationz) override;
 
 private:
   MPI_Comm     mpi_communicator;
@@ -49,8 +56,8 @@ private:
   std::vector<unsigned int>                    neumann_boundary_ids;
 
   std::shared_ptr<dealii::TransfiniteInterpolationManifold<2, 3>> inner_manifold;
-
-  dealii::ConditionalOStream pcout;
+  std::vector<Shape>                                              _shapes;
+  dealii::ConditionalOStream                                      pcout;
 };
 
 #endif // MULTI_MESH_DOMAIN_H1

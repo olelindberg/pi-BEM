@@ -62,9 +62,11 @@ using namespace OpenCASCADE;
 
 
 template <int dim, int spacedim>
-VerticalMeshProjection<dim, spacedim>::VerticalMeshProjection(const TopoDS_Shape &sh,
-                                                              const double        tolerance)
+VerticalMeshProjection<dim, spacedim>::VerticalMeshProjection(TopoDS_Shape &sh,
+                                                              double        reference_level,
+                                                              const double  tolerance)
   : sh(sh)
+  , _reference_level(reference_level)
   , tolerance(tolerance)
 {
   Assert(spacedim == 3, ExcNotImplemented());
@@ -84,30 +86,27 @@ template <int dim, int spacedim>
 std::unique_ptr<Manifold<dim, spacedim>> VerticalMeshProjection<dim, spacedim>::clone() const
 {
   return std::unique_ptr<Manifold<dim, spacedim>>(
-    new VerticalMeshProjection<dim, spacedim>(sh, tolerance));
+    new VerticalMeshProjection<dim, spacedim>(sh, _reference_level, tolerance));
 }
 
-Point<3> internal_project_to_manifold_vertical(const TopoDS_Shape &sh,
-                                               const double        tolerance,
-                                               const Point<3> &    candidate)
+
+template <int dim, int spacedim>
+Point<spacedim>
+VerticalMeshProjection<dim, spacedim>::project_to_manifold(const ArrayView<const Point<spacedim>> &,
+                                                           const Point<spacedim> &candidate) const
 {
   Tensor<1, 3> average_normal;
   average_normal[0] = 0.0;
   average_normal[1] = 0.0;
   average_normal[2] = -1.0;
 
-  auto point = my_line_intersection(sh, candidate, average_normal, tolerance);
-
+  dealii::Point<3> point;
+  if (!my_line_intersection(sh, candidate, average_normal, tolerance, point))
+  {
+    std::cout << _reference_level << std::endl;
+    point = dealii::Point<3>(candidate[0], candidate[1], _reference_level);
+  }
   return point;
-}
-
-
-template <int dim, int spacedim>
-Point<spacedim> VerticalMeshProjection<dim, spacedim>::project_to_manifold(
-  const ArrayView<const Point<spacedim>> &surrounding_points,
-  const Point<spacedim> &                 candidate) const
-{
-  return internal_project_to_manifold_vertical(sh, tolerance, candidate);
 }
 
 template class VerticalMeshProjection<2, 3>;

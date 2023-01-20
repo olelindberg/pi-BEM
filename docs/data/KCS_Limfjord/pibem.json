@@ -4,7 +4,7 @@
     "potentialErrorEstimatorMax": 2.05,
     "velocityErrorEstimatorMax": 2.05,
     "aspectRatioMax": 2.5,
-    "cellSizeMin": 0.5,
+    "cellSizeMin": 2.0,
     "adaptiveRefinementLevels": 1000,
     "iterMax": 1000
 }

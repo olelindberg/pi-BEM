@@ -405,7 +405,7 @@ void BoundaryConditions<dim>::compute_errors(std::string output_path)
 }
 
 template <int dim>
-void BoundaryConditions<dim>::output_results(const std::string filename)
+void BoundaryConditions<dim>::output_results(const std::string filename, int cnt)
 {
   Teuchos::TimeMonitor LocalTimer(*OutputTimer);
   // At the time being the output is not running in parallel with saks
@@ -442,8 +442,8 @@ void BoundaryConditions<dim>::output_results(const std::string filename)
   if (this_mpi_process == 0)
   {
     std::string filename_scalar, filename_vector;
-    filename_scalar = filename + "_scalar_results" + ".vtu";
-    filename_vector = filename + "_vector_results" + ".vtu";
+    filename_scalar = filename + "_scalar_results_" + std::to_string(cnt) + ".vtu";
+    filename_vector = filename + "_vector_results_" + std::to_string(cnt) + ".vtu";
 
     std::vector<DataComponentInterpretation::DataComponentInterpretation>
       data_component_interpretation(dim, DataComponentInterpretation::component_is_part_of_vector);

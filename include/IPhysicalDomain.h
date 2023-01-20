@@ -16,6 +16,8 @@ public:
   virtual void                                       read_domain(std::string input_path = "") = 0;
   virtual void refine_and_resize(std::string input_path = "")                                 = 0;
   virtual void update_triangulation()                                                         = 0;
+
+  virtual void update_domain(double, double, double){};
 };
 
 #endif // IPHYSICAL_DOMAIN_H

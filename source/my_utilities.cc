@@ -32,8 +32,7 @@ DEAL_II_NAMESPACE_OPEN
 using namespace OpenCASCADE;
 
 template <typename T>
-void
-Swap(T &t1, T &t2)
+void Swap(T &t1, T &t2)
 
 {
   T tmp = t1;
@@ -43,13 +42,12 @@ Swap(T &t1, T &t2)
 // Intersect ray R(t) = p + t*d against AABB a. When intersecting,
 // return intersection distance tmin and point q of intersection
 template <int dim>
-bool
-IntersectRayAABB(const Point<dim> &    p,
-                 const Tensor<1, dim> &d,
-                 const Point<dim> &    amin,
-                 const Point<dim> &    amax,
-                 double &              tmin,
-                 Point<dim> &          q)
+bool IntersectRayAABB(const Point<dim> &    p,
+                      const Tensor<1, dim> &d,
+                      const Point<dim> &    amin,
+                      const Point<dim> &    amax,
+                      double &              tmin,
+                      Point<dim> &          q)
 {
   tmin        = -FLT_MAX;
   double tmax = FLT_MAX;
@@ -101,12 +99,11 @@ enum class Position
   MIDDLE
 };
 template <int dim>
-bool
-HitBoundingBox(const Point<dim>     minB,
-               const Point<dim>     maxB,
-               const Point<dim>     origin,
-               const Tensor<1, dim> dir,
-               Point<dim>           coord)
+bool HitBoundingBox(const Point<dim>     minB,
+                    const Point<dim>     maxB,
+                    const Point<dim>     origin,
+                    const Tensor<1, dim> dir,
+                    Point<dim>           coord)
 {
   bool                      inside = true;
   std::array<Position, dim> quadrant;
@@ -297,10 +294,9 @@ my_closest_point_and_differential_forms(const TopoDS_Shape &in_shape,
 }
 
 template <int dim>
-Point<dim>
-closest_point(const TopoDS_Shape &  in_shape,
-              const Point<dim> &    origin,
-              const Tensor<1, dim> &direction)
+Point<dim> closest_point(const TopoDS_Shape &  in_shape,
+                         const Point<dim> &    origin,
+                         const Tensor<1, dim> &direction)
 {
   Point<dim> result;
   double     minDistance = 1e7;
@@ -338,30 +334,28 @@ closest_point(const TopoDS_Shape &  in_shape,
 
 
 template <int dim>
-Point<dim>
-my_line_intersection(const TopoDS_Shape &  in_shape,
-                     const Point<dim> &    origin,
-                     const Tensor<1, dim> &direction,
-                     const double          tolerance)
+bool my_line_intersection(const TopoDS_Shape &  in_shape,
+                          const Point<dim> &    origin,
+                          const Tensor<1, dim> &direction,
+                          const double          tolerance,
+                          Point<dim> &          result)
 {
   // translating original Point<dim> to gp point
-  // cout << "Line orig: " << origin << "  Line dir: " << direction << endl;
+  bool intersection_successful = false;
+
+  //  cout << "Line orig: " << origin << "  Line dir: " << direction << endl;
 
   gp_Pnt P0 = point(origin);
-  gp_Ax1 gpaxis(P0, gp_Dir(direction[0], dim > 1 ? direction[1] : 0, dim > 2 ? direction[2] : 0));
-  gp_Lin line(gpaxis);
+  gp_Ax1 axis(P0, gp_Dir(direction[0], dim > 1 ? direction[1] : 0, dim > 2 ? direction[2] : 0));
+  gp_Lin line(axis);
 
   // destination point
-  gp_Pnt     Pproj(0.0, 0.0, 0.0);
-  Point<dim> result;
-  double     minDistance = 1e7;
+  ;
+  double minDistance = 1e7;
 
   TopExp_Explorer exp;
-  unsigned int    cross_count = 0;
-  unsigned int    face_count  = 0;
   for (exp.Init(in_shape, TopAbs_FACE); exp.More(); exp.Next())
   {
-    face_count++;
     TopoDS_Face face = TopoDS::Face(exp.Current());
     Bnd_Box     box_face;
     BRepBndLib::Add(face, box_face);
@@ -371,14 +365,16 @@ my_line_intersection(const TopoDS_Shape &  in_shape,
     Point<dim> hit_point;
     if (IntersectRayAABB(origin, direction, corner_min, corner_max, tmin, hit_point))
     {
-      cross_count++;
+      //      std::cout << "hit" << std::endl;
       IntCurvesFace_ShapeIntersector Inters;
       Inters.Load(face, tolerance);
       Inters.Perform(line, -RealLast(), +RealLast());
       Assert(Inters.IsDone(), ExcMessage("Could not project point."));
+      //      std::cout << Inters.NbPnt() << std::endl;
       for (int i = 0; i < Inters.NbPnt(); ++i)
       {
-        const double distance = point(origin).Distance(Inters.Pnt(i + 1));
+        intersection_successful = true;
+        const double distance   = point(origin).Distance(Inters.Pnt(i + 1));
         if (distance < minDistance)
         {
           minDistance = distance;
@@ -387,11 +383,11 @@ my_line_intersection(const TopoDS_Shape &  in_shape,
       }
     }
   }
-
+  //  std::cout << result << std::endl;
   if (result.norm() < std::numeric_limits<double>::epsilon())
     result = closest_point(in_shape, origin, direction);
 
-  return result;
+  return intersection_successful;
 }
 
 template std::tuple<Point<2>, TopoDS_Shape, double, double>
@@ -399,20 +395,20 @@ my_project_point_and_pull_back<2>(const TopoDS_Shape &in_shape,
                                   const Point<2> &    origin,
                                   const double        tolerance);
 template std::tuple<Point<3>, TopoDS_Shape, double, double>
-my_project_point_and_pull_back<3>(const TopoDS_Shape &in_shape,
+              my_project_point_and_pull_back<3>(const TopoDS_Shape &in_shape,
                                   const Point<3> &    origin,
                                   const double        tolerance);
+template bool my_line_intersection<2>(const TopoDS_Shape &in_shape,
+                                      const Point<2> &    origin,
+                                      const Tensor<1, 2> &direction,
+                                      const double        tolerance,
+                                      Point<2> &          result);
 
-template Point<2>
-my_line_intersection<2>(const TopoDS_Shape &in_shape,
-                        const Point<2> &    origin,
-                        const Tensor<1, 2> &direction,
-                        const double        tolerance);
-template Point<3>
-my_line_intersection<3>(const TopoDS_Shape &in_shape,
-                        const Point<3> &    origin,
-                        const Tensor<1, 3> &direction,
-                        const double        tolerance);
+template bool my_line_intersection<3>(const TopoDS_Shape &in_shape,
+                                      const Point<3> &    origin,
+                                      const Tensor<1, 3> &direction,
+                                      const double        tolerance,
+                                      Point<3> &          result);
 
 
 DEAL_II_NAMESPACE_CLOSE

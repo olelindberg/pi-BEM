@@ -17,14 +17,14 @@
 #ifndef dealii_occ_my_utilities_h
 #define dealii_occ_my_utilities_h
 
-#  include <deal.II/opencascade/utilities.h>
+#include <deal.II/opencascade/utilities.h>
 // opencascade needs "HAVE_CONFIG_H" to be exported...
-#  define HAVE_CONFIG_H
-#  include <Adaptor3d_Curve.hxx>
-#  include <Adaptor3d_HCurve.hxx>
-#  include <BRepAdaptor_Curve.hxx>
-#  include <Bnd_Box.hxx>
-#  undef HAVE_CONFIG_H
+#define HAVE_CONFIG_H
+#include <Adaptor3d_Curve.hxx>
+#include <Adaptor3d_HCurve.hxx>
+#include <BRepAdaptor_Curve.hxx>
+#include <Bnd_Box.hxx>
+#undef HAVE_CONFIG_H
 
 
 DEAL_II_NAMESPACE_OPEN
@@ -34,30 +34,34 @@ using namespace OpenCASCADE;
 
 
 template <int dim>
-bool
-IntersectRayAABB (const Point<dim>& p, const Tensor<1, dim>& d, const Point<dim>& amin, const Point<dim>& amax, double &tmin, Point<dim> &q);
+bool IntersectRayAABB(const Point<dim> &    p,
+                      const Tensor<1, dim> &d,
+                      const Point<dim> &    amin,
+                      const Point<dim> &    amax,
+                      double &              tmin,
+                      Point<dim> &          q);
 
 
-  template <int dim>
-  std::tuple<Point<dim>, TopoDS_Shape, double, double>
-  my_project_point_and_pull_back(const TopoDS_Shape &in_shape,
-                              const Point<dim> &  origin,
-                              const double        tolerance);
+template <int dim>
+std::tuple<Point<dim>, TopoDS_Shape, double, double>
+my_project_point_and_pull_back(const TopoDS_Shape &in_shape,
+                               const Point<dim> &  origin,
+                               const double        tolerance);
 
 
 
-  std::tuple<Point<3>, Tensor<1, 3>, double, double>
-  my_closest_point_and_differential_forms(const TopoDS_Shape &in_shape,
-                                       const Point<3> &    origin,
-                                       const double        tolerance);
+std::tuple<Point<3>, Tensor<1, 3>, double, double>
+my_closest_point_and_differential_forms(const TopoDS_Shape &in_shape,
+                                        const Point<3> &    origin,
+                                        const double        tolerance);
 
 
-  template <int dim>
-  Point<dim>
-  my_line_intersection(const TopoDS_Shape &  in_shape,
-                       const Point<dim> &    origin,
-                       const Tensor<1, dim> &direction,
-                       const double          tolerance);
+template <int dim>
+bool my_line_intersection(const TopoDS_Shape &  in_shape,
+                          const Point<dim> &    origin,
+                          const Tensor<1, dim> &direction,
+                          const double          tolerance,
+                          Point<dim> &          result);
 
 DEAL_II_NAMESPACE_CLOSE
 

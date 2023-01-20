@@ -6,134 +6,112 @@
 class GeometryInput
 {
 public:
-  void
-  set_filename(std::string val)
+  void set_filename(std::string val)
   {
     _filename = val;
   }
 
-  void
-  set_scale(double val)
+  void set_scale(double val)
   {
     _scale = val;
   }
 
-  void
-  set_rotate_x(double val)
+  void set_rotate_x(double val)
   {
     _rotate_x = val;
   }
 
-  void
-  set_rotate_y(double val)
+  void set_rotate_y(double val)
   {
     _rotate_y = val;
   }
 
-  void
-  set_rotate_z(double val)
+  void set_rotate_z(double val)
   {
     _rotate_z = val;
   }
 
-  void
-  set_pre_translate_x(double val)
+  void set_pre_translate_x(double val)
   {
     _pre_translate_x = val;
   }
 
-  void
-  set_pre_translate_y(double val)
+  void set_pre_translate_y(double val)
   {
     _pre_translate_y = val;
   }
 
-  void
-  set_pre_translate_z(double val)
+  void set_pre_translate_z(double val)
   {
     _pre_translate_z = val;
   }
 
-  void
-  set_post_translate_x(double val)
+  void set_post_translate_x(double val)
   {
     _post_translate_x = val;
   }
 
-  void
-  set_post_translate_y(double val)
+  void set_post_translate_y(double val)
   {
     _post_translate_y = val;
   }
 
-  void
-  set_post_translate_z(double val)
+  void set_post_translate_z(double val)
   {
     _post_translate_z = val;
   }
 
-  std::string
-  get_filename() const
+  std::string get_filename() const
   {
     return _filename;
   }
 
-  double
-  get_scale() const
+  double get_scale() const
   {
     return _scale;
   }
 
-  double
-  get_rotate_x() const
+  double get_rotate_x() const
   {
     return _rotate_x;
   }
 
-  double
-  get_rotate_y() const
+  double get_rotate_y() const
   {
     return _rotate_y;
   }
 
-  double
-  get_rotate_z() const
+  double get_rotate_z() const
   {
     return _rotate_z;
   }
 
-  double
-  get_pre_translate_x() const
+  double get_pre_translate_x() const
   {
     return _pre_translate_x;
   }
 
-  double
-  get_pre_translate_y() const
+  double get_pre_translate_y() const
   {
     return _pre_translate_y;
   }
 
-  double
-  get_pre_translate_z() const
+  double get_pre_translate_z() const
   {
     return _pre_translate_z;
   }
 
-  double
-  get_post_translate_x() const
+  double get_post_translate_x() const
   {
     return _post_translate_x;
   }
 
-  double
-  get_post_translate_y() const
+  double get_post_translate_y() const
   {
     return _post_translate_y;
   }
 
-  double
-  get_post_translate_z() const
+  double get_post_translate_z() const
   {
     return _post_translate_z;
   }
