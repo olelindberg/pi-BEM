@@ -27,8 +27,7 @@ surface_integral_util<3>::surface_integral_util(ComputationalDomain<3> &comp_dom
 {}
 
 template <int dim>
-void
-surface_integral_util<dim>::reinit()
+void surface_integral_util<dim>::reinit()
 {
   fe          = parsed_fe();
   gradient_fe = parsed_gradient_fe();
@@ -86,8 +85,7 @@ surface_integral_util<dim>::reinit()
 
 
 template <int dim>
-void
-surface_integral_util<dim>::declare_parameters(ParameterHandler &prm)
+void surface_integral_util<dim>::declare_parameters(ParameterHandler &prm)
 {
   prm.enter_subsection("Quadrature rules");
   {
@@ -105,15 +103,14 @@ surface_integral_util<dim>::declare_parameters(ParameterHandler &prm)
 }
 
 template <int dim>
-void
-surface_integral_util<dim>::parse_parameters(ParameterHandler &prm)
+void surface_integral_util<dim>::parse_parameters(ParameterHandler &prm)
 {
   prm.enter_subsection("Quadrature rules");
   {
-    quadrature = std_cxx1x::shared_ptr<Quadrature<dim - 1>>(
+    quadrature = std::shared_ptr<Quadrature<dim - 1>>(
       new QuadratureSelector<dim - 1>(prm.get("Quadrature type"),
                                       prm.get_integer("Quadrature order")));
-    _quadrature1d = std_cxx1x::shared_ptr<Quadrature<dim - 2>>(
+    _quadrature1d = std::shared_ptr<Quadrature<dim - 2>>(
       new QuadratureSelector<dim - 2>(prm.get("Quadrature type"),
                                       prm.get_integer("Quadrature order")));
   }
@@ -126,8 +123,7 @@ surface_integral_util<dim>::parse_parameters(ParameterHandler &prm)
 
 
 template <int dim>
-double
-surface_integral_util<dim>::ssurffint(const Body &body, int dimId)
+double surface_integral_util<dim>::ssurffint(const Body &body, int dimId)
 {
   FEValues<dim - 1, dim> fe_v(*mapping,
                               dh.get_fe(),

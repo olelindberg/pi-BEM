@@ -17,27 +17,22 @@ public:
   {}
 
 
-  bool
-  saveScalarFields(std::string                                   filename,
-                   const dealii::DoFHandler<2, 3> &              dh,
-                   const std::shared_ptr<dealii::Mapping<2, 3>> &mapping,
-                   unsigned int                                  mapping_degree)
+  bool saveScalarFields(std::string                                   filename,
+                        const dealii::DoFHandler<2, 3> &              dh,
+                        const std::shared_ptr<dealii::Mapping<2, 3>> &mapping,
+                        unsigned int                                  mapping_degree)
   {
-    dealii::DataOut<2, dealii::DoFHandler<2, 3>> dataout;
+    dealii::DataOut<2, 3> dataout;
     dataout.attach_dof_handler(dh);
 
     auto nameIt = _scalarFieldNames.begin();
     for (auto &field : _scalarFields)
     {
-      dataout.add_data_vector(field,
-                              *nameIt,
-                              dealii::DataOut<2, dealii::DoFHandler<2, 3>>::type_cell_data);
+      dataout.add_data_vector(field, *nameIt, dealii::DataOut<2, 3>::type_cell_data);
       ++nameIt;
     }
 
-    dataout.build_patches(*mapping,
-                          mapping_degree,
-                          dealii::DataOut<2, dealii::DoFHandler<2, 3>>::curved_inner_cells);
+    dataout.build_patches(*mapping, mapping_degree, dealii::DataOut<2, 3>::curved_inner_cells);
 
     std::ofstream file(filename);
     if (file.is_open())
@@ -51,17 +46,15 @@ public:
   }
 
 
-  void
-  addScalarField(std::string name, const dealii::Vector<double> &scalarField)
+  void addScalarField(std::string name, const dealii::Vector<double> &scalarField)
   {
     _scalarFieldNames.push_back(name);
     _scalarFields.push_back(scalarField);
   }
 
-  bool
-  save(std::string filename, const dealii::Triangulation<2, 3> &trimesh)
+  bool save(std::string filename, const dealii::Triangulation<2, 3> &trimesh)
   {
-    dealii::DataOut<2, dealii::DoFHandler<2, 3>> dataout;
+    dealii::DataOut<2, 3> dataout;
     dataout.attach_triangulation(trimesh);
     dataout.build_patches();
     std::ofstream file(filename);

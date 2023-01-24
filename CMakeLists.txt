@@ -19,7 +19,7 @@ SET(TARGET bem_fma)
 SET(_main source/main.cc)
 
 
-set(OPENCASCADE_DIR /home/ole/dev/tools/oce-0.18.3)
+set(OPENCASCADE_DIR /usr/local/oce-upstream-V7_5_0)
 message("OpenCASCADE directory:")
 message(${OPENCASCADE_DIR})
 
@@ -128,7 +128,7 @@ FOREACH(_build_type ${_d2_build_types})
 ENDFOREACH()
 
 INCLUDE_DIRECTORIES(${D2K_DIR}/include)
-INCLUDE_DIRECTORIES(${OPENCASCADE_DIR}/include/oce)
+INCLUDE_DIRECTORIES(${OPENCASCADE_DIR}/include/opencascade)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 

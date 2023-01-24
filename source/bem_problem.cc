@@ -297,10 +297,10 @@ void BEMProblem<dim>::parse_parameters(ParameterHandler &prm)
 
   prm.enter_subsection("Quadrature rules");
   {
-    quadrature = std_cxx1x::shared_ptr<Quadrature<dim - 1>>(
+    quadrature = std::shared_ptr<Quadrature<dim - 1>>(
       new QuadratureSelector<dim - 1>(prm.get("Quadrature type"),
                                       prm.get_integer("Quadrature order")));
-    _quadrature1d = std_cxx1x::shared_ptr<Quadrature<dim - 2>>(
+    _quadrature1d = std::shared_ptr<Quadrature<dim - 2>>(
       new QuadratureSelector<dim - 2>(prm.get("Quadrature type"),
                                       prm.get_integer("Quadrature order")));
     quadrature_order          = prm.get_integer("Quadrature order");

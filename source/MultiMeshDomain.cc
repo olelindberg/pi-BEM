@@ -3,14 +3,72 @@
 #include "../include/KCS_LimfjordSetup.h"
 #include "../include/ManifoldCreator.h"
 #include "../include/MeshReader.h"
-#include "../include/MeshUtil.h"
+// #include "../include/MeshUtil.h"
 #include "../include/ShapesReader.h"
 #include "../include/Writer.h"
 
-#include <deal.II/base/mpi.h>
-#include <deal.II/grid/grid_tools.h>
+#include <BRep_Tool.hxx>
+#include <BVH_BoxSet.hxx>
+#include <GeomAPI_IntCS.hxx>
+// #include <BVH_Tools.hxx>
+#include <BVH_Traverse.hxx>
+#include <GC_MakeLine.hxx>
+#include <Geom_Line.hxx>
+#include <TopExp_Explorer.hxx>
+#include <TopoDS.hxx>
+#include <gp_Lin.hxx>
+
+#include <deal.II/dofs/dof_tools.h>
+#include <deal.II/fe/fe_q.h>
+//#include <deal.II/base/mpi.h>
+//#include <deal.II/grid/grid_tools.h>
 
 #include <filesystem>
+
+typedef BVH_Box<double, 2>                 bvh_box_t;
+typedef BVH_BoxSet<double, 2, TopoDS_Face> bvh_boxset_t;
+typedef bvh_box_t::BVH_VecNt               bvh_vec_t;
+
+class BVH_SurfaceSelector : public BVH_Traverse<double, 2, bvh_boxset_t, double>
+{
+public:
+  virtual Standard_Boolean
+  RejectNode(const bvh_vec_t &theCMin, const bvh_vec_t &theCMax, double &) const Standard_OVERRIDE
+  {
+    if (theCMin.x() < _point.x() && _point.x() < theCMax.x())
+      if (theCMin.y() < _point.y() && _point.y() < theCMax.y())
+        return false;
+    return true;
+  }
+
+  virtual Standard_Boolean Accept(const Standard_Integer theIndex, const double &) Standard_OVERRIDE
+  {
+    const TopoDS_Face &face = myBVHSet->Element(theIndex);
+    const bvh_box_t &  box  = myBVHSet->Box(theIndex);
+
+    double dummy;
+    if (!this->RejectNode(box.CornerMin(), box.CornerMax(), dummy))
+    {
+      _surfaces.push_back(BRep_Tool::Surface(myBVHSet->Element(theIndex)));
+      return true;
+    }
+    return false;
+  }
+
+  void set_point(const bvh_vec_t &point)
+  {
+    _point = point;
+  }
+  const std::vector<Handle(Geom_Surface)> &get_surfaces()
+  {
+    return _surfaces;
+  }
+
+private:
+  bvh_vec_t                         _point;
+  std::vector<Handle(Geom_Surface)> _surfaces;
+};
+
 
 
 template <int dim>
@@ -38,19 +96,8 @@ void MultiMeshDomain<dim>::read_domain(std::string input_path)
   KCS_LimfjordSetup setup;
 
   MeshReader::read(root, setup.mesh_inputs(), *_mesh);
-  _shapes        = ShapesReader::read(root, setup.shape_inputs());
-  auto manifolds = ManifoldCreator::make(setup.shape_inputs(), _shapes, *_mesh);
-
-  // // --------------------------------------------------------------------------
-  // // Project to manifold:
-  // // --------------------------------------------------------------------------
-  // std::vector<int> initial_projection_manifold_ids;
-  // for (auto input : setup.shape_inputs())
-  //   if (input.get_mesh_projection() == "directional")
-  //     initial_projection_manifold_ids.push_back(input.get_mesh_element_id());
-
-  // for (auto &manifold_id : initial_projection_manifold_ids)
-  //   MeshUtil::project(*_mesh, manifold_id);
+  _shapes    = ShapesReader::read(root, setup.shape_inputs());
+  _manifolds = ManifoldCreator::make(setup.shape_inputs(), _shapes, *_mesh);
 }
 
 template <int dim>
@@ -86,42 +133,102 @@ void MultiMeshDomain<dim>::update_triangulation()
 template <int dim>
 void MultiMeshDomain<dim>::update_domain(double positionx, double positiony, double rotationz)
 {
+  std::cout << "Setting position and rotation ..." << std::endl;
   _shapes[2].set_position(-positionx, -positiony, 10.8);
   _shapes[2].set_rotation(0.0, 0.0, -rotationz);
 
-  for (auto vtx = _mesh->begin_active_vertex(); vtx != _mesh->end_vertex(); ++vtx)
-  {
-    std::cout << vtx->vertex(0) << std::endl;
-  }
-
   // --------------------------------------------------------------------------
-  // Project to manifold:
+  // Find interior points on the bottom:
   // --------------------------------------------------------------------------
   std::cout << "projecting1 ..." << std::endl;
-
+  std::vector bottom_interior_vertex(_mesh->n_vertices(), false);
   for (auto cell = _mesh->begin_active(); cell != _mesh->end(); ++cell)
   {
     if (cell->manifold_id() == 3)
     {
+      for (unsigned int i = 0; i < 4; ++i)
+        bottom_interior_vertex[cell->vertex_index(i)] = true;
       if (cell->at_boundary())
-      {
-        std::cout << "Cell at boundary ..." << cell->at_boundary(0) << " " << cell->at_boundary(1)
-                  << cell->at_boundary(2) << " " << cell->at_boundary(3) << std::endl;
         for (unsigned int i = 0; i < 4; ++i)
-        {
-          if (cell->at_boundary(i) || cell->at_boundary((i + 1) % 4))
+          if (cell->line(i)->at_boundary())
+            for (unsigned int j = 0; j < 2; ++j)
+              bottom_interior_vertex[cell->line(i)->vertex_index(j)] = false;
+    }
+  }
 
-            std::cout << "Vertex at boundary ..." << std::endl;
-          //        cell->vertex(i)
+
+
+  std::cout << "Building BVH ...\n";
+  BVH_BoxSet<double, 2, TopoDS_Face> bvh_box_set;
+  TopExp_Explorer                    exp;
+  for (exp.Init(_shapes[2].shape, TopAbs_FACE); exp.More(); exp.Next())
+  {
+    TopoDS_Face face = TopoDS::Face(exp.Current());
+
+    Bnd_Box bnd_box;
+    BRepBndLib::Add(face, bnd_box);
+
+    bvh_vec_t          point_min(bnd_box.CornerMin().X(), bnd_box.CornerMin().Y());
+    bvh_vec_t          point_max(bnd_box.CornerMax().X(), bnd_box.CornerMax().Y());
+    BVH_Box<double, 2> bvh_box(point_min, point_max);
+
+    bvh_box_set.Add(face, bvh_box);
+  }
+  bvh_box_set.Build();
+  auto bvh = bvh_box_set.BVH();
+  std::cout << "Building BVH, done\n";
+
+
+  for (auto vtx = _mesh->begin_active_vertex(); vtx != _mesh->end_vertex(); ++vtx)
+  {
+    if (bottom_interior_vertex[vtx->vertex_index(0)])
+    {
+      BVH_SurfaceSelector bvh_surface_selector;
+      bvh_surface_selector.SetBVHSet(&bvh_box_set);
+      bvh_surface_selector.set_point(bvh_vec_t(vtx->vertex(0)[0], vtx->vertex(0)[1]));
+      if (bvh_surface_selector.Select() > 0)
+      {
+        gp_Pnt point(vtx->vertex(0)[0], vtx->vertex(0)[1], 0.0);
+        gp_Dir direction(0.0, 0.0, -1.0);
+        gp_Lin line(point, direction);
+        Handle(Geom_Line) line2 = GC_MakeLine(point, direction);
+        for (auto &surface : bvh_surface_selector.get_surfaces())
+        {
+          GeomAPI_IntCS geom_intersect;
+          geom_intersect.Perform(line2, surface);
+          if (geom_intersect.IsDone() && geom_intersect.NbPoints() > 0)
+            vtx->vertex(0)[2] = geom_intersect.Point(1).Z();
         }
       }
     }
   }
   std::cout << "projecting1, done" << std::endl;
 
+  dealii::FE_Q<2, 3>       fe(1);
+  dealii::DoFHandler<2, 3> dof_handler(*_mesh);
+  dof_handler.distribute_dofs(fe);
 
+  dealii::Vector<double> solution(dof_handler.n_dofs());
+  {
+    int i = 0;
+    for (auto vtx = _mesh->begin_active_vertex(); vtx != _mesh->end_vertex(); ++vtx)
+    {
+      solution[i] = vtx->vertex(0)[2];
+      ++i;
+    }
+  }
 
-  MeshUtil::project(*_mesh, 3);
+  dealii::AffineConstraints<double> constraints;
+  dealii::DoFTools::make_hanging_node_constraints(dof_handler, constraints);
+  constraints.distribute(solution);
+  {
+    int i = 0;
+    for (auto vtx = _mesh->begin_active_vertex(); vtx != _mesh->end_vertex(); ++vtx)
+    {
+      vtx->vertex(0)[2] = solution[i];
+      ++i;
+    }
+  }
 }
 
 

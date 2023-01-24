@@ -132,16 +132,16 @@ void Driver<dim>::run(std::string input_path, std::string output_path)
     _physical_domain->refine_and_resize(input_path);
 
     // Loop route:
-    for (unsigned int i = 0; i < route.size(); ++i)
+    for (unsigned int i = 0; i < route.size() - 1; ++i)
     {
       auto delta   = route[i + 1] - route[i];
       auto heading = std::atan2(delta[1], delta[0]);
-      auto pi      = acos(-1.0);
+      auto pi      = std::acos(-1.0);
       if (heading < 0.0)
         heading += 2.0 * pi;
-      std::cout << route[i] << std::endl;
-      std::cout << delta << std::endl;
-      std::cout << heading << std::endl;
+      std::cout << "Waypoint " << i << ":\n";
+      std::cout << "Position: " << route[i] << std::endl;
+      std::cout << "Heading:  " << heading << std::endl;
 
       _physical_domain->update_domain(route[i][0], route[i][1], heading);
       _physical_domain->update_triangulation();

@@ -12,27 +12,27 @@
 #include <boost/filesystem.hpp>
 
 template <int dim, class DH = DoFHandler<dim, dim + 1>>
-class FilteredDataOut : public DataOut<dim, DH>
+class FilteredDataOut : public DataOut<dim, dim + 1>
 {
 public:
   FilteredDataOut(const unsigned int subdomain_id)
     : subdomain_id(subdomain_id)
   {}
-  virtual typename DataOut<dim, DH>::cell_iterator first_cell()
+  virtual typename DataOut<dim, dim + 1>::cell_iterator first_cell()
   {
-    typename DataOut<dim, DH>::active_cell_iterator cell = this->dofs->begin_active();
+    typename DataOut<dim, dim + 1>::active_cell_iterator cell = this->dofs->begin_active();
     while ((cell != this->dofs->end()) && (cell->subdomain_id() != subdomain_id))
       ++cell;
     return cell;
   }
-  virtual typename DataOut<dim, DH>::cell_iterator
-  next_cell(const typename DataOut<dim, DH>::cell_iterator &old_cell)
+  virtual typename DataOut<dim, dim + 1>::cell_iterator
+  next_cell(const typename DataOut<dim, dim + 1>::cell_iterator &old_cell)
   {
     if (old_cell != this->dofs->end())
     {
       const IteratorFilters::SubdomainEqualTo predicate(subdomain_id);
-      return ++(
-        FilteredIterator<typename DataOut<dim, DH>::active_cell_iterator>(predicate, old_cell));
+      return ++(FilteredIterator<typename DataOut<dim, dim + 1>::active_cell_iterator>(predicate,
+                                                                                       old_cell));
     }
     else
       return old_cell;
@@ -370,16 +370,16 @@ void BoundaryConditions<dim>::compute_errors(std::string output_path)
       boost::filesystem::path(output_path).append("vector_error.vtu").string();
     std::vector<DataComponentInterpretation::DataComponentInterpretation>
       data_component_interpretation(dim, DataComponentInterpretation::component_is_part_of_vector);
-    DataOut<dim - 1, DoFHandler<dim - 1, dim>> dataout_vector;
+    DataOut<dim - 1, dim> dataout_vector;
     dataout_vector.attach_dof_handler(bem.gradient_dh);
     dataout_vector.add_data_vector(vector_gradients_node_error,
                                    std::vector<std::string>(dim, "phi_gradient_error"),
-                                   DataOut<dim - 1, DoFHandler<dim - 1, dim>>::type_dof_data,
+                                   DataOut<dim - 1, dim>::type_dof_data,
                                    data_component_interpretation);
 
     dataout_vector.build_patches(*bem.mapping,
                                  bem.mapping_degree,
-                                 DataOut<dim - 1, DoFHandler<dim - 1, dim>>::curved_inner_cells);
+                                 DataOut<dim - 1, dim>::curved_inner_cells);
 
     std::ofstream file_vector(filename_vector.c_str());
 
@@ -387,17 +387,17 @@ void BoundaryConditions<dim>::compute_errors(std::string output_path)
 
     std::string filename_scalar =
       boost::filesystem::path(output_path).append("scalar_error.vtu").string();
-    DataOut<dim - 1, DoFHandler<dim - 1, dim>> dataout_scalar;
+    DataOut<dim - 1, dim> dataout_scalar;
     dataout_scalar.attach_dof_handler(bem.dh);
     dataout_scalar.add_data_vector(phi_node_error,
                                    std::vector<std::string>(1, "phi_error"),
-                                   DataOut<dim - 1, DoFHandler<dim - 1, dim>>::type_dof_data);
+                                   DataOut<dim - 1, dim>::type_dof_data);
     dataout_scalar.add_data_vector(dphi_dn_node_error,
                                    std::vector<std::string>(1, "dphi_dn_error"),
-                                   DataOut<dim - 1, DoFHandler<dim - 1, dim>>::type_dof_data);
+                                   DataOut<dim - 1, dim>::type_dof_data);
     dataout_scalar.build_patches(*bem.mapping,
                                  bem.mapping_degree,
-                                 DataOut<dim - 1, DoFHandler<dim - 1, dim>>::curved_inner_cells);
+                                 DataOut<dim - 1, dim>::curved_inner_cells);
 
     std::ofstream file_scalar(filename_scalar.c_str());
     dataout_scalar.write_vtu(file_scalar);
@@ -448,44 +448,40 @@ void BoundaryConditions<dim>::output_results(const std::string filename, int cnt
     std::vector<DataComponentInterpretation::DataComponentInterpretation>
       data_component_interpretation(dim, DataComponentInterpretation::component_is_part_of_vector);
 
-    DataOut<dim - 1, DoFHandler<dim - 1, dim>> dataout_scalar;
-    DataOut<dim - 1, DoFHandler<dim - 1, dim>> dataout_vector;
+    DataOut<dim - 1, dim> dataout_scalar;
+    DataOut<dim - 1, dim> dataout_vector;
 
     dataout_scalar.attach_dof_handler(bem.dh);
     dataout_vector.attach_dof_handler(bem.gradient_dh);
 
-    dataout_scalar.add_data_vector(localized_phi,
-                                   "phi",
-                                   DataOut<dim - 1, DoFHandler<dim - 1, dim>>::type_dof_data);
+    dataout_scalar.add_data_vector(localized_phi, "phi", DataOut<dim - 1, dim>::type_dof_data);
     dataout_scalar.add_data_vector(localized_hydrostatic_pressure,
                                    "hydrostatic_pressure",
-                                   DataOut<dim - 1, DoFHandler<dim - 1, dim>>::type_dof_data);
+                                   DataOut<dim - 1, dim>::type_dof_data);
     dataout_scalar.add_data_vector(localized_hydrodynamic_pressure,
                                    "hydrodynamic_pressure",
-                                   DataOut<dim - 1, DoFHandler<dim - 1, dim>>::type_dof_data);
+                                   DataOut<dim - 1, dim>::type_dof_data);
     dataout_scalar.add_data_vector(localized_dphi_dn,
                                    "dphi_dn",
-                                   DataOut<dim - 1, DoFHandler<dim - 1, dim>>::type_dof_data);
-    dataout_scalar.add_data_vector(localized_alpha,
-                                   "alpha",
-                                   DataOut<dim - 1, DoFHandler<dim - 1, dim>>::type_dof_data);
+                                   DataOut<dim - 1, dim>::type_dof_data);
+    dataout_scalar.add_data_vector(localized_alpha, "alpha", DataOut<dim - 1, dim>::type_dof_data);
 
     dataout_vector.add_data_vector(localized_gradients,
                                    std::vector<std::string>(dim, "phi_gradient"),
-                                   DataOut<dim - 1, DoFHandler<dim - 1, dim>>::type_dof_data,
+                                   DataOut<dim - 1, dim>::type_dof_data,
                                    data_component_interpretation);
     dataout_vector.add_data_vector(localized_surf_gradients,
                                    std::vector<std::string>(dim, "phi_surf_gradient"),
-                                   DataOut<dim - 1, DoFHandler<dim - 1, dim>>::type_dof_data,
+                                   DataOut<dim - 1, dim>::type_dof_data,
                                    data_component_interpretation);
     dataout_vector.add_data_vector(localized_normals,
                                    std::vector<std::string>(dim, "normals_at_nodes"),
-                                   DataOut<dim - 1, DoFHandler<dim - 1, dim>>::type_dof_data,
+                                   DataOut<dim - 1, dim>::type_dof_data,
                                    data_component_interpretation);
 
     dataout_scalar.build_patches(*bem.mapping,
                                  bem.mapping_degree,
-                                 DataOut<dim - 1, DoFHandler<dim - 1, dim>>::curved_inner_cells);
+                                 DataOut<dim - 1, dim>::curved_inner_cells);
 
     std::ofstream file_scalar(filename_scalar.c_str());
 
@@ -493,7 +489,7 @@ void BoundaryConditions<dim>::output_results(const std::string filename, int cnt
 
     dataout_vector.build_patches(*bem.mapping,
                                  bem.mapping_degree,
-                                 DataOut<dim - 1, DoFHandler<dim - 1, dim>>::curved_inner_cells);
+                                 DataOut<dim - 1, dim>::curved_inner_cells);
 
     std::ofstream file_vector(filename_vector.c_str());
 

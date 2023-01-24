@@ -26,7 +26,7 @@
     "boxRefinement": {
         "manifold_id": 3,
         "aspectRatioMax": 5.0,
-        "cellSizeMin": 200.0,
+        "cellSizeMin": 10.0,
         "xmin": 0,
         "xmax": 230,
         "ymin": -16.1,

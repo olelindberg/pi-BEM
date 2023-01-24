@@ -55,9 +55,9 @@ private:
   std::vector<unsigned int>                    dirichlet_boundary_ids;
   std::vector<unsigned int>                    neumann_boundary_ids;
 
-  std::shared_ptr<dealii::TransfiniteInterpolationManifold<2, 3>> inner_manifold;
-  std::vector<Shape>                                              _shapes;
-  dealii::ConditionalOStream                                      pcout;
+  std::vector<Shape>                                   _shapes;
+  std::vector<std::shared_ptr<dealii::Manifold<2, 3>>> _manifolds;
+  dealii::ConditionalOStream                           pcout;
 };
 
 #endif // MULTI_MESH_DOMAIN_H1

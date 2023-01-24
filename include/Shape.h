@@ -8,29 +8,21 @@
 class Shape
 {
 public:
+  // Set position in world coordinates
   void set_position(double valx, double valy, double valz)
   {
-    {
-      gp_Pnt  origin;
-      gp_Trsf rotation;
-      rotation.SetRotation(gp_Ax1(origin, gp_Dir(0.0, 0.0, 1.0)), -_rotate_z);
-      BRepBuilderAPI_Transform transform(rotation);
-      transform.Perform(shape, Standard_True);
-      shape = transform.Shape();
-    }
+    double translate_x = valx - _position_x;
+    double translate_y = valy - _position_y;
+    double angle_z     = _rotate_z;
+
+    double translate_x_local = std::cos(angle_z) * translate_x - std::sin(angle_z) * translate_y;
+    double translate_y_local = std::sin(angle_z) * translate_x + std::cos(angle_z) * translate_y;
+
     {
       gp_Trsf translate;
-      translate.SetTranslation(gp_Vec(valx - _position_x, valy - _position_y, valz - _position_z));
+      translate.SetTranslation(gp_Vec(translate_x_local, translate_y_local, 0.0));
       BRepBuilderAPI_Transform transform(translate);
       transform.Perform(shape);
-      shape = transform.Shape();
-    }
-    {
-      gp_Pnt  origin;
-      gp_Trsf rotation;
-      rotation.SetRotation(gp_Ax1(origin, gp_Dir(0.0, 0.0, 1.0)), _rotate_z);
-      BRepBuilderAPI_Transform transform(rotation);
-      transform.Perform(shape, Standard_True);
       shape = transform.Shape();
     }
 
@@ -50,24 +42,6 @@ public:
       shape = transform.Shape();
     }
 
-    {
-      gp_Trsf rotation;
-      rotation.SetRotation(gp_Ax1(origin, gp_Dir(0.0, 1.0, 0.0)), valy - _rotate_y);
-      BRepBuilderAPI_Transform transform(rotation);
-      transform.Perform(shape, Standard_True);
-      shape = transform.Shape();
-    }
-
-    {
-      gp_Trsf rotation;
-      rotation.SetRotation(gp_Ax1(origin, gp_Dir(1.0, 0.0, 0.0)), valx - _rotate_x);
-      BRepBuilderAPI_Transform transform(rotation);
-      transform.Perform(shape, Standard_True);
-      shape = transform.Shape();
-    }
-
-    _rotate_x = valx;
-    _rotate_y = valy;
     _rotate_z = valz;
   }
 

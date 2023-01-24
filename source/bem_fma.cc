@@ -39,13 +39,12 @@ BEMFMA<dim>::~BEMFMA()
 }
 
 template <int dim>
-void
-BEMFMA<dim>::init_fma(const DoFHandler<dim - 1, dim> &                      input_dh,
-                      const std::vector<std::set<types::global_dof_index>> &db_in,
-                      const TrilinosWrappers::MPI::Vector &                 input_sn,
-                      const Mapping<dim - 1, dim> &                         input_mapping,
-                      unsigned int                                          quad_order,
-                      unsigned int                                          sing_quad_order)
+void BEMFMA<dim>::init_fma(const DoFHandler<dim - 1, dim> &                      input_dh,
+                           const std::vector<std::set<types::global_dof_index>> &db_in,
+                           const TrilinosWrappers::MPI::Vector &                 input_sn,
+                           const Mapping<dim - 1, dim> &                         input_mapping,
+                           unsigned int                                          quad_order,
+                           unsigned int                                          sing_quad_order)
 {
   quadrature_order          = quad_order;
   singular_quadrature_order = sing_quad_order;
@@ -63,8 +62,7 @@ BEMFMA<dim>::init_fma(const DoFHandler<dim - 1, dim> &                      inpu
 }
 
 template <int dim>
-void
-BEMFMA<dim>::declare_parameters(ParameterHandler &prm)
+void BEMFMA<dim>::declare_parameters(ParameterHandler &prm)
 {
   prm.enter_subsection("Octree Params");
   {
@@ -87,8 +85,7 @@ BEMFMA<dim>::declare_parameters(ParameterHandler &prm)
 }
 
 template <int dim>
-void
-BEMFMA<dim>::parse_parameters(ParameterHandler &prm)
+void BEMFMA<dim>::parse_parameters(ParameterHandler &prm)
 {
   prm.enter_subsection("Octree Params");
   {
@@ -108,8 +105,7 @@ BEMFMA<dim>::parse_parameters(ParameterHandler &prm)
 
 
 template <int dim>
-void
-BEMFMA<dim>::direct_integrals()
+void BEMFMA<dim>::direct_integrals()
 {
   pcout << "Computing direct integrals..." << std::endl;
   Teuchos::TimeMonitor LocalTimer(*DirInt);
@@ -985,12 +981,12 @@ BEMFMA<dim>::direct_integrals()
   // a bind to let WorkStream see a function requiring only 3 arguments
   WorkStream::run(childlessList.begin(),
                   childlessList.end(),
-                  std_cxx11::bind(f_worker_direct_childless_non_int_list,
-                                  std_cxx11::_1,
-                                  std_cxx11::_2,
-                                  std_cxx11::_3,
-                                  support_points,
-                                  sing_quadratures),
+                  std::bind(f_worker_direct_childless_non_int_list,
+                            std::placeholders::_1,
+                            std::placeholders::_2,
+                            std::placeholders::_3,
+                            support_points,
+                            sing_quadratures),
                   f_copier_direct,
                   direct_childless_scratch_data,
                   direct_childless_copy_data);
@@ -1143,12 +1139,12 @@ BEMFMA<dim>::direct_integrals()
     DirectCopyData    direct_bigger_copy_data;
     WorkStream::run(dofs_filled_blocks[level].begin(),
                     dofs_filled_blocks[level].end(),
-                    std_cxx11::bind(f_worker_direct_bigger_blocks,
-                                    std_cxx11::_1,
-                                    std_cxx11::_2,
-                                    std_cxx11::_3,
-                                    support_points,
-                                    startBlockLevel),
+                    std::bind(f_worker_direct_bigger_blocks,
+                              std::placeholders::_1,
+                              std::placeholders::_2,
+                              std::placeholders::_3,
+                              support_points,
+                              startBlockLevel),
                     f_copier_direct,
                     direct_bigger_scratch_data,
                     direct_bigger_copy_data);
@@ -1610,8 +1606,7 @@ BEMFMA<dim>::direct_integrals()
 // The following function set up the structure needed to generate the multipole
 // expansions with a Boundary Element Method.
 template <int dim>
-void
-BEMFMA<dim>::multipole_integrals()
+void BEMFMA<dim>::multipole_integrals()
 {
   pcout << "Computing multipole integrals..." << std::endl;
   Teuchos::TimeMonitor LocalTimer(*MultInt);
@@ -1973,8 +1968,7 @@ BEMFMA<dim>::multipole_integrals()
 // need the values of the two traces of the solutions to fill the multipole
 // expansions and then to let them be translated along the octree.
 template <int dim>
-void
-BEMFMA<dim>::generate_multipole_expansions(
+void BEMFMA<dim>::generate_multipole_expansions(
   const TrilinosWrappers::MPI::Vector &phi_values_in,
   const TrilinosWrappers::MPI::Vector &dphi_dn_values_in) const
 {
@@ -2335,11 +2329,11 @@ BEMFMA<dim>::generate_multipole_expansions(
     if (endLevel[level] >= startLevel[level])
       WorkStream::run(blocks.begin() + startLevel[level],
                       blocks.begin() + endLevel[level] + 1,
-                      std_cxx11::bind(f_worker_ascend,
-                                      std_cxx11::_1,
-                                      std_cxx11::_2,
-                                      std_cxx11::_3,
-                                      startLevel[level]),
+                      std::bind(f_worker_ascend,
+                                std::placeholders::_1,
+                                std::placeholders::_2,
+                                std::placeholders::_3,
+                                startLevel[level]),
                       f_copier_ascend,
                       sample_scratch,
                       sample_copy);
@@ -2394,11 +2388,10 @@ BEMFMA<dim>::generate_multipole_expansions(
 // {}
 // The following functions takes care of the descending phase of the FMA.
 template <int dim>
-void
-BEMFMA<dim>::multipole_matr_vect_products(const TrilinosWrappers::MPI::Vector &phi_values,
-                                          const TrilinosWrappers::MPI::Vector &dphi_dn_values,
-                                          TrilinosWrappers::MPI::Vector &      matrVectProdN,
-                                          TrilinosWrappers::MPI::Vector &      matrVectProdD) const
+void BEMFMA<dim>::multipole_matr_vect_products(const TrilinosWrappers::MPI::Vector &phi_values,
+                                               const TrilinosWrappers::MPI::Vector &dphi_dn_values,
+                                               TrilinosWrappers::MPI::Vector &      matrVectProdN,
+                                               TrilinosWrappers::MPI::Vector &matrVectProdD) const
 {
   pcout << "Computing multipole matrix-vector products... " << std::endl;
   Teuchos::TimeMonitor LocalTimer(*MatrVec);
@@ -2755,11 +2748,11 @@ BEMFMA<dim>::multipole_matr_vect_products(const TrilinosWrappers::MPI::Vector &p
     if (endBlockLevel >= startBlockLevel)
       WorkStream::run(dofs_filled_blocks[level].begin(),
                       dofs_filled_blocks[level].end(),
-                      std_cxx11::bind(f_worker_Descend,
-                                      std_cxx11::_1,
-                                      std_cxx11::_2,
-                                      std_cxx11::_3,
-                                      startBlockLevel),
+                      std::bind(f_worker_Descend,
+                                std::placeholders::_1,
+                                std::placeholders::_2,
+                                std::placeholders::_3,
+                                startBlockLevel),
                       f_copier_Descend,
                       sample_scratch,
                       sample_copy);
@@ -3418,8 +3411,7 @@ BEMFMA<dim>::FMA_preconditioner(const TrilinosWrappers::MPI::Vector &alpha,
 }
 
 template <int dim>
-void
-BEMFMA<dim>::compute_geometry_cache()
+void BEMFMA<dim>::compute_geometry_cache()
 {
   pcout << "Generating geometry cache..." << std::endl;
 
@@ -3620,8 +3612,7 @@ BEMFMA<dim>::compute_geometry_cache()
 // for the fast multipole algorithm
 
 template <int dim>
-void
-BEMFMA<dim>::generate_octree_blocking()
+void BEMFMA<dim>::generate_octree_blocking()
 {
   pcout << "Generating octree blocking... " << std::endl;
   Teuchos::TimeMonitor LocalTimer(*ListCreat);

@@ -2,7 +2,8 @@ SET(TARGET test15_cad_bathymetry)
 SET(_main test15_cad_bathymetry.cc)
 
 
-set(OPENCASCADE_DIR /home/ole/dev/tools/oce-0.18.3)
+#set(OPENCASCADE_DIR /home/ole/dev/tools/oce-0.18.3)
+set(OPENCASCADE_DIR /usr/local/oce-upstream-V7_5_0)
 message("OpenCASCADE directory:")
 message(${OPENCASCADE_DIR})
 
@@ -83,7 +84,54 @@ FOREACH(_build_type ${_d2_build_types})
 		MESSAGE("-- Configuring executable ${_exe}")
 		ADD_EXECUTABLE(${_exe} ${_main})
 		target_compile_definitions(${_exe} PUBLIC DEAL_II_DIMENSION=${_dim})
-		TARGET_LINK_LIBRARIES(${_exe} ${_lib} Boost::program_options Boost::filesystem)
+		TARGET_LINK_LIBRARIES(${_exe} 
+              ${_lib} 
+              Boost::program_options Boost::filesystem
+${OPENCASCADE_DIR}/lib/libTKernel.so
+${OPENCASCADE_DIR}/lib/libTKMath.so
+${OPENCASCADE_DIR}/lib/libTKG2d.so
+${OPENCASCADE_DIR}/lib/libTKG3d.so
+${OPENCASCADE_DIR}/lib/libTKGeomBase.so
+${OPENCASCADE_DIR}/lib/libTKBRep.so
+${OPENCASCADE_DIR}/lib/libTKGeomAlgo.so
+${OPENCASCADE_DIR}/lib/libTKTopAlgo.so
+${OPENCASCADE_DIR}/lib/libTKPrim.so
+${OPENCASCADE_DIR}/lib/libTKBO.so
+${OPENCASCADE_DIR}/lib/libTKShHealing.so
+${OPENCASCADE_DIR}/lib/libTKBool.so
+${OPENCASCADE_DIR}/lib/libTKHLR.so
+${OPENCASCADE_DIR}/lib/libTKFillet.so
+${OPENCASCADE_DIR}/lib/libTKOffset.so
+${OPENCASCADE_DIR}/lib/libTKFeat.so
+${OPENCASCADE_DIR}/lib/libTKMesh.so
+${OPENCASCADE_DIR}/lib/libTKService.so
+${OPENCASCADE_DIR}/lib/libTKV3d.so
+${OPENCASCADE_DIR}/lib/libTKOpenGl.so
+${OPENCASCADE_DIR}/lib/libTKMeshVS.so
+${OPENCASCADE_DIR}/lib/libTKCDF.so
+${OPENCASCADE_DIR}/lib/libTKLCAF.so
+${OPENCASCADE_DIR}/lib/libTKCAF.so
+${OPENCASCADE_DIR}/lib/libTKBinL.so
+${OPENCASCADE_DIR}/lib/libTKXmlL.so
+${OPENCASCADE_DIR}/lib/libTKBin.so
+${OPENCASCADE_DIR}/lib/libTKXml.so
+${OPENCASCADE_DIR}/lib/libTKTObj.so
+${OPENCASCADE_DIR}/lib/libTKBinTObj.so
+${OPENCASCADE_DIR}/lib/libTKXmlTObj.so
+${OPENCASCADE_DIR}/lib/libTKXSBase.so
+${OPENCASCADE_DIR}/lib/libTKSTEPBase.so
+${OPENCASCADE_DIR}/lib/libTKSTEPAttr.so
+${OPENCASCADE_DIR}/lib/libTKSTEP209.so
+${OPENCASCADE_DIR}/lib/libTKSTEP.so
+${OPENCASCADE_DIR}/lib/libTKIGES.so
+${OPENCASCADE_DIR}/lib/libTKXDEIGES.so
+${OPENCASCADE_DIR}/lib/libTKXCAF.so
+${OPENCASCADE_DIR}/lib/libTKXDESTEP.so
+${OPENCASCADE_DIR}/lib/libTKSTL.so
+${OPENCASCADE_DIR}/lib/libTKXmlXCAF.so
+${OPENCASCADE_DIR}/lib/libTKVRML.so
+${OPENCASCADE_DIR}/lib/libTKBinXCAF.so
+              )
 		D2K_SETUP_TARGET(${_exe} ${_BUILD_TYPE})
  	ENDFOREACH()
 

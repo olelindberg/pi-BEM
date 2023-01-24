@@ -113,7 +113,7 @@ bool AdaptiveRefinement::refine(unsigned int                                 np,
       break;
     }
 
-    dealii::SolutionTransfer<2, dealii::Vector<double>, dealii::DoFHandler<2, 3>> scalarInterp(dh);
+    dealii::SolutionTransfer<2, dealii::Vector<double>, 3> scalarInterp(dh);
 
     _pcout << "mesh preparing ...\n";
     tria.prepare_coarsening_and_refinement();
