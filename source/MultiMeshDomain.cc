@@ -133,14 +133,12 @@ void MultiMeshDomain<dim>::update_triangulation()
 template <int dim>
 void MultiMeshDomain<dim>::update_domain(double positionx, double positiony, double rotationz)
 {
-  std::cout << "Setting position and rotation ..." << std::endl;
   _shapes[2].set_position(-positionx, -positiony, 10.8);
   _shapes[2].set_rotation(0.0, 0.0, -rotationz);
 
   // --------------------------------------------------------------------------
   // Find interior points on the bottom:
   // --------------------------------------------------------------------------
-  std::cout << "projecting1 ..." << std::endl;
   std::vector bottom_interior_vertex(_mesh->n_vertices(), false);
   for (auto cell = _mesh->begin_active(); cell != _mesh->end(); ++cell)
   {
@@ -156,9 +154,9 @@ void MultiMeshDomain<dim>::update_domain(double positionx, double positiony, dou
     }
   }
 
-
-
-  std::cout << "Building BVH ...\n";
+  //---------------------------------------------------------------------------
+  // Build BVH:
+  //---------------------------------------------------------------------------
   BVH_BoxSet<double, 2, TopoDS_Face> bvh_box_set;
   TopExp_Explorer                    exp;
   for (exp.Init(_shapes[2].shape, TopAbs_FACE); exp.More(); exp.Next())
@@ -176,9 +174,10 @@ void MultiMeshDomain<dim>::update_domain(double positionx, double positiony, dou
   }
   bvh_box_set.Build();
   auto bvh = bvh_box_set.BVH();
-  std::cout << "Building BVH, done\n";
 
-
+  //---------------------------------------------------------------------------
+  // Interpolate CAD surface to mesh:
+  //---------------------------------------------------------------------------
   for (auto vtx = _mesh->begin_active_vertex(); vtx != _mesh->end_vertex(); ++vtx)
   {
     if (bottom_interior_vertex[vtx->vertex_index(0)])
@@ -202,32 +201,47 @@ void MultiMeshDomain<dim>::update_domain(double positionx, double positiony, dou
       }
     }
   }
-  std::cout << "projecting1, done" << std::endl;
 
+  //---------------------------------------------------------------------------
+  // Assign vertical vertex position to solution:
+  //---------------------------------------------------------------------------
   dealii::FE_Q<2, 3>       fe(1);
   dealii::DoFHandler<2, 3> dof_handler(*_mesh);
   dof_handler.distribute_dofs(fe);
-
   dealii::Vector<double> solution(dof_handler.n_dofs());
+  std::vector<int> vertex_id_to_dof(_mesh->n_vertices());  
+  std::vector<bool> visited(_mesh->n_vertices(),false);
+  int i = 0; 
+  auto vertices = _mesh->get_vertices();   
+  for (auto cell = _mesh->begin_active();cell != _mesh->end();++cell)
   {
-    int i = 0;
-    for (auto vtx = _mesh->begin_active_vertex(); vtx != _mesh->end_vertex(); ++vtx)
+    for (int j=0;j<4;++j)
     {
-      solution[i] = vtx->vertex(0)[2];
-      ++i;
+      if (!visited[cell->vertex_index(j)])
+      {
+        solution[i] = vertices[cell->vertex_index(j)][2];
+        vertex_id_to_dof[cell->vertex_index(j)] = i;
+        visited[cell->vertex_index(j)] = true;
+        ++i;
+      }
     }
   }
 
+  //---------------------------------------------------------------------------
+  // Interpolate to hanging nodes:
+  //---------------------------------------------------------------------------
   dealii::AffineConstraints<double> constraints;
   dealii::DoFTools::make_hanging_node_constraints(dof_handler, constraints);
   constraints.distribute(solution);
+
+  //---------------------------------------------------------------------------
+  // Assign the interpolated vertical vertex positions to vertices:
+  //---------------------------------------------------------------------------
+  i = 0;
+  for (auto vtx = _mesh->begin_active_vertex(); vtx != _mesh->end_vertex(); ++vtx)
   {
-    int i = 0;
-    for (auto vtx = _mesh->begin_active_vertex(); vtx != _mesh->end_vertex(); ++vtx)
-    {
-      vtx->vertex(0)[2] = solution[i];
-      ++i;
-    }
+    vtx->vertex(0)[2] = solution[vertex_id_to_dof[i]];
+    ++i;
   }
 }
 

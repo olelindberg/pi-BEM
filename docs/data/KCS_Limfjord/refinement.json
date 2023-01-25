@@ -21,12 +21,12 @@
         "ymax": 16.1,
         "zmin": -1000,
         "zmax": 1000,
-        "refinement_levels": 0
+        "refinement_levels": 1000
     },
     "boxRefinement": {
         "manifold_id": 3,
         "aspectRatioMax": 5.0,
-        "cellSizeMin": 10.0,
+        "cellSizeMin": 5.0,
         "xmin": 0,
         "xmax": 230,
         "ymin": -16.1,
