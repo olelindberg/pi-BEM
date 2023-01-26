@@ -49,10 +49,10 @@ public:
       input.set_filename("limfjord_seabed.iges");
       input.set_mesh_projection("directional");
       input.set_mesh_element_id(3);
-      input.set_pre_translate_x(-581628.0);
-      input.set_pre_translate_y(-6314958.0);
+      //      input.set_pre_translate_x(-581628.0);
+      //      input.set_pre_translate_y(-6314958.0);
       input.set_pre_translate_z(10.8);
-      input.set_rotate_z(-2.5);
+      //      input.set_rotate_z(-2.5);
 
       _shape_inputs.push_back(input);
     }

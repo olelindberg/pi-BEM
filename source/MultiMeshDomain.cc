@@ -187,7 +187,7 @@ void MultiMeshDomain<dim>::update_domain(double positionx, double positiony, dou
       bvh_surface_selector.set_point(bvh_vec_t(vtx->vertex(0)[0], vtx->vertex(0)[1]));
       if (bvh_surface_selector.Select() > 0)
       {
-        gp_Pnt point(vtx->vertex(0)[0], vtx->vertex(0)[1], 0.0);
+        gp_Pnt point(vtx->vertex(0)[0], vtx->vertex(0)[1], 1000.0);
         gp_Dir direction(0.0, 0.0, -1.0);
         gp_Lin line(point, direction);
         Handle(Geom_Line) line2 = GC_MakeLine(point, direction);
@@ -209,19 +209,19 @@ void MultiMeshDomain<dim>::update_domain(double positionx, double positiony, dou
   dealii::DoFHandler<2, 3> dof_handler(*_mesh);
   dof_handler.distribute_dofs(fe);
   dealii::Vector<double> solution(dof_handler.n_dofs());
-  std::vector<int> vertex_id_to_dof(_mesh->n_vertices());  
-  std::vector<bool> visited(_mesh->n_vertices(),false);
-  int i = 0; 
-  auto vertices = _mesh->get_vertices();   
-  for (auto cell = _mesh->begin_active();cell != _mesh->end();++cell)
+  std::vector<int>       vertex_id_to_dof(_mesh->n_vertices());
+  std::vector<bool>      visited(_mesh->n_vertices(), false);
+  int                    i        = 0;
+  auto                   vertices = _mesh->get_vertices();
+  for (auto cell = _mesh->begin_active(); cell != _mesh->end(); ++cell)
   {
-    for (int j=0;j<4;++j)
+    for (int j = 0; j < 4; ++j)
     {
       if (!visited[cell->vertex_index(j)])
       {
-        solution[i] = vertices[cell->vertex_index(j)][2];
+        solution[i]                             = vertices[cell->vertex_index(j)][2];
         vertex_id_to_dof[cell->vertex_index(j)] = i;
-        visited[cell->vertex_index(j)] = true;
+        visited[cell->vertex_index(j)]          = true;
         ++i;
       }
     }

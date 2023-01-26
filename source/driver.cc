@@ -135,11 +135,12 @@ void Driver<dim>::run(std::string input_path, std::string output_path)
     for (unsigned int i = 0; i < route.size() - 1; ++i)
     {
       auto delta   = route[i + 1] - route[i];
-      auto heading = std::atan2(delta[1], delta[0]);
+      auto heading = 0.0 * std::atan2(delta[1], delta[0]);
       auto pi      = std::acos(-1.0);
       if (heading < 0.0)
         heading += 2.0 * pi;
       std::cout << "Waypoint " << i << ":\n";
+      std::cout << std::setprecision(16);
       std::cout << "Position: " << route[i] << std::endl;
       std::cout << "Heading:  " << heading << std::endl;
 
