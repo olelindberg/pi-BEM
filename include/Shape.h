@@ -13,14 +13,16 @@ public:
   {
     double translate_x = valx - _position_x;
     double translate_y = valy - _position_y;
-    double angle_z     = _rotate_z;
+    double translate_z = valz - _position_z;
 
-    double translate_x_local = std::cos(angle_z) * translate_x - std::sin(angle_z) * translate_y;
-    double translate_y_local = std::sin(angle_z) * translate_x + std::cos(angle_z) * translate_y;
+    double translate_x_local =
+      std::cos(_rotate_z) * translate_x - std::sin(_rotate_z) * translate_y;
+    double translate_y_local =
+      std::sin(_rotate_z) * translate_x + std::cos(_rotate_z) * translate_y;
 
     {
       gp_Trsf translate;
-      translate.SetTranslation(gp_Vec(translate_x_local, translate_y_local, 0.0));
+      translate.SetTranslation(gp_Vec(translate_x_local, translate_y_local, translate_z));
       BRepBuilderAPI_Transform transform(translate);
       transform.Perform(shape);
       shape = transform.Shape();
