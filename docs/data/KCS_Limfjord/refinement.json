@@ -5,7 +5,7 @@
             1,
             2
         ],
-        "refinement_levels": 0
+        "refinement_levels": 1000
     },
     "heightRatioRefinement": {
         "height_ratio_max": 0.3,
@@ -25,7 +25,7 @@
     },
     "boxRefinement": {
         "manifold_id": 3,
-        "aspectRatioMax": 5.0,
+        "aspectRatioMax": 4.0,
         "cellSizeMin": 5.0,
         "xmin": 0,
         "xmax": 230,

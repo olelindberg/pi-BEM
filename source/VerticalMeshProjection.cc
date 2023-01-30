@@ -68,19 +68,7 @@ VerticalMeshProjection<dim, spacedim>::VerticalMeshProjection(TopoDS_Shape &sh,
   : sh(sh)
   , _reference_level(reference_level)
   , tolerance(tolerance)
-{
-  Assert(spacedim == 3, ExcNotImplemented());
-  Assert(std::get<0>(count_elements(sh)) > 0,
-         ExcMessage("VerticalMeshProjection needs a shape containing faces to operate."));
-  Standard_Real aDeflection = 0.0001, deflection;
-  Standard_Real aXmin, aYmin, aZmin, aXmax, aYmax, aZmax;
-  Bnd_Box       box;
-  BRepBndLib::Add(sh, box);
-  box.Get(aXmin, aYmin, aZmin, aXmax, aYmax, aZmax);
-  deflection =
-    sqrt(pow(aXmax - aXmin, 2) + pow(aYmax - aYmin, 2) + pow(aZmax - aZmin, 2)) * aDeflection;
-  BRepMesh_IncrementalMesh Inc(sh, deflection);
-}
+{}
 
 template <int dim, int spacedim>
 std::unique_ptr<Manifold<dim, spacedim>> VerticalMeshProjection<dim, spacedim>::clone() const
@@ -103,7 +91,6 @@ VerticalMeshProjection<dim, spacedim>::project_to_manifold(const ArrayView<const
   dealii::Point<3> point;
   if (!my_line_intersection(sh, candidate, average_normal, tolerance, point))
   {
-    std::cout << _reference_level << std::endl;
     point = dealii::Point<3>(candidate[0], candidate[1], _reference_level);
   }
   return point;

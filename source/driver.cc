@@ -132,7 +132,8 @@ void Driver<dim>::run(std::string input_path, std::string output_path)
     _physical_domain->refine_and_resize(input_path);
 
     // Loop route:
-    for (unsigned int i = 0; i < route.size() - 1; ++i)
+    // for (unsigned int i = 0; i < route.size() - 1; ++i)
+    int i = 10;
     {
       auto delta   = route[i + 1] - route[i];
       auto heading = std::atan2(delta[1], delta[0]);
@@ -146,8 +147,8 @@ void Driver<dim>::run(std::string input_path, std::string output_path)
 
       _physical_domain->update_domain(route[i][0], route[i][1], heading);
       _physical_domain->update_triangulation();
-      //      bem_problem->reinit();
-      //      boundary_conditions->solve_problem(body);
+      bem_problem->reinit();
+      boundary_conditions->solve_problem(body);
 
       if (false && !global_refinement) // adaptive refinement
       {
@@ -351,11 +352,10 @@ void Driver<dim>::run(std::string input_path, std::string output_path)
       GridOut grid_out0;
       grid_out0.write_ucd(_physical_domain->getTria(), logfile0);
 
-      //      std::string filename =
-      //        boost::filesystem::path(output_path).append(boundary_conditions->output_file_name).string();
-      //      boundary_conditions->output_results(filename, i); // \todo change to Writer in
-      //      Writer.h
-    } // for route points
+      std::string filename =
+        boost::filesystem::path(output_path).append(boundary_conditions->output_file_name).string();
+      boundary_conditions->output_results(filename, i); // \todo change to Writer in Writer.h
+    }                                                   // for route points
   }
   catch (std::exception &e)
   {

@@ -3,8 +3,8 @@
     "density": 1000,
     "potentialErrorEstimatorMax": 2.05,
     "velocityErrorEstimatorMax": 2.05,
-    "aspectRatioMax": 2.5,
-    "cellSizeMin": 2.0,
+    "aspectRatioMax": 4.0,
+    "cellSizeMin": 5.0,
     "adaptiveRefinementLevels": 1000,
     "iterMax": 1000
 }

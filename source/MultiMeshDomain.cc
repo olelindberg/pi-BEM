@@ -196,11 +196,17 @@ void MultiMeshDomain<dim>::update_domain(double positionx, double positiony, dou
           GeomAPI_IntCS geom_intersect;
           geom_intersect.Perform(line2, surface);
           if (geom_intersect.IsDone() && geom_intersect.NbPoints() > 0)
-            vtx->vertex(0)[2] = geom_intersect.Point(1).Z();
+          {
+            double posz = geom_intersect.Point(1).Z();
+            // if (posz > 10.7)
+            //   posz = 10.7;
+            vtx->vertex(0)[2] = posz;
+          }
         }
       }
     }
   }
+
 
   //---------------------------------------------------------------------------
   // Assign vertical vertex position to solution:
