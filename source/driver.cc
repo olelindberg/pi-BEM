@@ -95,6 +95,7 @@ void Driver<dim>::run(std::string input_path, std::string output_path)
 {
   try
   {
+    int writeCnt = 0;
     //-------------------------------------------------------------------------
     // Pre steps:
     //-------------------------------------------------------------------------
@@ -132,27 +133,26 @@ void Driver<dim>::run(std::string input_path, std::string output_path)
     _physical_domain->refine_and_resize(input_path);
 
     // Loop route:
-    // for (unsigned int i = 0; i < route.size() - 1; ++i)
-    int i = 10;
+    for (unsigned int i = 0; i < route.size() - 1; ++i)
     {
       auto delta   = route[i + 1] - route[i];
       auto heading = std::atan2(delta[1], delta[0]);
       auto pi      = std::acos(-1.0);
       if (heading < 0.0)
         heading += 2.0 * pi;
-      std::cout << "Waypoint " << i << ":\n";
+      std::cout << "Waypoint " << i << ": ";
       std::cout << std::setprecision(16);
-      std::cout << "Position: " << route[i] << std::endl;
-      std::cout << "Heading:  " << heading << std::endl;
+      std::cout << "Position: " << route[i];
+      std::cout << ", Heading: " << heading << std::endl;
 
       _physical_domain->update_domain(route[i][0], route[i][1], heading);
       _physical_domain->update_triangulation();
+
       bem_problem->reinit();
       boundary_conditions->solve_problem(body);
 
-      if (false && !global_refinement) // adaptive refinement
+      if (!global_refinement) // adaptive refinement
       {
-        pcout << "Adaptive refinement ...\n";
         Teuchos::TimeMonitor LocalTimer(*TotalTime);
 
         AdaptiveRefinement adaptiveRefinement(pcout,
@@ -165,10 +165,6 @@ void Driver<dim>::run(std::string input_path, std::string output_path)
 
         for (int i = 0; i < pibemSettings.adaptiveRefinementLevels; ++i)
         {
-          pcout << "Refinement level " << i << " ...\n";
-
-
-
           if (!adaptiveRefinement.refine(n_mpi_processes,
                                          bem_problem->this_mpi_process,
                                          *bem_problem->fe,
@@ -187,13 +183,17 @@ void Driver<dim>::run(std::string input_path, std::string output_path)
           pcout << "Degrees of Freedom: DOF = " << bem_problem->dh.n_dofs() << std::endl;
 
           Writer writer;
-          writer.addScalarField("error_estimator",
+          writer.addScalarField("error_estimator_potential",
                                 adaptiveRefinement.get_error_estimator_potential());
-          writer.saveScalarFields(std::string(input_path).append("/scalars.vtu"),
+          writer.addScalarField("error_estimator_velocity",
+                                adaptiveRefinement.get_error_estimator_velocity());
+          writer.saveScalarFields(std::string(output_path)
+                                    .append("/error_estimators" + std::to_string(writeCnt) +
+                                            ".vtu"),
                                   bem_problem->dh,
                                   bem_problem->mapping,
                                   bem_problem->mapping_degree);
-
+          ++writeCnt;
           boundary_conditions->solve_problem(body);
         }
       }
@@ -346,16 +346,11 @@ void Driver<dim>::run(std::string input_path, std::string output_path)
       }
 
 
-      std::string   filename0 = "mesh_out" + std::to_string(i) + ".inp";
-      std::ofstream logfile0(filename0.c_str());
-      logfile0 << std::setprecision(16);
-      GridOut grid_out0;
-      grid_out0.write_ucd(_physical_domain->getTria(), logfile0);
-
       std::string filename =
         boost::filesystem::path(output_path).append(boundary_conditions->output_file_name).string();
       boundary_conditions->output_results(filename, i); // \todo change to Writer in Writer.h
-    }                                                   // for route points
+
+    } // for route points
   }
   catch (std::exception &e)
   {

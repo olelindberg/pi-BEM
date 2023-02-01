@@ -7,6 +7,9 @@
 #include "../include/ShapesReader.h"
 #include "../include/Writer.h"
 
+#include "../include/BVH_SurfaceSelector.h"
+
+
 #include <BRep_Tool.hxx>
 #include <BVH_BoxSet.hxx>
 #include <GeomAPI_IntCS.hxx>
@@ -24,50 +27,6 @@
 //#include <deal.II/grid/grid_tools.h>
 
 #include <filesystem>
-
-typedef BVH_Box<double, 2>                 bvh_box_t;
-typedef BVH_BoxSet<double, 2, TopoDS_Face> bvh_boxset_t;
-typedef bvh_box_t::BVH_VecNt               bvh_vec_t;
-
-class BVH_SurfaceSelector : public BVH_Traverse<double, 2, bvh_boxset_t, double>
-{
-public:
-  virtual Standard_Boolean
-  RejectNode(const bvh_vec_t &theCMin, const bvh_vec_t &theCMax, double &) const Standard_OVERRIDE
-  {
-    if (theCMin.x() < _point.x() && _point.x() < theCMax.x())
-      if (theCMin.y() < _point.y() && _point.y() < theCMax.y())
-        return false;
-    return true;
-  }
-
-  virtual Standard_Boolean Accept(const Standard_Integer theIndex, const double &) Standard_OVERRIDE
-  {
-    const TopoDS_Face &face = myBVHSet->Element(theIndex);
-    const bvh_box_t &  box  = myBVHSet->Box(theIndex);
-
-    double dummy;
-    if (!this->RejectNode(box.CornerMin(), box.CornerMax(), dummy))
-    {
-      _surfaces.push_back(BRep_Tool::Surface(myBVHSet->Element(theIndex)));
-      return true;
-    }
-    return false;
-  }
-
-  void set_point(const bvh_vec_t &point)
-  {
-    _point = point;
-  }
-  const std::vector<Handle(Geom_Surface)> &get_surfaces()
-  {
-    return _surfaces;
-  }
-
-private:
-  bvh_vec_t                         _point;
-  std::vector<Handle(Geom_Surface)> _surfaces;
-};
 
 
 
@@ -103,25 +62,12 @@ void MultiMeshDomain<dim>::read_domain(std::string input_path)
 template <int dim>
 void MultiMeshDomain<dim>::refine_and_resize(std::string input_path)
 {
-  pcout << "Refining and resizing ... " << std::endl;
   auto filename       = std::filesystem::path(input_path).append("refinement.json").string();
   auto gridrefinement = GridRefinementCreator::create(filename, pcout);
 
-  pcout << "Saving ... " << std::endl;
-  Writer writer;
-  writer.save("/home/ole/dev/temp/trimeshinit.vtu", *_mesh);
-
-  pcout << "Refining ... " << std::endl;
   // Do the refinement:
-  int cnt = 0;
   for (const auto &refinement : gridrefinement)
-  {
     refinement->refine(*_mesh);
-    writer.save(
-      std::string("/home/ole/dev/temp/trimeshrefine").append(std::to_string(cnt)).append(".vtu"),
-      *_mesh);
-    ++cnt;
-  }
 }
 
 template <int dim>
@@ -135,6 +81,10 @@ void MultiMeshDomain<dim>::update_domain(double positionx, double positiony, dou
 {
   _shapes[2].set_position(-positionx, -positiony, 10.8);
   _shapes[2].set_rotation(0.0, 0.0, -rotationz);
+
+  KCS_LimfjordSetup setup;
+  _manifolds.clear();
+  _manifolds = ManifoldCreator::make(setup.shape_inputs(), _shapes, *_mesh);
 
   // --------------------------------------------------------------------------
   // Find interior points on the bottom:
@@ -198,8 +148,8 @@ void MultiMeshDomain<dim>::update_domain(double positionx, double positiony, dou
           if (geom_intersect.IsDone() && geom_intersect.NbPoints() > 0)
           {
             double posz = geom_intersect.Point(1).Z();
-            // if (posz > 10.7)
-            //   posz = 10.7;
+            if (posz > 10.7)
+              posz = 10.7;
             vtx->vertex(0)[2] = posz;
           }
         }

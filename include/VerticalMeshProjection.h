@@ -17,6 +17,8 @@
 #ifndef VERTICAL_MESH_PROJECTION_H
 #define VERTICAL_MESH_PROJECTION_H
 
+#include "../include/BVH_SurfaceSelector.h"
+
 #include <deal.II/base/config.h>
 
 #include <deal.II/grid/manifold.h>
@@ -41,6 +43,8 @@ protected:
   TopoDS_Shape &                                               sh;
   double                                                       _reference_level = 0.0;
   const double                                                 tolerance;
+  bvh_boxset_t                                                 _bvh_boxset;
+
 
 private:
 };

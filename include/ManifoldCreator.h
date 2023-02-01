@@ -29,7 +29,6 @@ public:
     {
       if (input.get_mesh_projection() == "directional")
       {
-        std::cout << "creating directional projection" << std::endl;
         auto manifold = std::make_shared<dealii::VerticalMeshProjection<2, 3>>(
           shape->shape,
           input.get_pre_translate_z(),
@@ -38,7 +37,6 @@ public:
       }
       else if (input.get_mesh_projection() == "normal")
       {
-        std::cout << "creating normal projection" << std::endl;
         auto manifold = std::make_shared<dealii::MyNormalToMeshProjectionManifold<2, 3>>(
           shape->shape, 1.0 * dealii::OpenCASCADE::get_shape_tolerance(shape->shape));
         manifolds.push_back(manifold);
@@ -46,7 +44,6 @@ public:
 
       else if (input.get_mesh_projection() == "arch_length")
       {
-        std::cout << "creating arch length projection" << std::endl;
         auto manifold =
           std::make_shared<dealii::OpenCASCADE::ArclengthProjectionLineManifold<2, 3>>(
             shape->shape, 1.0 * dealii::OpenCASCADE::get_shape_tolerance(shape->shape));

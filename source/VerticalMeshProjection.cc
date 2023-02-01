@@ -55,6 +55,7 @@
 
 #include "../include/VerticalMeshProjection.h"
 #include "../include/my_utilities.h"
+#include <limits>
 
 DEAL_II_NAMESPACE_OPEN
 
@@ -68,7 +69,23 @@ VerticalMeshProjection<dim, spacedim>::VerticalMeshProjection(TopoDS_Shape &sh,
   : sh(sh)
   , _reference_level(reference_level)
   , tolerance(tolerance)
-{}
+{
+  TopExp_Explorer exp;
+  for (exp.Init(sh, TopAbs_FACE); exp.More(); exp.Next())
+  {
+    TopoDS_Face face = TopoDS::Face(exp.Current());
+
+    Bnd_Box bnd_box;
+    BRepBndLib::Add(face, bnd_box);
+
+    bvh_vec_t          point_min(bnd_box.CornerMin().X(), bnd_box.CornerMin().Y());
+    bvh_vec_t          point_max(bnd_box.CornerMax().X(), bnd_box.CornerMax().Y());
+    BVH_Box<double, 2> bvh_box(point_min, point_max);
+
+    _bvh_boxset.Add(face, bvh_box);
+  }
+  _bvh_boxset.Build();
+}
 
 template <int dim, int spacedim>
 std::unique_ptr<Manifold<dim, spacedim>> VerticalMeshProjection<dim, spacedim>::clone() const
@@ -77,22 +94,44 @@ std::unique_ptr<Manifold<dim, spacedim>> VerticalMeshProjection<dim, spacedim>::
     new VerticalMeshProjection<dim, spacedim>(sh, _reference_level, tolerance));
 }
 
+void assign_to_bvh_surface_selector(const BVH_SurfaceSelector &bvh_surface_selector,
+                                    const bvh_boxset_t &       bvh_boxset,
+                                    const bvh_vec_t &          point)
+{
+  BVH_SurfaceSelector &bvhss = const_cast<BVH_SurfaceSelector &>(bvh_surface_selector);
+  bvhss.SetBVHSet(const_cast<bvh_boxset_t *>(&bvh_boxset));
+  bvhss.set_point(point);
+}
 
 template <int dim, int spacedim>
 Point<spacedim>
 VerticalMeshProjection<dim, spacedim>::project_to_manifold(const ArrayView<const Point<spacedim>> &,
                                                            const Point<spacedim> &candidate) const
 {
-  Tensor<1, 3> average_normal;
-  average_normal[0] = 0.0;
-  average_normal[1] = 0.0;
-  average_normal[2] = -1.0;
+  dealii::Point<3> point(candidate[0], candidate[1], _reference_level);
 
-  dealii::Point<3> point;
-  if (!my_line_intersection(sh, candidate, average_normal, tolerance, point))
+
+  BVH_SurfaceSelector bvh_surface_selector;
+  assign_to_bvh_surface_selector(bvh_surface_selector,
+                                 _bvh_boxset,
+                                 bvh_vec_t(candidate[0], candidate[1]));
+  if (bvh_surface_selector.Select() > 0)
   {
-    point = dealii::Point<3>(candidate[0], candidate[1], _reference_level);
+    Handle(Geom_Line) line2 =
+      GC_MakeLine(gp_Pnt(candidate[0], candidate[1], 1000.0), gp_Dir(0.0, 0.0, -1.0));
+    for (auto &surface : bvh_surface_selector.get_surfaces())
+    {
+      GeomAPI_IntCS geom_intersect;
+      geom_intersect.Perform(line2, surface);
+      if (geom_intersect.IsDone() && geom_intersect.NbPoints() > 0)
+      {
+        point[2] = geom_intersect.Point(1).Z();
+      }
+    }
   }
+
+  if (point[2] > 10.7)
+    point[2] = 10.7;
   return point;
 }
 

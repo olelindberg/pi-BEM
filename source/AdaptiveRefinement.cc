@@ -43,10 +43,7 @@ bool AdaptiveRefinement::refine(unsigned int                                 np,
     if (lmin < cellSizeMin)
       cellSizeMin = lmin;
   }
-  std::cout << "Cell size min " << cellSizeMin << std::endl;
   cellSizeMin = std::max(_cellSizeMin, cellSizeMin);
-  std::cout << "Cell size min " << cellSizeMin << std::endl;
-
 
   //---------------------------------------------------------------------------
   // Parallel calculation of velocity magnitude:
@@ -115,17 +112,9 @@ bool AdaptiveRefinement::refine(unsigned int                                 np,
 
     dealii::SolutionTransfer<2, dealii::Vector<double>, 3> scalarInterp(dh);
 
-    _pcout << "mesh preparing ...\n";
     tria.prepare_coarsening_and_refinement();
-    _pcout << "mesh preparing, done\n";
-
-    _pcout << "interp preparing ...\n";
     scalarInterp.prepare_for_pure_refinement();
-    _pcout << "interp preparing, done\n";
-
-    _pcout << "mesh refining ...\n";
     tria.execute_coarsening_and_refinement();
-    _pcout << "mesh refining, done\n";
 
     dealii::GridTools::partition_triangulation(np, tria);
 
@@ -140,35 +129,6 @@ bool AdaptiveRefinement::refine(unsigned int                                 np,
     dealii::Vector<double> vel_mag_old(velocity_magnitude_local);
     velocity_magnitude_local.reinit(dh.n_dofs());
     scalarInterp.refine_interpolate(vel_mag_old, velocity_magnitude_local);
-
-    Writer      writer;
-    std::string postfix;
-    if (writeCount < 10)
-      postfix = "00000";
-    else if (writeCount < 100)
-      postfix = "0000";
-    else if (writeCount < 1000)
-      postfix = "000";
-    else if (writeCount < 10000)
-      postfix = "00";
-    else if (writeCount < 100000)
-      postfix = "0";
-    else if (writeCount < 1000000)
-      postfix = "";
-
-    writer.save(std::string("/home/ole/dev/temp/trimesh")
-                  .append(postfix)
-                  .append(std::to_string(writeCount))
-                  .append(".vtu"),
-                tria);
-    ++writeCount;
-
-
-    _pcout << "Number of cells refinement by potential error estimator: " << numCellsPot
-           << std::endl;
-    _pcout << "Number of cells refinement by velocity error estimator: " << numCellsVel
-           << std::endl;
-    _pcout << "Number of cells after adaptive refinement: " << tria.n_active_cells() << std::endl;
 
     isrefined = true;
   }

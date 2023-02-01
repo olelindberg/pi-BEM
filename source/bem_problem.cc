@@ -106,7 +106,6 @@ void BEMProblem<dim>::reinit()
   DoFRenumbering::component_wise(dh);
   DoFRenumbering::component_wise(gradient_dh);
 
-  pcout << "Re-ordering vectors ..." << std::endl;
   compute_reordering_vectors();
 
   DoFRenumbering::subdomain_wise(dh);
@@ -171,7 +170,6 @@ void BEMProblem<dim>::reinit()
   serv_tmp_rhs.reinit(this_cpu_set, mpi_communicator);
 
   // TrilinosWrappers::SparsityPattern for the BEM matricesreinitialization
-  pcout << "re-initializing sparsity patterns and matrices" << std::endl;
   if (solution_method == "Direct")
   {
     full_sparsity_pattern.reinit(this_cpu_set, mpi_communicator);
@@ -186,7 +184,6 @@ void BEMProblem<dim>::reinit()
     neumann_matrix.reinit(full_sparsity_pattern);
     dirichlet_matrix.reinit(full_sparsity_pattern);
   }
-  pcout << "re-initialized sparsity patterns and matrices" << std::endl;
 
   preconditioner_band = 100;
   preconditioner_sparsity_pattern.reinit(this_cpu_set,
@@ -481,7 +478,6 @@ template <int dim>
 void BEMProblem<dim>::assemble_system()
 {
   Teuchos::TimeMonitor LocalTimer(*AssembleTime);
-  pcout << "(Directly) Assembling system matrices" << std::endl;
 
   neumann_matrix   = 0;
   dirichlet_matrix = 0;
@@ -962,7 +958,6 @@ template <int dim>
 void BEMProblem<dim>::_assemble_system_double_body(double z0)
 {
   Teuchos::TimeMonitor LocalTimer(*AssembleTime);
-  pcout << "(Directly) Assembling system double body matrices " << z0 << std::endl;
 
   neumann_matrix   = 0;
   dirichlet_matrix = 0;
@@ -1752,8 +1747,6 @@ template <int dim>
 void BEMProblem<dim>::compute_gradients(const TrilinosWrappers::MPI::Vector &glob_phi,
                                         const TrilinosWrappers::MPI::Vector &glob_dphi_dn)
 {
-  pcout << "BEMProblem<dim>::compute_gradients" << std::endl;
-
   Teuchos::TimeMonitor LocalTimer(*GradientTime);
 
   // We need the solution to be stored on a parallel vector with ghost elements.
@@ -1885,8 +1878,6 @@ void BEMProblem<dim>::compute_gradients(const TrilinosWrappers::MPI::Vector &glo
 template <int dim>
 void BEMProblem<dim>::compute_surface_gradients(const TrilinosWrappers::MPI::Vector &tmp_rhs)
 {
-  pcout << "BEMProblem<dim>::compute_surface_gradients" << std::endl;
-
   Teuchos::TimeMonitor          LocalTimer(*SurfaceGradientTime);
   TrilinosWrappers::MPI::Vector phi(ghosted_set);
   phi.reinit(tmp_rhs, false, true);
@@ -2006,8 +1997,6 @@ void BEMProblem<dim>::compute_surface_gradients(const TrilinosWrappers::MPI::Vec
 template <int dim>
 void BEMProblem<dim>::compute_normals()
 {
-  pcout << "Computing boundary normals ...\n";
-
   Teuchos::TimeMonitor LocalTimer(*NormalsTime);
   vector_normals_solution.reinit(vector_this_cpu_set, mpi_communicator);
 

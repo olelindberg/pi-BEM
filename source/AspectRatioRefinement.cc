@@ -9,8 +9,6 @@ void AspectRatioRefinement::refine(dealii::Triangulation<2, 3> &tria)
   // flagged for refinement, or until we reach a maximum of 10 cycles
   while (refinedCellCounter > 0 && (cycles_counter < (unsigned int)itermax))
   {
-    _pcout << "Refining based on element aspect ratio ...\n";
-
     // the refined cells counter is zeroed at the start of each cycle
     refinedCellCounter = 0;
     // we loop on the all the triangulation active cells
@@ -49,8 +47,6 @@ void AspectRatioRefinement::refine(dealii::Triangulation<2, 3> &tria)
     }
     // the number of cells refined in this cycle is reported before
     // proceeding with the next one
-    _pcout << "Aspect Ratio Reduction Cycle: " << cycles_counter << " (" << refinedCellCounter
-           << ")" << std::endl;
     tria.prepare_coarsening_and_refinement();
     tria.execute_coarsening_and_refinement();
 

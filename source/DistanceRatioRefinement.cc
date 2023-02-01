@@ -25,8 +25,6 @@ DistanceRatioRefinement::DistanceRatioRefinement(dealii::ConditionalOStream pcou
 
 void DistanceRatioRefinement::refine(dealii::Triangulation<2, 3> &tria)
 {
-  _pcout << "Distance refinement ... \n";
-
   for (int refineId = 0; refineId < levels; ++refineId)
   {
     for (dealii::Triangulation<2, 3>::active_cell_iterator cell = tria.begin_active();

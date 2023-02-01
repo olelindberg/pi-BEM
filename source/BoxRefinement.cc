@@ -1,7 +1,9 @@
 #include "../include/BoxRefinement.h"
 #include "../include/RefinementUtil.h"
 #include <BRepBndLib.hxx>
+#include <chrono>
 #include <gp_Pnt.hxx>
+
 
 BoxRefinement::BoxRefinement(dealii::ConditionalOStream pcout,
                              const Bnd_Box &            box,
@@ -20,8 +22,6 @@ BoxRefinement::BoxRefinement(dealii::ConditionalOStream pcout,
 
 void BoxRefinement::refine(dealii::Triangulation<2, 3> &tria)
 {
-  _pcout << "Box refinement ... \n";
-
   for (int refineId = 0; refineId < levels; ++refineId)
   {
     for (dealii::Triangulation<2, 3>::active_cell_iterator cell = tria.begin_active();
@@ -40,14 +40,15 @@ void BoxRefinement::refine(dealii::Triangulation<2, 3> &tria)
           boxx.Add(gp_Pnt(pnt[0], pnt[1], pnt[2]));
         }
 
+        auto start2 = std::chrono::high_resolution_clock::now();
         if (!_box.IsOut(boxx))
+        {
           RefinementUtil::aspectRatioRefinement(_aspectRatioMax, cell);
+        }
       }
     }
+
     tria.prepare_coarsening_and_refinement();
     tria.execute_coarsening_and_refinement();
   }
-
-  std::cout << "Number of active cells after box refinement: " << tria.n_active_cells()
-            << std::endl;
 }

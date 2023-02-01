@@ -4,8 +4,6 @@
 
 void HeightRatioRefinement::refine(dealii::Triangulation<2, 3> &tria)
 {
-  _pcout << "Height ratio refinement ...\n";
-
   for (int iter = 0; iter < itermax; ++iter)
   {
     bool isrefining = false;

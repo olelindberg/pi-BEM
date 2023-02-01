@@ -111,8 +111,6 @@ void BoundaryConditions<dim>::parse_parameters(ParameterHandler &prm)
 template <int dim>
 void BoundaryConditions<dim>::solve_problem(const Body &body)
 {
-  pcout << "Solving boundary conditions ...\n";
-
   potential.set_time(0);
   wind.set_time(0);
 
@@ -127,11 +125,9 @@ void BoundaryConditions<dim>::solve_problem(const Body &body)
   dphi_dn.reinit(this_cpu_set, mpi_communicator);
   tmp_rhs.reinit(this_cpu_set, mpi_communicator);
 
-  pcout << "Computing normal vector ...\n";
   bem.compute_normals();
   prepare_bem_vectors(body);
 
-  pcout << "Solving Laplace equation for potential ...\n";
   bem.solve(phi, dphi_dn, tmp_rhs);
   have_dirichlet_bc = bem.have_dirichlet_bc;
   if (!have_dirichlet_bc)
