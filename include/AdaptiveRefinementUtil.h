@@ -17,11 +17,10 @@ class AdaptiveRefinementUtil
 public:
   typedef typename dealii::DoFHandler<2, 3>::active_cell_iterator cell_it;
 
-  static void
-  scalarFieldRanges(int                             numCellDOF,
-                    const dealii::DoFHandler<2, 3> &dh,
-                    const dealii::Vector<double> &  scalarField,
-                    dealii::Vector<double> &        ranges)
+  static void scalarFieldRanges(int                             numCellDOF,
+                                const dealii::DoFHandler<2, 3> &dh,
+                                const dealii::Vector<double> &  scalarField,
+                                dealii::Vector<double> &        ranges)
   {
     std::vector<dealii::types::global_dof_index> indices(numCellDOF);
     for (cell_it cell = dh.begin_active(); cell != dh.end(); ++cell)
@@ -40,19 +39,35 @@ public:
     }
   }
 
-  static void
-  normalizeRanges(dealii::Vector<double> &ranges)
+  static void normalizeRanges(dealii::Vector<double> &ranges)
   {
     ranges.add(-ranges.mean_value());
     ranges /= (ranges.l2_norm() * std::sqrt(1.0 / ranges.size()));
   }
 
-  static int
-  assignRefinement(double                        errorEstimatorMax,
-                   double                        aspectRatioMax,
-                   double                        cellSizeMin,
-                   const dealii::Vector<double> &error_estimator,
-                   dealii::DoFHandler<2, 3> &    dh)
+  static void lognormParameters(const dealii::Vector<double> &ranges, double &mu, double &s2)
+  {
+    mu = 0.0;
+    for (auto val : ranges)
+      mu += std::log(val);
+    mu /= ranges.size();
+
+    s2 = 0.0;
+    for (auto val : ranges)
+    {
+      double tmp = std::log(val) - mu;
+      s2 += tmp * tmp;
+    }
+    s2 /= ranges.size();
+  }
+
+
+
+  static int assignRefinement(double                        errorEstimatorMax,
+                              double                        aspectRatioMax,
+                              double                        cellSizeMin,
+                              const dealii::Vector<double> &error_estimator,
+                              dealii::DoFHandler<2, 3> &    dh)
   {
     int cnt = 0;
     for (cell_it cell = dh.begin_active(); cell != dh.end(); ++cell)
@@ -67,6 +82,22 @@ public:
           RefinementUtil::aspectRatioRefinement(aspectRatioMax, cell);
           ++cnt;
         }
+      }
+    } // for cell in active cells
+    return cnt;
+  }
+
+  static int assignCoarsening(double                        errorEstimatorMin,
+                              const dealii::Vector<double> &error_estimator,
+                              dealii::DoFHandler<2, 3> &    dh)
+  {
+    int cnt = 0;
+    for (cell_it cell = dh.begin_active(); cell != dh.end(); ++cell)
+    {
+      if (error_estimator[cell->active_cell_index()] < errorEstimatorMin)
+      {
+        cell->set_coarsen_flag();
+        ++cnt;
       }
     } // for cell in active cells
     return cnt;

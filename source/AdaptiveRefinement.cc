@@ -74,7 +74,35 @@ bool AdaptiveRefinement::refine(unsigned int                                 np,
   dealii::Vector<double> potential_local(potential);
   dealii::Vector<double> velocity_magnitude_local(velocity_magnitude);
 
-  bool isrefined = false;
+  double factor = 2.5;
+
+  double mu, s2;
+  bool   isrefined = false;
+
+  _error_estimator_potential.reinit(tria.n_active_cells());
+  AdaptiveRefinementUtil::scalarFieldRanges(fe.dofs_per_cell,
+                                            dh,
+                                            potential_local,
+                                            _error_estimator_potential);
+  AdaptiveRefinementUtil::lognormParameters(_error_estimator_potential, mu, s2);
+  double potentialErrorEstimatorMin = std::exp(mu + s2 / 2.0 - factor * s2);
+  double potentialErrorEstimatorMax = std::exp(mu + s2 / 2.0 + factor * s2);
+
+  _error_estimator_velocity.reinit(tria.n_active_cells());
+  AdaptiveRefinementUtil::scalarFieldRanges(fe.dofs_per_cell,
+                                            dh,
+                                            velocity_magnitude_local,
+                                            _error_estimator_velocity);
+  AdaptiveRefinementUtil::lognormParameters(_error_estimator_velocity, mu, s2);
+  double velocityErrorEstimatorMin = std::exp(mu + s2 / 2.0 - factor * s2);
+  double velocityErrorEstimatorMax = std::exp(mu + s2 / 2.0 + factor * s2);
+
+  std::cout << "potentialErrorEstimatorMin " << potentialErrorEstimatorMin << std::endl;
+  std::cout << "potentialErrorEstimatorMax  " << potentialErrorEstimatorMax << std::endl;
+  std::cout << "velocityErrorEstimatorMin " << velocityErrorEstimatorMin << std::endl;
+  std::cout << "velocityErrorEstimatorMax  " << velocityErrorEstimatorMax << std::endl << std::endl;
+
+
   for (int iter = 0; iter < _iterMax; ++iter)
   {
     //---------------------------------------------------------------------------
@@ -85,7 +113,6 @@ bool AdaptiveRefinement::refine(unsigned int                                 np,
                                               dh,
                                               potential_local,
                                               _error_estimator_potential);
-    AdaptiveRefinementUtil::normalizeRanges(_error_estimator_potential);
 
     //---------------------------------------------------------------------------
     // Adaptation to velocity gradient magnitude:
@@ -95,25 +122,31 @@ bool AdaptiveRefinement::refine(unsigned int                                 np,
                                               dh,
                                               velocity_magnitude_local,
                                               _error_estimator_velocity);
-    AdaptiveRefinementUtil::normalizeRanges(_error_estimator_velocity);
 
     //---------------------------------------------------------------------------
     // Assing refinement to cells via the dof handler:
     //---------------------------------------------------------------------------
-    int numCellsPot = AdaptiveRefinementUtil::assignRefinement(
-      _potentialErrorEstimatorMax, _aspectRatioMax, cellSizeMin, _error_estimator_potential, dh);
-    int numCellsVel = AdaptiveRefinementUtil::assignRefinement(
-      _velocityErrorEstimatorMax, _aspectRatioMax, cellSizeMin, _error_estimator_velocity, dh);
+    int numRefineCellsPot = AdaptiveRefinementUtil::assignRefinement(
+      potentialErrorEstimatorMax, _aspectRatioMax, cellSizeMin, _error_estimator_potential, dh);
 
-    if (numCellsPot == 0 && numCellsVel == 0)
+    int numRefineCellsVel = AdaptiveRefinementUtil::assignRefinement(
+      velocityErrorEstimatorMax, _aspectRatioMax, cellSizeMin, _error_estimator_velocity, dh);
+
+    std::cout << "numRefineCellsPot  " << numRefineCellsPot << std::endl;
+    std::cout << "numRefineCellsVel  " << numRefineCellsVel << std::endl << std::endl;
+
+    if (numRefineCellsPot == 0 && numRefineCellsVel == 0)
     {
       break;
     }
 
-    dealii::SolutionTransfer<2, dealii::Vector<double>, 3> scalarInterp(dh);
+    dealii::SolutionTransfer<2, dealii::Vector<double>, 3> potentialInterp(dh);
+    dealii::SolutionTransfer<2, dealii::Vector<double>, 3> velocityInterp(dh);
 
+    int num_cells_before = tria.n_cells();
     tria.prepare_coarsening_and_refinement();
-    scalarInterp.prepare_for_pure_refinement();
+    potentialInterp.prepare_for_coarsening_and_refinement(potential_local);
+    velocityInterp.prepare_for_coarsening_and_refinement(velocity_magnitude_local);
     tria.execute_coarsening_and_refinement();
 
     dealii::GridTools::partition_triangulation(np, tria);
@@ -124,14 +157,87 @@ bool AdaptiveRefinement::refine(unsigned int                                 np,
 
     dealii::Vector<double> potential_old(potential_local);
     potential_local.reinit(dh.n_dofs());
-    scalarInterp.refine_interpolate(potential_old, potential_local);
+    potentialInterp.interpolate(potential_old, potential_local);
 
     dealii::Vector<double> vel_mag_old(velocity_magnitude_local);
     velocity_magnitude_local.reinit(dh.n_dofs());
-    scalarInterp.refine_interpolate(vel_mag_old, velocity_magnitude_local);
+    velocityInterp.interpolate(vel_mag_old, velocity_magnitude_local);
 
     isrefined = true;
   }
+
+  if (false)
+    for (int iter = 0; iter < _iterMax; ++iter)
+    {
+      //---------------------------------------------------------------------------
+      // Adaptation to velocity potential:
+      //---------------------------------------------------------------------------
+      _error_estimator_potential.reinit(tria.n_active_cells());
+      AdaptiveRefinementUtil::scalarFieldRanges(fe.dofs_per_cell,
+                                                dh,
+                                                potential_local,
+                                                _error_estimator_potential);
+      //---------------------------------------------------------------------------
+      // Adaptation to velocity gradient magnitude:
+      //---------------------------------------------------------------------------
+      _error_estimator_velocity.reinit(tria.n_active_cells());
+      AdaptiveRefinementUtil::scalarFieldRanges(fe.dofs_per_cell,
+                                                dh,
+                                                velocity_magnitude_local,
+                                                _error_estimator_velocity);
+
+      //---------------------------------------------------------------------------
+      // Assing refinement to cells via the dof handler:
+      //---------------------------------------------------------------------------
+      int numCoarsenCellsPot = AdaptiveRefinementUtil::assignCoarsening(potentialErrorEstimatorMin,
+                                                                        _error_estimator_potential,
+                                                                        dh);
+
+      int numCoarsenCellsVel = AdaptiveRefinementUtil::assignCoarsening(velocityErrorEstimatorMin,
+                                                                        _error_estimator_velocity,
+                                                                        dh);
+
+
+
+      std::cout << "numCoarsenCellsPot " << numCoarsenCellsPot << std::endl;
+      std::cout << "numCoarsenCellsVel " << numCoarsenCellsVel << std::endl;
+
+      if (numCoarsenCellsPot == 0 && numCoarsenCellsVel == 0)
+      {
+        break;
+      }
+
+      dealii::SolutionTransfer<2, dealii::Vector<double>, 3> potentialInterp(dh);
+      dealii::SolutionTransfer<2, dealii::Vector<double>, 3> velocityInterp(dh);
+
+      int num_cells_before = tria.n_cells();
+      tria.prepare_coarsening_and_refinement();
+      potentialInterp.prepare_for_coarsening_and_refinement(potential_local);
+      velocityInterp.prepare_for_coarsening_and_refinement(velocity_magnitude_local);
+      tria.execute_coarsening_and_refinement();
+
+      if (num_cells_before == tria.n_cells())
+        break;
+
+
+      dealii::GridTools::partition_triangulation(np, tria);
+
+      dh.distribute_dofs(fe);
+      dealii::DoFRenumbering::component_wise(dh);
+      dealii::DoFRenumbering::subdomain_wise(dh);
+
+      dealii::Vector<double> potential_old(potential_local);
+      potential_local.reinit(dh.n_dofs());
+      potentialInterp.interpolate(potential_old, potential_local);
+
+      dealii::Vector<double> vel_mag_old(velocity_magnitude_local);
+      velocity_magnitude_local.reinit(dh.n_dofs());
+      velocityInterp.interpolate(vel_mag_old, velocity_magnitude_local);
+
+      isrefined = true;
+    }
+
+
 
   return isrefined;
 }
