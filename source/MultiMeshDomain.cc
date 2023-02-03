@@ -21,6 +21,7 @@
 #include <TopoDS.hxx>
 #include <gp_Lin.hxx>
 
+#include <deal.II/dofs/dof_renumbering.h>
 #include <deal.II/dofs/dof_tools.h>
 #include <deal.II/fe/fe_q.h>
 //#include <deal.II/base/mpi.h>
@@ -157,31 +158,23 @@ void MultiMeshDomain<dim>::update_domain(double positionx, double positiony, dou
     }
   }
 
-
   //---------------------------------------------------------------------------
   // Assign vertical vertex position to solution:
   //---------------------------------------------------------------------------
-  dealii::FE_Q<2, 3>       fe(1);
+  dealii::FE_Q<2, 3> fe(1);
+
   dealii::DoFHandler<2, 3> dof_handler(*_mesh);
   dof_handler.distribute_dofs(fe);
+
   dealii::Vector<double> solution(dof_handler.n_dofs());
-  std::vector<int>       vertex_id_to_dof(_mesh->n_vertices());
-  std::vector<bool>      visited(_mesh->n_vertices(), false);
-  int                    i        = 0;
-  auto                   vertices = _mesh->get_vertices();
-  for (auto cell = _mesh->begin_active(); cell != _mesh->end(); ++cell)
-  {
+
+  std::vector<int>  vertex_id_to_dof(_mesh->n_vertices());
+  std::vector<bool> visited(_mesh->n_vertices(), false);
+
+  auto vertices = _mesh->get_vertices();
+  for (auto cell = dof_handler.begin_active(); cell != dof_handler.end(); ++cell)
     for (int j = 0; j < 4; ++j)
-    {
-      if (!visited[cell->vertex_index(j)])
-      {
-        solution[i]                             = vertices[cell->vertex_index(j)][2];
-        vertex_id_to_dof[cell->vertex_index(j)] = i;
-        visited[cell->vertex_index(j)]          = true;
-        ++i;
-      }
-    }
-  }
+      solution[cell->vertex_dof_index(j, 0)] = vertices[cell->vertex_index(j)][2];
 
   //---------------------------------------------------------------------------
   // Interpolate to hanging nodes:
@@ -193,12 +186,9 @@ void MultiMeshDomain<dim>::update_domain(double positionx, double positiony, dou
   //---------------------------------------------------------------------------
   // Assign the interpolated vertical vertex positions to vertices:
   //---------------------------------------------------------------------------
-  i = 0;
-  for (auto vtx = _mesh->begin_active_vertex(); vtx != _mesh->end_vertex(); ++vtx)
-  {
-    vtx->vertex(0)[2] = solution[vertex_id_to_dof[i]];
-    ++i;
-  }
+  for (auto cell = dof_handler.begin_active(); cell != dof_handler.end(); ++cell)
+    for (int j = 0; j < 4; ++j)
+      vertices[cell->vertex_index(j)][2] = solution[cell->vertex_dof_index(j, 0)];
 }
 
 

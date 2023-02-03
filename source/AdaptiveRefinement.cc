@@ -102,7 +102,6 @@ bool AdaptiveRefinement::refine(unsigned int                                 np,
   std::cout << "velocityErrorEstimatorMin " << velocityErrorEstimatorMin << std::endl;
   std::cout << "velocityErrorEstimatorMax  " << velocityErrorEstimatorMax << std::endl << std::endl;
 
-
   for (int iter = 0; iter < _iterMax; ++iter)
   {
     //---------------------------------------------------------------------------
@@ -131,6 +130,14 @@ bool AdaptiveRefinement::refine(unsigned int                                 np,
 
     int numRefineCellsVel = AdaptiveRefinementUtil::assignRefinement(
       velocityErrorEstimatorMax, _aspectRatioMax, cellSizeMin, _error_estimator_velocity, dh);
+
+    int numCoarsenCellsPot = AdaptiveRefinementUtil::assignCoarsening(potentialErrorEstimatorMin,
+                                                                      _error_estimator_potential,
+                                                                      dh);
+
+    int numCoarsenCellsVel = AdaptiveRefinementUtil::assignCoarsening(velocityErrorEstimatorMin,
+                                                                      _error_estimator_velocity,
+                                                                      dh);
 
     std::cout << "numRefineCellsPot  " << numRefineCellsPot << std::endl;
     std::cout << "numRefineCellsVel  " << numRefineCellsVel << std::endl << std::endl;
@@ -163,6 +170,7 @@ bool AdaptiveRefinement::refine(unsigned int                                 np,
     velocity_magnitude_local.reinit(dh.n_dofs());
     velocityInterp.interpolate(vel_mag_old, velocity_magnitude_local);
 
+
     isrefined = true;
   }
 
@@ -177,6 +185,7 @@ bool AdaptiveRefinement::refine(unsigned int                                 np,
                                                 dh,
                                                 potential_local,
                                                 _error_estimator_potential);
+
       //---------------------------------------------------------------------------
       // Adaptation to velocity gradient magnitude:
       //---------------------------------------------------------------------------
@@ -216,15 +225,13 @@ bool AdaptiveRefinement::refine(unsigned int                                 np,
       velocityInterp.prepare_for_coarsening_and_refinement(velocity_magnitude_local);
       tria.execute_coarsening_and_refinement();
 
-      if (num_cells_before == tria.n_cells())
-        break;
 
 
-      dealii::GridTools::partition_triangulation(np, tria);
+      //    dealii::GridTools::partition_triangulation(np, tria);
 
       dh.distribute_dofs(fe);
-      dealii::DoFRenumbering::component_wise(dh);
-      dealii::DoFRenumbering::subdomain_wise(dh);
+      //    dealii::DoFRenumbering::component_wise(dh);
+      //    dealii::DoFRenumbering::subdomain_wise(dh);
 
       dealii::Vector<double> potential_old(potential_local);
       potential_local.reinit(dh.n_dofs());

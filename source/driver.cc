@@ -95,7 +95,6 @@ void Driver<dim>::run(std::string input_path, std::string output_path)
 {
   try
   {
-    int writeCnt = 0;
     //-------------------------------------------------------------------------
     // Pre steps:
     //-------------------------------------------------------------------------
@@ -144,10 +143,8 @@ void Driver<dim>::run(std::string input_path, std::string output_path)
       std::cout << std::setprecision(16);
       std::cout << "Position: " << route[i];
       std::cout << ", Heading: " << heading << std::endl;
-
       _physical_domain->update_domain(route[i][0], route[i][1], heading);
       _physical_domain->update_triangulation();
-
       bem_problem->reinit();
       boundary_conditions->solve_problem(body);
 
@@ -182,18 +179,6 @@ void Driver<dim>::run(std::string input_path, std::string output_path)
           bem_problem->reinit();
           pcout << "Degrees of Freedom: DOF = " << bem_problem->dh.n_dofs() << std::endl;
 
-          Writer writer;
-          writer.addScalarField("error_estimator_potential",
-                                adaptiveRefinement.get_error_estimator_potential());
-          writer.addScalarField("error_estimator_velocity",
-                                adaptiveRefinement.get_error_estimator_velocity());
-          writer.saveScalarFields(std::string(output_path)
-                                    .append("/error_estimators" + std::to_string(writeCnt) +
-                                            ".vtu"),
-                                  bem_problem->dh,
-                                  bem_problem->mapping,
-                                  bem_problem->mapping_degree);
-          ++writeCnt;
           boundary_conditions->solve_problem(body);
         }
       }
