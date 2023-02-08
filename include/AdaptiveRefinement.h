@@ -4,6 +4,7 @@
 #include <deal.II/base/conditional_ostream.h>
 #include <deal.II/dofs/dof_handler.h>
 #include <deal.II/fe/fe.h>
+#include <deal.II/grid/grid_refinement.h>
 #include <deal.II/lac/trilinos_vector.h>
 
 #include <iostream>
@@ -16,11 +17,11 @@ public:
 
   AdaptiveRefinement(dealii::ConditionalOStream pcout,
                      MPI_Comm                   mpi_comm,
-                     double                     potentialErrorEstimatorMax,
-                     double                     velocityErrorEstimatorMax,
                      double                     aspectRatioMax,
                      double                     cellSizeMin,
-                     int                        iterMax);
+                     int                        iterMax,
+                     double                     top_fraction_max,
+                     int                        number_of_elements_max);
 
   virtual ~AdaptiveRefinement()
   {}
@@ -37,12 +38,12 @@ public:
 
   const dealii::Vector<double> &get_error_estimator_potential()
   {
-    return _error_estimator_potential;
+    return _error_estimator_pot;
   }
 
   const dealii::Vector<double> &get_error_estimator_velocity()
   {
-    return _error_estimator_velocity;
+    return _error_estimator_vel;
   }
 
 private:
@@ -50,14 +51,14 @@ private:
 
   dealii::ConditionalOStream _pcout;
   MPI_Comm                   _mpi_comm;
-  double                     _potentialErrorEstimatorMax = 0.0;
-  double                     _velocityErrorEstimatorMax  = 0.0;
-  double                     _aspectRatioMax             = 0.0;
-  double                     _cellSizeMin                = 0.0;
-  int                        _iterMax                    = 0;
+  double                     _aspectRatioMax         = 0.0;
+  double                     _cellSizeMin            = 0.0;
+  int                        _iterMax                = 0;
+  double                     _top_fraction_max       = 0;
+  unsigned int               _number_of_elements_max = 0;
 
-  dealii::Vector<double> _error_estimator_potential;
-  dealii::Vector<double> _error_estimator_velocity;
+  dealii::Vector<double> _error_estimator_pot;
+  dealii::Vector<double> _error_estimator_vel;
 
   void _assignRefinement(const dealii::Vector<double> &error_estimator,
                          dealii::DoFHandler<2, 3> &    dh);

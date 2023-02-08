@@ -12,18 +12,18 @@
 
 AdaptiveRefinement::AdaptiveRefinement(dealii::ConditionalOStream pcout,
                                        MPI_Comm                   mpi_comm,
-                                       double                     potentialErrorEstimatorMax,
-                                       double                     velocityErrorEstimatorMax,
                                        double                     aspectRatioMax,
                                        double                     cellSizeMin,
-                                       int                        iterMax)
+                                       int                        iterMax,
+                                       double                     top_fraction_max,
+                                       int                        number_of_elements_max)
   : _pcout(pcout)
   , _mpi_comm(mpi_comm)
-  , _potentialErrorEstimatorMax(potentialErrorEstimatorMax)
-  , _velocityErrorEstimatorMax(velocityErrorEstimatorMax)
   , _aspectRatioMax(aspectRatioMax)
   , _cellSizeMin(cellSizeMin)
   , _iterMax(iterMax)
+  , _top_fraction_max(top_fraction_max)
+  , _number_of_elements_max(number_of_elements_max)
 {}
 
 bool AdaptiveRefinement::refine(unsigned int                                 np,
@@ -74,86 +74,82 @@ bool AdaptiveRefinement::refine(unsigned int                                 np,
   dealii::Vector<double> potential_local(potential);
   dealii::Vector<double> velocity_magnitude_local(velocity_magnitude);
 
-  double factor = 2.5;
-
-  double mu, s2;
-  bool   isrefined = false;
-
-  _error_estimator_potential.reinit(tria.n_active_cells());
-  AdaptiveRefinementUtil::scalarFieldRanges(fe.dofs_per_cell,
-                                            dh,
-                                            potential_local,
-                                            _error_estimator_potential);
-  AdaptiveRefinementUtil::lognormParameters(_error_estimator_potential, mu, s2);
-  double potentialErrorEstimatorMin = std::exp(mu + s2 / 2.0 - factor * s2);
-  double potentialErrorEstimatorMax = std::exp(mu + s2 / 2.0 + factor * s2);
-
-  _error_estimator_velocity.reinit(tria.n_active_cells());
-  AdaptiveRefinementUtil::scalarFieldRanges(fe.dofs_per_cell,
-                                            dh,
-                                            velocity_magnitude_local,
-                                            _error_estimator_velocity);
-  AdaptiveRefinementUtil::lognormParameters(_error_estimator_velocity, mu, s2);
-  double velocityErrorEstimatorMin = std::exp(mu + s2 / 2.0 - factor * s2);
-  double velocityErrorEstimatorMax = std::exp(mu + s2 / 2.0 + factor * s2);
-
-  std::cout << "potentialErrorEstimatorMin " << potentialErrorEstimatorMin << std::endl;
-  std::cout << "potentialErrorEstimatorMax  " << potentialErrorEstimatorMax << std::endl;
-  std::cout << "velocityErrorEstimatorMin " << velocityErrorEstimatorMin << std::endl;
-  std::cout << "velocityErrorEstimatorMax  " << velocityErrorEstimatorMax << std::endl << std::endl;
+  bool isrefined = false;
 
   for (int iter = 0; iter < _iterMax; ++iter)
   {
     //---------------------------------------------------------------------------
     // Adaptation to velocity potential:
     //---------------------------------------------------------------------------
-    _error_estimator_potential.reinit(tria.n_active_cells());
+    _error_estimator_pot.reinit(tria.n_active_cells());
     AdaptiveRefinementUtil::scalarFieldRanges(fe.dofs_per_cell,
                                               dh,
                                               potential_local,
-                                              _error_estimator_potential);
+                                              _error_estimator_pot);
+
+    for (cell_it cell = dh.begin_active(); cell != dh.end(); ++cell)
+      _error_estimator_pot[cell->active_cell_index()] =
+        _error_estimator_pot[cell->active_cell_index()] *
+        _error_estimator_pot[cell->active_cell_index()] / std::sqrt(cell->measure());
 
     //---------------------------------------------------------------------------
     // Adaptation to velocity gradient magnitude:
     //---------------------------------------------------------------------------
-    _error_estimator_velocity.reinit(tria.n_active_cells());
+    _error_estimator_vel.reinit(tria.n_active_cells());
     AdaptiveRefinementUtil::scalarFieldRanges(fe.dofs_per_cell,
                                               dh,
                                               velocity_magnitude_local,
-                                              _error_estimator_velocity);
+                                              _error_estimator_vel);
+
+    double top_fraction = 0.0;
+    double bot_fraction = 0.0;
+    if (tria.n_active_cells() < _number_of_elements_max)
+    {
+      int refine_max = (_number_of_elements_max - tria.n_active_cells()) / 4;
+      top_fraction =
+        std::min(_top_fraction_max, double(refine_max) / double(tria.n_active_cells()));
+    }
+
+    dealii::GridRefinement::refine_and_coarsen_fixed_number(tria,
+                                                            _error_estimator_pot,
+                                                            top_fraction,
+                                                            bot_fraction);
+
+    dealii::GridRefinement::refine_and_coarsen_fixed_number(tria,
+                                                            _error_estimator_vel,
+                                                            top_fraction,
+                                                            bot_fraction);
+
 
     //---------------------------------------------------------------------------
     // Assing refinement to cells via the dof handler:
     //---------------------------------------------------------------------------
-    int numRefineCellsPot = AdaptiveRefinementUtil::assignRefinement(
-      potentialErrorEstimatorMax, _aspectRatioMax, cellSizeMin, _error_estimator_potential, dh);
+    AdaptiveRefinementUtil::assignRefinement(_aspectRatioMax, cellSizeMin, dh);
 
-    int numRefineCellsVel = AdaptiveRefinementUtil::assignRefinement(
-      velocityErrorEstimatorMax, _aspectRatioMax, cellSizeMin, _error_estimator_velocity, dh);
+    tria.prepare_coarsening_and_refinement();
 
-    int numCoarsenCellsPot = AdaptiveRefinementUtil::assignCoarsening(potentialErrorEstimatorMin,
-                                                                      _error_estimator_potential,
-                                                                      dh);
+    int num_refine_cells  = 0;
+    int num_coarsen_cells = 0;
+    for (cell_it cell = dh.begin_active(); cell != dh.end(); ++cell)
+    {
+      if (cell->refine_flag_set())
+        ++num_refine_cells;
 
-    int numCoarsenCellsVel = AdaptiveRefinementUtil::assignCoarsening(velocityErrorEstimatorMin,
-                                                                      _error_estimator_velocity,
-                                                                      dh);
+      if (cell->coarsen_flag_set())
+        ++num_coarsen_cells;
+    }
 
-    std::cout << "numRefineCellsPot  " << numRefineCellsPot << std::endl;
-    std::cout << "numRefineCellsVel  " << numRefineCellsVel << std::endl << std::endl;
-
-    if (numRefineCellsPot == 0 && numRefineCellsVel == 0)
+    if (num_refine_cells == 0 && num_coarsen_cells == 0)
     {
       break;
     }
 
     dealii::SolutionTransfer<2, dealii::Vector<double>, 3> potentialInterp(dh);
-    dealii::SolutionTransfer<2, dealii::Vector<double>, 3> velocityInterp(dh);
-
-    int num_cells_before = tria.n_cells();
-    tria.prepare_coarsening_and_refinement();
     potentialInterp.prepare_for_coarsening_and_refinement(potential_local);
+
+    dealii::SolutionTransfer<2, dealii::Vector<double>, 3> velocityInterp(dh);
     velocityInterp.prepare_for_coarsening_and_refinement(velocity_magnitude_local);
+
     tria.execute_coarsening_and_refinement();
 
     dealii::GridTools::partition_triangulation(np, tria);
@@ -170,81 +166,7 @@ bool AdaptiveRefinement::refine(unsigned int                                 np,
     velocity_magnitude_local.reinit(dh.n_dofs());
     velocityInterp.interpolate(vel_mag_old, velocity_magnitude_local);
 
-
     isrefined = true;
   }
-
-  if (false)
-    for (int iter = 0; iter < _iterMax; ++iter)
-    {
-      //---------------------------------------------------------------------------
-      // Adaptation to velocity potential:
-      //---------------------------------------------------------------------------
-      _error_estimator_potential.reinit(tria.n_active_cells());
-      AdaptiveRefinementUtil::scalarFieldRanges(fe.dofs_per_cell,
-                                                dh,
-                                                potential_local,
-                                                _error_estimator_potential);
-
-      //---------------------------------------------------------------------------
-      // Adaptation to velocity gradient magnitude:
-      //---------------------------------------------------------------------------
-      _error_estimator_velocity.reinit(tria.n_active_cells());
-      AdaptiveRefinementUtil::scalarFieldRanges(fe.dofs_per_cell,
-                                                dh,
-                                                velocity_magnitude_local,
-                                                _error_estimator_velocity);
-
-      //---------------------------------------------------------------------------
-      // Assing refinement to cells via the dof handler:
-      //---------------------------------------------------------------------------
-      int numCoarsenCellsPot = AdaptiveRefinementUtil::assignCoarsening(potentialErrorEstimatorMin,
-                                                                        _error_estimator_potential,
-                                                                        dh);
-
-      int numCoarsenCellsVel = AdaptiveRefinementUtil::assignCoarsening(velocityErrorEstimatorMin,
-                                                                        _error_estimator_velocity,
-                                                                        dh);
-
-
-
-      std::cout << "numCoarsenCellsPot " << numCoarsenCellsPot << std::endl;
-      std::cout << "numCoarsenCellsVel " << numCoarsenCellsVel << std::endl;
-
-      if (numCoarsenCellsPot == 0 && numCoarsenCellsVel == 0)
-      {
-        break;
-      }
-
-      dealii::SolutionTransfer<2, dealii::Vector<double>, 3> potentialInterp(dh);
-      dealii::SolutionTransfer<2, dealii::Vector<double>, 3> velocityInterp(dh);
-
-      int num_cells_before = tria.n_cells();
-      tria.prepare_coarsening_and_refinement();
-      potentialInterp.prepare_for_coarsening_and_refinement(potential_local);
-      velocityInterp.prepare_for_coarsening_and_refinement(velocity_magnitude_local);
-      tria.execute_coarsening_and_refinement();
-
-
-
-      //    dealii::GridTools::partition_triangulation(np, tria);
-
-      dh.distribute_dofs(fe);
-      //    dealii::DoFRenumbering::component_wise(dh);
-      //    dealii::DoFRenumbering::subdomain_wise(dh);
-
-      dealii::Vector<double> potential_old(potential_local);
-      potential_local.reinit(dh.n_dofs());
-      potentialInterp.interpolate(potential_old, potential_local);
-
-      dealii::Vector<double> vel_mag_old(velocity_magnitude_local);
-      velocity_magnitude_local.reinit(dh.n_dofs());
-      velocityInterp.interpolate(vel_mag_old, velocity_magnitude_local);
-
-      isrefined = true;
-    }
-
-
-
   return isrefined;
 }

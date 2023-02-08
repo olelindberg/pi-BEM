@@ -10,35 +10,37 @@ import math
 
 colors = vtk.vtkNamedColors()
 
-quantile_fraction = 0.95
-
-for i in range(34):
+for i in range(1):
 
     # Read the source file.
     reader = vtk.vtkXMLUnstructuredGridReader()
-    reader.SetFileName("/home/ole/dev/projects/pi-BEM/docs/data/KCS_Limfjord/output/error_estimators" + str(i) + ".vtu")
+    reader.SetFileName("/home/ole/dev/projects/pi-BEM/docs/data/KCS_Limfjord/output/errors" + str(i) + ".vtu")
     reader.Update()  # Needed because of GetScalarRange
     output = reader.GetOutput()
 
-    #error_estimate = VN.vtk_to_numpy(output.GetPointData().GetArray('error_estimator_potential'))
-    error_estimate = VN.vtk_to_numpy(output.GetPointData().GetArray('error_estimator_velocity'))
-
-    x   = np.sort(error_estimate)
-    mu  = np.sum(np.log(x))/len(x)
-    s2  = np.sum((np.log(x)-mu)**2)/len(x)
-    s   = np.sqrt(s2)   
-    pdf = 1/(x*s*np.sqrt(2*np.pi))*np.exp(-((np.log(x)-mu)**2)/(2*s2))
+    error_estimate_pot = VN.vtk_to_numpy(output.GetPointData().GetArray('error_estimator_pot'))
 
     plt.figure()
-    counts, bins = np.histogram(error_estimate,bins=2**6)
+    plt.plot(error_estimate_pot)
+    plt.grid(True)    
+
+    plt.figure()
+    counts, bins = np.histogram(error_estimate_pot,bins=2**6)
     plt.hist((bins[:-1]), (bins), weights=counts/np.sum(np.diff(bins)*counts))
-    plt.axvline(x = np.exp(mu+s2/2), color = 'r', label = 'mean')
-    plt.axvline(x = np.exp(mu+s2/2-3*s2), color = 'g', label = 'mean - x*var')
-    plt.axvline(x = np.exp(mu+s2/2+3*s2), color = 'b', label = 'mean + x*var')
-    plt.plot((x),pdf)
     plt.legend()
     plt.grid(True)    
 
+    error_estimate_vel = VN.vtk_to_numpy(output.GetPointData().GetArray('error_estimator_vel'))
+
+    plt.figure()
+    plt.plot(error_estimate_vel)
+    plt.grid(True)    
+
+    plt.figure()
+    counts, bins = np.histogram(error_estimate_vel,bins=2**6)
+    plt.hist((bins[:-1]), (bins), weights=counts/np.sum(np.diff(bins)*counts))
+    plt.legend()
+    plt.grid(True)   
 
 plt.show() 
 

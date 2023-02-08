@@ -154,11 +154,11 @@ void Driver<dim>::run(std::string input_path, std::string output_path)
 
         AdaptiveRefinement adaptiveRefinement(pcout,
                                               mpi_communicator,
-                                              pibemSettings.potentialErrorEstimatorMax,
-                                              pibemSettings.velocityErrorEstimatorMax,
                                               pibemSettings.aspectRatioMax,
                                               pibemSettings.cellSizeMin,
-                                              pibemSettings.iterMax);
+                                              pibemSettings.iterMax,
+                                              pibemSettings.top_fraction_max,
+                                              pibemSettings.number_of_elements_max);
 
         for (int i = 0; i < pibemSettings.adaptiveRefinementLevels; ++i)
         {
@@ -184,151 +184,174 @@ void Driver<dim>::run(std::string input_path, std::string output_path)
       }
 
       //-------------------------------------------------------------------------
-      // Main steps:
+      // Post steps:
       //-------------------------------------------------------------------------
-      if (false)
+
+
+      //-------------------------------------------------------------------------
+      // Waterplane area and displacement:
+      //-------------------------------------------------------------------------
+      auto volume = bem_problem->volume_integral(body);
+
+      //-------------------------------------------------------------------------
+      // Hydrostatic and hydrodynamic pressures:
+      //-------------------------------------------------------------------------
+      bem_problem->hydrostatic_pressure(pibemSettings.gravity,
+                                        pibemSettings.density,
+                                        body.getDraft(),
+                                        boundary_conditions->get_hydrostatic_pressure());
+
+      bem_problem->hydrodynamic_pressure(pibemSettings.density,
+                                         boundary_conditions->get_wind(),
+                                         boundary_conditions->get_hydrodynamic_pressure());
+
+
+      //-------------------------------------------------------------------------
+      // Pressure centers:
+      //-------------------------------------------------------------------------
+      Tensor<1, dim, double> hydrostatic_pressure_center;
+      bem_problem->center_of_pressure(body,
+                                      boundary_conditions->get_hydrostatic_pressure(),
+                                      hydrostatic_pressure_center);
+
+      Tensor<1, dim, double> hydrodynamic_pressure_center;
+      bem_problem->center_of_pressure(body,
+                                      boundary_conditions->get_hydrodynamic_pressure(),
+                                      hydrodynamic_pressure_center);
+
+      std::cout << "Displacement           : V = " << volume << "\n";
+      std::cout << "Static pressure center :     " << hydrostatic_pressure_center << "\n";
+      std::cout << "Dynamic pressure center:     " << hydrodynamic_pressure_center << "\n";
+
+      // if (false)
+      // {
+      //   BRepBuilderAPI_MakeWire wirebuilder;
+      //   for (auto id : body.getWaterlineIndices())
+      //     wirebuilder.Add(TopoDS::Wire(_physical_domain->cad_curves[id - 11]));
+      //   if (wirebuilder.IsDone())
+      //   {
+      //     double         x0 = body.getCenterOfGravity()[0];
+      //     double         y0 = body.getCenterOfGravity()[1];
+      //     SurfaceMoments sm(x0, y0);
+      //     if (!WireUtil::surfaceMoments(wirebuilder.Wire(), sm))
+      //       pcout << "Surface moments failed ..." << std::endl;
+
+      //     pcout << "x0  : " << sm.getx0() << std::endl;
+      //     pcout << "y0  : " << sm.gety0() << std::endl;
+      //     pcout << "S0  : " << sm.getS0() << std::endl;
+      //     pcout << "Sx  : " << sm.getSx() << std::endl;
+      //     pcout << "Sy  : " << sm.getSy() << std::endl;
+      //     pcout << "Sxx : " << sm.getSxx() << std::endl;
+      //     pcout << "Sxy : " << sm.getSxy() << std::endl;
+      //     pcout << "Syy : " << sm.getSyy() << std::endl;
+      //   }
+      // }
+      // dealii::Point<3> tmp;
+      // for (int i = 0; i < 3; ++i)
+      //   tmp[i] = hydrostatic_pressure_center[i];
+      // WaterPlaneMoments wpm = bem_problem->water_plane_moments(body, tmp);
+
+      // std::cout << "S0  = " << wpm.getS0() << "\n";
+      // std::cout << "Sx  = " << wpm.getSx() << "\n";
+      // std::cout << "Sy  = " << wpm.getSy() << "\n";
+      // std::cout << "Sxx = " << wpm.getSxx() << "\n";
+      // std::cout << "Sxy = " << wpm.getSxy() << "\n";
+      // std::cout << "Syy = " << wpm.getSyy() << "\n";
+
+
+
+      //-------------------------------------------------------------------------
+      // Pressure Forces:
+      //-------------------------------------------------------------------------
+      Tensor<1, dim, double> hydrostaticForce;
+      Tensor<1, dim, double> hydrostaticMoment;
+      bem_problem->pressure_force_and_moment(body,
+                                             boundary_conditions->get_hydrostatic_pressure(),
+                                             hydrostaticForce,
+                                             hydrostaticMoment);
+
+      Tensor<1, dim, double> hydrodynamicForce;
+      Tensor<1, dim, double> hydrodynamicMoment;
+      bem_problem->pressure_force_and_moment(body,
+                                             boundary_conditions->get_hydrodynamic_pressure(),
+                                             hydrodynamicForce,
+                                             hydrodynamicMoment);
+
+
+      std::vector<Point<dim>> elevation;
+      bem_problem->free_surface_elevation(pibemSettings.gravity,
+                                          pibemSettings.density,
+                                          body,
+                                          boundary_conditions->get_hydrodynamic_pressure(),
+                                          elevation);
+
+      if (this_mpi_process == 0)
       {
         //-------------------------------------------------------------------------
-        // Post steps:
+        // Save forces:
         //-------------------------------------------------------------------------
-
-
-        //-------------------------------------------------------------------------
-        // Waterplane area and displacement:
-        //-------------------------------------------------------------------------
-        auto volume = bem_problem->volume_integral(body);
-
-        //-------------------------------------------------------------------------
-        // Hydrostatic and hydrodynamic pressures:
-        //-------------------------------------------------------------------------
-        bem_problem->hydrostatic_pressure(pibemSettings.gravity,
-                                          pibemSettings.density,
-                                          body.getDraft(),
-                                          boundary_conditions->get_hydrostatic_pressure());
-
-        bem_problem->hydrodynamic_pressure(pibemSettings.density,
-                                           boundary_conditions->get_wind(),
-                                           boundary_conditions->get_hydrodynamic_pressure());
-
-
-        //-------------------------------------------------------------------------
-        // Pressure centers:
-        //-------------------------------------------------------------------------
-        Tensor<1, dim, double> hydrostatic_pressure_center;
-        bem_problem->center_of_pressure(body,
-                                        boundary_conditions->get_hydrostatic_pressure(),
-                                        hydrostatic_pressure_center);
-
-        Tensor<1, dim, double> hydrodynamic_pressure_center;
-        bem_problem->center_of_pressure(body,
-                                        boundary_conditions->get_hydrodynamic_pressure(),
-                                        hydrodynamic_pressure_center);
-
-        std::cout << "Displacement           : V = " << volume << "\n";
-        std::cout << "Static pressure center :     " << hydrostatic_pressure_center << "\n";
-        std::cout << "Dynamic pressure center:     " << hydrodynamic_pressure_center << "\n";
-
-        // if (false)
-        // {
-        //   BRepBuilderAPI_MakeWire wirebuilder;
-        //   for (auto id : body.getWaterlineIndices())
-        //     wirebuilder.Add(TopoDS::Wire(_physical_domain->cad_curves[id - 11]));
-        //   if (wirebuilder.IsDone())
-        //   {
-        //     double         x0 = body.getCenterOfGravity()[0];
-        //     double         y0 = body.getCenterOfGravity()[1];
-        //     SurfaceMoments sm(x0, y0);
-        //     if (!WireUtil::surfaceMoments(wirebuilder.Wire(), sm))
-        //       pcout << "Surface moments failed ..." << std::endl;
-
-        //     pcout << "x0  : " << sm.getx0() << std::endl;
-        //     pcout << "y0  : " << sm.gety0() << std::endl;
-        //     pcout << "S0  : " << sm.getS0() << std::endl;
-        //     pcout << "Sx  : " << sm.getSx() << std::endl;
-        //     pcout << "Sy  : " << sm.getSy() << std::endl;
-        //     pcout << "Sxx : " << sm.getSxx() << std::endl;
-        //     pcout << "Sxy : " << sm.getSxy() << std::endl;
-        //     pcout << "Syy : " << sm.getSyy() << std::endl;
-        //   }
-        // }
-        // dealii::Point<3> tmp;
-        // for (int i = 0; i < 3; ++i)
-        //   tmp[i] = hydrostatic_pressure_center[i];
-        // WaterPlaneMoments wpm = bem_problem->water_plane_moments(body, tmp);
-
-        // std::cout << "S0  = " << wpm.getS0() << "\n";
-        // std::cout << "Sx  = " << wpm.getSx() << "\n";
-        // std::cout << "Sy  = " << wpm.getSy() << "\n";
-        // std::cout << "Sxx = " << wpm.getSxx() << "\n";
-        // std::cout << "Sxy = " << wpm.getSxy() << "\n";
-        // std::cout << "Syy = " << wpm.getSyy() << "\n";
-
-
-
-        //-------------------------------------------------------------------------
-        // Pressure Forces:
-        //-------------------------------------------------------------------------
-        Tensor<1, dim, double> hydrostaticForce;
-        Tensor<1, dim, double> hydrostaticMoment;
-        bem_problem->pressure_force_and_moment(body,
-                                               boundary_conditions->get_hydrostatic_pressure(),
-                                               hydrostaticForce,
-                                               hydrostaticMoment);
-
-        Tensor<1, dim, double> hydrodynamicForce;
-        Tensor<1, dim, double> hydrodynamicMoment;
-        bem_problem->pressure_force_and_moment(body,
-                                               boundary_conditions->get_hydrodynamic_pressure(),
-                                               hydrodynamicForce,
-                                               hydrodynamicMoment);
-
-
-        std::vector<Point<dim>> elevation;
-        bem_problem->free_surface_elevation(pibemSettings.gravity,
-                                            pibemSettings.density,
-                                            body,
-                                            boundary_conditions->get_hydrodynamic_pressure(),
-                                            elevation);
-
-        if (this_mpi_process == 0)
         {
-          //-------------------------------------------------------------------------
-          // Save forces:
-          //-------------------------------------------------------------------------
           std::fstream file;
-          std::string  force_filename =
-            boost::filesystem::path(output_path).append("force.csv").string();
-          file.open(force_filename, std::fstream::out);
+          std::string  filename =
+            boost::filesystem::path(output_path).append("hydrodynamic_force.csv").string();
+          if (i == 0)
+          {
+            file.open(filename, std::fstream::out);
+            if (file.is_open())
+              file << "# Fx [N], Fy [N], Fz [N], Mx [Nm], My [Nm], Mz [Nm]\n";
+          }
+          else
+            file.open(filename, std::fstream::app);
+
           if (file.is_open())
           {
-            file << "# Fx [N], Fy [N], Fz [N], Mx [Nm], My [Nm], Mz [Nm]\n";
             file << hydrodynamicForce[0] << ", " << hydrodynamicForce[1] << ", "
                  << hydrodynamicForce[2] << ", " << hydrodynamicMoment[0] << ", "
                  << hydrodynamicMoment[1] << ", " << hydrodynamicMoment[2] << "\n";
+            file.close();
+          }
+        }
+
+        {
+          std::fstream file;
+          std::string  filename =
+            boost::filesystem::path(output_path).append("hydrostatic_force.csv").string();
+          if (i == 0)
+          {
+            file.open(filename, std::fstream::out);
+            if (file.is_open())
+              file << "# Fx [N], Fy [N], Fz [N], Mx [Nm], My [Nm], Mz [Nm]\n";
+          }
+          else
+            file.open(filename, std::fstream::app);
+
+          if (file.is_open())
+          {
             file << hydrostaticForce[0] << ", " << hydrostaticForce[1] << ", "
                  << hydrostaticForce[2] << ", " << hydrostaticMoment[0] << ", "
                  << hydrostaticMoment[1] << ", " << hydrostaticMoment[2] << "\n";
             file.close();
           }
+        }
 
-          //-------------------------------------------------------------------------
-          // Save wave elevation:
-          //-------------------------------------------------------------------------
+        //-------------------------------------------------------------------------
+        // Save wave elevation:
+        //-------------------------------------------------------------------------
+        {
+          std::fstream file;
+          std::string  filename =
+            boost::filesystem::path(output_path).append("elevation.csv").string();
+          file.open(filename, std::fstream::out);
+          if (file.is_open())
           {
-            std::fstream file;
-            std::string  filename =
-              boost::filesystem::path(output_path).append("elevation.csv").string();
-            file.open(filename, std::fstream::out);
-            if (file.is_open())
-            {
-              file << "# x [m], y [m], z [m]\n";
-              for (auto &elev : elevation)
-                file << elev[0] << ", " << elev[1] << ", " << elev[2] << "\n";
-              file.close();
-            }
+            file << "# x [m], y [m], z [m]\n";
+            for (auto &elev : elevation)
+              file << elev[0] << ", " << elev[1] << ", " << elev[2] << "\n";
+            file.close();
           }
         }
       }
+
 
 
       std::string filename =

@@ -114,7 +114,9 @@ public:
 protected:
   ConditionalOStream pcout;
 
-  MPI_Comm mpi_communicator;
+  MPI_Comm           mpi_communicator;
+  const unsigned int n_mpi_processes;
+  const unsigned int this_mpi_process;
 
   std::shared_ptr<IPhysicalDomain<3>>    _physical_domain;
   std::shared_ptr<BEMProblem<3>>         bem_problem;
@@ -123,9 +125,6 @@ protected:
   ParameterHandler prm;
 
   bool global_refinement;
-
-  const unsigned int n_mpi_processes;
-  const unsigned int this_mpi_process;
 };
 
 #endif

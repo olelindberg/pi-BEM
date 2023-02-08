@@ -97,11 +97,11 @@ void MultiMeshDomain<dim>::update_domain(double positionx, double positiony, dou
     {
       for (unsigned int i = 0; i < 4; ++i)
         bottom_interior_vertex[cell->vertex_index(i)] = true;
-      if (cell->at_boundary())
-        for (unsigned int i = 0; i < 4; ++i)
-          if (cell->line(i)->at_boundary())
-            for (unsigned int j = 0; j < 2; ++j)
-              bottom_interior_vertex[cell->line(i)->vertex_index(j)] = false;
+
+      for (unsigned int i = 0; i < 4; ++i)
+        if (cell->line(i)->manifold_id() != 3)
+          for (unsigned int j = 0; j < 2; ++j)
+            bottom_interior_vertex[cell->line(i)->vertex_index(j)] = false;
     }
   }
 
@@ -133,6 +133,8 @@ void MultiMeshDomain<dim>::update_domain(double positionx, double positiony, dou
   {
     if (bottom_interior_vertex[vtx->vertex_index(0)])
     {
+      if (std::fabs(vtx->vertex(0)[0] - 1100.0) < 1.0e-1)
+        std::cout << "upper bnd\n";
       BVH_SurfaceSelector bvh_surface_selector;
       bvh_surface_selector.SetBVHSet(&bvh_box_set);
       bvh_surface_selector.set_point(bvh_vec_t(vtx->vertex(0)[0], vtx->vertex(0)[1]));
@@ -149,8 +151,8 @@ void MultiMeshDomain<dim>::update_domain(double positionx, double positiony, dou
           if (geom_intersect.IsDone() && geom_intersect.NbPoints() > 0)
           {
             double posz = geom_intersect.Point(1).Z();
-            if (posz > 10.7)
-              posz = 10.7;
+            if (posz > 10.0)
+              posz = 10.0;
             vtx->vertex(0)[2] = posz;
           }
         }

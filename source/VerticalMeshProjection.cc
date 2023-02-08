@@ -110,6 +110,8 @@ VerticalMeshProjection<dim, spacedim>::project_to_manifold(const ArrayView<const
 {
   dealii::Point<3> point(candidate[0], candidate[1], _reference_level);
 
+  if (std::fabs(candidate[0] - 1100.0) < 1.0e-1)
+    std::cout << "upper bnd\n";
 
   BVH_SurfaceSelector bvh_surface_selector;
   assign_to_bvh_surface_selector(bvh_surface_selector,
@@ -130,8 +132,8 @@ VerticalMeshProjection<dim, spacedim>::project_to_manifold(const ArrayView<const
     }
   }
 
-  if (point[2] > 10.7)
-    point[2] = 10.7;
+  if (point[2] > 10.0)
+    point[2] = 10.0;
   return point;
 }
 

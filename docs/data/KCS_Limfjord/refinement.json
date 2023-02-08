@@ -13,7 +13,7 @@
     },
     "distanceRatioRefinement": {
         "distance_ratio_max": 1.0,
-        "aspectRatioMax": 5.0,
+        "aspectRatioMax": 4.0,
         "manifold_id": 3,
         "xmin": 0,
         "xmax": 230,
@@ -26,7 +26,7 @@
     "boxRefinement": {
         "manifold_id": 3,
         "aspectRatioMax": 4.0,
-        "cellSizeMin": 5.0,
+        "cellSizeMin": 20.0,
         "xmin": 0,
         "xmax": 230,
         "ymin": -16.1,

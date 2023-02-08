@@ -33,7 +33,7 @@ public:
     _position_z = valz;
   }
 
-  void set_rotation(double valx, double valy, double valz)
+  void set_rotation(double, double, double valz)
   {
     gp_Pnt origin;
     {

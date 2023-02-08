@@ -17,10 +17,10 @@ public:
   {}
 
 
-  bool saveScalarFields(std::string                                   filename,
-                        const dealii::DoFHandler<2, 3> &              dh,
-                        const std::shared_ptr<dealii::Mapping<2, 3>> &mapping,
-                        unsigned int                                  mapping_degree)
+  bool saveScalarFields(std::string                     filename,
+                        const dealii::DoFHandler<2, 3> &dh,
+                        const dealii::Mapping<2, 3> &   mapping,
+                        unsigned int                    mapping_degree)
   {
     dealii::DataOut<2, 3> dataout;
     dataout.attach_dof_handler(dh);
@@ -32,7 +32,8 @@ public:
       ++nameIt;
     }
 
-    dataout.build_patches(*mapping, mapping_degree, dealii::DataOut<2, 3>::curved_inner_cells);
+    dataout.build_patches(mapping, mapping_degree, dealii::DataOut<2, 3>::curved_inner_cells);
+    dataout.build_patches();
 
     std::ofstream file(filename);
     if (file.is_open())

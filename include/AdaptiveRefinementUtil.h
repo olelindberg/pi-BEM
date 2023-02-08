@@ -3,11 +3,13 @@
 
 #include "RefinementUtil.h"
 
+#include <deal.II/base/bounding_box.h>
 #include <deal.II/dofs/dof_accessor.h>
 #include <deal.II/dofs/dof_handler.h>
 #include <deal.II/dofs/dof_tools.h>
 #include <deal.II/fe/fe.h>
 #include <deal.II/lac/trilinos_vector.h>
+
 
 #include <iostream>
 #include <vector>
@@ -35,55 +37,36 @@ public:
         minval   = std::min(val, minval);
         maxval   = std::max(val, maxval);
       } // for j in cell dofs
-      ranges[cell->active_cell_index()] = maxval - minval;
+      ranges[cell->active_cell_index()] = (maxval - minval);
     }
   }
 
-  static void normalizeRanges(dealii::Vector<double> &ranges)
-  {
-    ranges.add(-ranges.mean_value());
-    ranges /= (ranges.l2_norm() * std::sqrt(1.0 / ranges.size()));
-  }
-
-  static void lognormParameters(const dealii::Vector<double> &ranges, double &mu, double &s2)
-  {
-    mu = 0.0;
-    for (auto val : ranges)
-      mu += std::log(val);
-    mu /= ranges.size();
-
-    s2 = 0.0;
-    for (auto val : ranges)
-    {
-      double tmp = std::log(val) - mu;
-      s2 += tmp * tmp;
-    }
-    s2 /= ranges.size();
-  }
-
-
-
-  static int assignRefinement(double                        errorEstimatorMax,
-                              double                        aspectRatioMax,
-                              double                        cellSizeMin,
-                              const dealii::Vector<double> &error_estimator,
-                              dealii::DoFHandler<2, 3> &    dh)
+  static int
+  assignRefinement(double aspectRatioMax, double cellSizeMin, dealii::DoFHandler<2, 3> &dh)
   {
     int cnt = 0;
     for (cell_it cell = dh.begin_active(); cell != dh.end(); ++cell)
     {
-      if (error_estimator[cell->active_cell_index()] > errorEstimatorMax)
+      //      if (cell->user_flag_set()) // Only refine cells that are not newly coarsened
       {
-        double l1   = cell->extent_in_direction(0);
-        double l2   = cell->extent_in_direction(1);
-        double lmin = std::min(l1, l2);
-        if (lmin >= cellSizeMin)
+        if (cell->refine_flag_set())
         {
-          RefinementUtil::aspectRatioRefinement(aspectRatioMax, cell);
-          ++cnt;
+          double l1   = cell->extent_in_direction(0);
+          double l2   = cell->extent_in_direction(1);
+          double lmin = std::min(l1, l2);
+          if (lmin >= cellSizeMin)
+          {
+            RefinementUtil::aspectRatioRefinement(aspectRatioMax, cell);
+            ++cnt;
+          }
+          else
+          {
+            cell->clear_refine_flag();
+          }
         }
       }
     } // for cell in active cells
+
     return cnt;
   }
 
@@ -94,10 +77,13 @@ public:
     int cnt = 0;
     for (cell_it cell = dh.begin_active(); cell != dh.end(); ++cell)
     {
-      if (error_estimator[cell->active_cell_index()] < errorEstimatorMin)
+      if (cell->user_flag_set()) // Only coarsen cells that are not newly refined
       {
-        cell->set_coarsen_flag();
-        ++cnt;
+        if (error_estimator[cell->active_cell_index()] < errorEstimatorMin)
+        {
+          cell->set_coarsen_flag();
+          ++cnt;
+        }
       }
     } // for cell in active cells
     return cnt;
