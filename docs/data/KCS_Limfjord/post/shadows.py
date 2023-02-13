@@ -1,6 +1,6 @@
-#!/usr/bin/env python
-import vtkmodules.all as vtk
 
+import numpy as np
+import vtkmodules.all as vtk
 from matplotlib import cm
 
 
@@ -48,6 +48,68 @@ If no file is entered a sphere is used.
     args = parser.parse_args()
     return args.filename
 
+def sphereActor(center,radius):
+
+    sphere = vtkSphereSource()
+    sphere.SetCenter(center)
+    sphere.SetRadius(radius)
+
+    mapper = vtkPolyDataMapper()
+    mapper.SetInputConnection(sphere.GetOutputPort())
+
+    actor = vtkActor()
+    actor.SetMapper(mapper)
+
+    return actor
+
+def arrowActor(origin,direction):
+
+    arrow = vtk.vtkArrowSource()
+    arrow.SetTipResolution(64)
+    arrow.SetShaftResolution(64)
+
+
+    # The X axis is a vector from start to end
+    normalizedX = direction
+    length = vtk.vtkMath.Norm(normalizedX)
+    vtk.vtkMath.Normalize(normalizedX)
+
+    # The Z axis is an arbitrary vector cross X
+    normalizedZ = [0] * 3
+    rng = vtk.vtkMinimalStandardRandomSequence()
+    rng.SetSeed(8775070)  # For testing.    
+    arbitrary = [0] * 3
+    for i in range(0, 3):
+        rng.Next()
+        arbitrary[i] = rng.GetRangeValue(-10, 10)
+    vtk.vtkMath.Cross(normalizedX, arbitrary, normalizedZ)
+    vtk.vtkMath.Normalize(normalizedZ)
+
+    # The Y axis is Z cross X
+    normalizedY = [0] * 3
+    vtk.vtkMath.Cross(normalizedZ, normalizedX, normalizedY)
+    matrix = vtk.vtkMatrix4x4()
+
+    # Create the direction cosine matrix
+    matrix.Identity()
+    for i in range(0, 3):
+        matrix.SetElement(i, 0, normalizedX[i])
+        matrix.SetElement(i, 1, normalizedY[i])
+        matrix.SetElement(i, 2, normalizedZ[i])
+
+    # Apply the transforms
+    transform = vtk.vtkTransform()
+    transform.Translate(origin)
+    transform.Concatenate(matrix)
+    transform.Scale(length, length, length)
+
+    mapper = vtkPolyDataMapper()
+    mapper.SetInputConnection(arrow.GetOutputPort())
+
+    actor = vtkActor()
+    actor.SetUserMatrix(transform.GetMatrix())
+    actor.SetMapper(mapper)
+    return actor
 
 def ReadPolyData(file_name):
     import os
@@ -102,163 +164,159 @@ def makeLookupTable(xmin,xmax):
 
 def main():
 
-    colors  = vtk.vtkNamedColors()
+    for step in range(35):
+
+        colors  = vtk.vtkNamedColors()
+
+        reader = vtk.vtkXMLUnstructuredGridReader()
+        reader.SetFileName('./../output/result_scalar_results_' + str(step) + '.vtu')
+        reader.Update()  # Needed because of GetScalarRange
+        output = reader.GetOutput()
+
+        static_force = np.genfromtxt("./../output/hydrostatic_force.csv",delimiter=",")
+        dynamic_force = np.genfromtxt("./../output/hydrodynamic_force.csv",delimiter=",")
+
+        static_cp  = static_force[step,:3]
+        dynamic_cp = dynamic_force[step,:3]
+        hydrodynamic_force = dynamic_force[step,3:6]
+
+        Lpp = 230.0
+        Tm  = 10.8
+        area = Lpp*Tm
+
+        zerocross_sphere = sphereActor([Lpp/2,0,Tm],4)
+        zerocross_sphere.GetProperty().SetColor(colors.GetColor3d("Black"))
+
+        static_cpsphere = sphereActor(static_cp,4)
+        static_cpsphere.GetProperty().SetColor(colors.GetColor3d("Red"))
+        
+        dynamic_cpsphere = sphereActor(dynamic_cp,4)
+        dynamic_cpsphere.GetProperty().SetColor(colors.GetColor3d("Green"))
+
+        b = 16
+        rho  = 1000
+        u    = 1.799786422884671
+        pressure_scale = 1/2*rho*u**2
+        force_scale = pressure_scale*area
+        print(hydrodynamic_force[1]/force_scale)
+        #print(static_force)
+        xforcearrow = arrowActor([0,0,0],[hydrodynamic_force[0]/force_scale,0,0])
+        yforcearrow = arrowActor(dynamic_cp,[0,hydrodynamic_force[1]/force_scale*10000,0])
+        zforcearrow = arrowActor([0,0,0],[0,0,hydrodynamic_force[2]])
+
+        # Create the mapper that corresponds the objects of the vtk.vtk file
+        # into graphics elements
+        mapper = vtk.vtkDataSetMapper()
+        mapper.SetLookupTable(makeLookupTable(-pressure_scale,pressure_scale))
+        mapper.SetInputData(output)
+        mapper.SetScalarRange(-pressure_scale,pressure_scale)
+        mapper.SelectColorArray("hydrodynamic_pressure")
+        mapper.SetScalarModeToUsePointFieldData()
+        mapper.InterpolateScalarsBeforeMappingOn()
 
 
-    fn = get_program_parameters()
-    if fn:
-        polyData = ReadPolyData(fn)
-    else:
-        # Use a sphere
-        source = vtkSphereSource()
-        source.SetThetaResolution(100)
-        source.SetPhiResolution(100)
-        source.Update()
-        polyData = source.GetOutput()
+        # Create the Actor
+        actor = vtk.vtkActor()
+        actor.SetMapper(mapper)
+        actor.GetProperty().SetInterpolationToGouraud()
+        #actor.GetProperty().EdgeVisibilityOn()
+        #actor.GetProperty().SetLineWidth(2.0)
+    #    actor.GetProperty().SetColor(colors.GetColor3d("MistyRose"))
+        #actor.GetProperty().SetSpecular(1.0)
+        #actor.GetProperty().SetDiffuse(0.4)
+        #actor.GetProperty().SetAmbient(0.4)
+        #actor.GetProperty().SetSpecularPower(30.0)
+        actor.GetProperty().SetOpacity(0.8)
+
+        backface = vtk.vtkProperty()
+        backface.SetColor(colors.GetColor3d('Tomato'))
+        actor.SetBackfaceProperty(backface)
+
+        colors.SetColor('HighNoonSun', [255, 255, 251, 255])  # Color temp. 5400°K
+        colors.SetColor('100W Tungsten', [255, 214, 170, 255])  # Color temp. 2850°K
+
+        renderer = vtkRenderer()
+        renderer.AddActor(actor)
+        renderer.AddActor(xforcearrow)
+        renderer.AddActor(yforcearrow)
+        renderer.AddActor(static_cpsphere)
+        renderer.AddActor(dynamic_cpsphere)
+        renderer.AddActor(zerocross_sphere)
+        
+        #renderer.AddActor(zforcearrow)
+
+        renderer.SetBackground(colors.GetColor3d('Silver'))
+
+        renderWindow = vtkRenderWindow()
+        renderWindow.SetSize(640, 480)
+        renderWindow.AddRenderer(renderer)
+
+        interactor = vtkRenderWindowInteractor()
+        interactor.SetRenderWindow(renderWindow)
+
+        light1 = vtkLight()
+        light1.SetFocalPoint(0, 0, 0)
+        light1.SetPosition(0, 1, 0.2)
+        light1.SetColor(colors.GetColor3d('HighNoonSun'))
+        light1.SetIntensity(0.5)
+        #renderer.AddLight(light1)
+
+        light2 = vtkLight()
+        light2.SetFocalPoint(0, 0, 0)
+        light2.SetPosition(1.0, 1.0, 1.0)
+        light2.SetColor(colors.GetColor3d('100W Tungsten'))
+        light2.SetIntensity(0.5)
+        #renderer.AddLight(light2)
+
+        renderWindow.SetMultiSamples(0)
+
+        shadows = vtkShadowMapPass()
+        seq = vtkSequencePass()
+
+        passes = vtkRenderPassCollection()
+        passes.AddItem(shadows.GetShadowMapBakerPass())
+        passes.AddItem(shadows)
+        seq.SetPasses(passes)
+
+        cameraP = vtkCameraPass()
+        cameraP.SetDelegatePass(seq)
+
+        # Tell the renderer to use our render pass pipeline
+        glrenderer = renderer
+    #    glrenderer.SetPass(cameraP)
+
+        #renderer.GetActiveCamera().SetPosition(-0.2, 0.2, 1)
+        #renderer.GetActiveCamera().SetFocalPoint(0, 0, 0)
+        #renderer.GetActiveCamera().SetViewUp(0, 0, 1)
+        #renderer.GetActiveCamera().Azimuth(60)
+        #renderer.GetActiveCamera().Elevation(-60)
+        camera = renderer.GetActiveCamera()
+        camera.Roll(120)
+        #camera.Azimuth(40.0)
+        camera.Elevation(-70.0)
+
+        renderer.ResetCamera()
+        renderer.GetActiveCamera().Dolly(8)
+        renderer.ResetCameraClippingRange()
+        renderWindow.SetWindowName('Shadows')
+        renderWindow.Render()
+        renderWindow.SetWindowName('Shadows')
 
 
-    reader = vtk.vtkXMLUnstructuredGridReader()
-    reader.SetFileName('/home/ole/Projects/pi-BEM/docs/data/KCS_Limfjord/output/result_scalar_results_0.vtu')
-    reader.Update()  # Needed because of GetScalarRange
-    output = reader.GetOutput()
+        # screenshot code:
+        w2if = vtk.vtkWindowToImageFilter()
+        w2if.SetInput(renderWindow)
+        w2if.SetInputBufferTypeToRGB()
+        w2if.ReadFrontBufferOff()
+        w2if.Update()
 
-    # Create the mapper that corresponds the objects of the vtk.vtk file
-    # into graphics elements
-    mapper = vtk.vtkDataSetMapper()
-    mapper.SetLookupTable(makeLookupTable(-1000,1600))
-    mapper.SetInputData(output)
-    mapper.SetScalarRange(-1000,1600)
-    # mapper.ScalarVisibilityOff()
-    mapper.SelectColorArray("hydrodynamic_pressure")
-    mapper.SetScalarModeToUsePointFieldData()
-    mapper.InterpolateScalarsBeforeMappingOn()
+        writer = vtk.vtkPNGWriter()
+        writer.SetFileName('pictures/KCS_Limfjord_' + str(step) + '.png')
+        writer.SetInputConnection(w2if.GetOutputPort())
+        writer.Write()
 
 
-    # Create the Actor
-    actor = vtk.vtkActor()
-    actor.SetMapper(mapper)
-    actor.GetProperty().SetInterpolationToGouraud()
-    #actor.GetProperty().EdgeVisibilityOn()
-    #actor.GetProperty().SetLineWidth(2.0)
-#    actor.GetProperty().SetColor(colors.GetColor3d("MistyRose"))
-    actor.GetProperty().SetSpecular(1.0)
-    actor.GetProperty().SetDiffuse(0.4)
-    actor.GetProperty().SetAmbient(0.4)
-    actor.GetProperty().SetSpecularPower(30.0)
-    actor.GetProperty().SetOpacity(1.0)
-
-    backface = vtk.vtkProperty()
-    backface.SetColor(colors.GetColor3d('Tomato'))
-    actor.SetBackfaceProperty(backface)
-
-
-
-    colors = vtkNamedColors()
-    colors.SetColor('HighNoonSun', [255, 255, 251, 255])  # Color temp. 5400°K
-    colors.SetColor('100W Tungsten', [255, 214, 170, 255])  # Color temp. 2850°K
-
-    renderer = vtkRenderer()
-    renderer.AddActor(actor)
-
-    renderer.SetBackground(colors.GetColor3d('Silver'))
-
-    renderWindow = vtkRenderWindow()
-    renderWindow.SetSize(640, 480)
-    renderWindow.AddRenderer(renderer)
-
-    interactor = vtkRenderWindowInteractor()
-    interactor.SetRenderWindow(renderWindow)
-
-    light1 = vtkLight()
-    light1.SetFocalPoint(0, 0, 0)
-    light1.SetPosition(0, 1, 0.2)
-    light1.SetColor(colors.GetColor3d('HighNoonSun'))
-    light1.SetIntensity(0.5)
-    renderer.AddLight(light1)
-
-    light2 = vtkLight()
-    light2.SetFocalPoint(0, 0, 0)
-    light2.SetPosition(1.0, 1.0, 1.0)
-    light2.SetColor(colors.GetColor3d('100W Tungsten'))
-    light2.SetIntensity(0.5)
-    renderer.AddLight(light2)
-
-    mapper = vtkPolyDataMapper()
-    mapper.SetInputData(polyData)
-
-    actor = vtkActor()
-    actor.SetMapper(mapper)
-    actor.GetProperty().SetAmbientColor(colors.GetColor3d('SaddleBrown'))
-    actor.GetProperty().SetDiffuseColor(colors.GetColor3d('Sienna'))
-    actor.GetProperty().SetSpecularColor(colors.GetColor3d('White'))
-    actor.GetProperty().SetSpecular(0.51)
-    actor.GetProperty().SetDiffuse(0.7)
-    actor.GetProperty().SetAmbient(0.7)
-    actor.GetProperty().SetSpecularPower(10.0)
-    actor.GetProperty().SetOpacity(1.0)
-    renderer.AddActor(actor)
-
-    # Add a plane
-    bounds = polyData.GetBounds()
-
-    rnge = [0] * 3
-    rnge[0] = bounds[1] - bounds[0]
-    rnge[1] = bounds[3] - bounds[2]
-    rnge[2] = bounds[5] - bounds[4]
-    print('range: ', ', '.join(['{0:0.6f}'.format(i) for i in rnge]))
-    expand = 1.0
-    thickness = rnge[2] * 0.1
-    plane = vtkCubeSource()
-    plane.SetCenter((bounds[1] + bounds[0]) / 2.0,
-                    bounds[2] - thickness / 2.0,
-                    (bounds[5] + bounds[4]) / 2.0)
-    plane.SetXLength(bounds[1] - bounds[0] + (rnge[0] * expand))
-    plane.SetYLength(thickness)
-    plane.SetZLength(bounds[5] - bounds[4] + (rnge[2] * expand))
-
-    planeMapper = vtkPolyDataMapper()
-    planeMapper.SetInputConnection(plane.GetOutputPort())
-
-    planeActor = vtkActor()
-    planeActor.SetMapper(planeMapper)
-    renderer.AddActor(planeActor)
-
-    renderWindow.SetMultiSamples(0)
-
-    shadows = vtkShadowMapPass()
-
-    seq = vtkSequencePass()
-
-    passes = vtkRenderPassCollection()
-    passes.AddItem(shadows.GetShadowMapBakerPass())
-    passes.AddItem(shadows)
-    seq.SetPasses(passes)
-
-    cameraP = vtkCameraPass()
-    cameraP.SetDelegatePass(seq)
-
-    # Tell the renderer to use our render pass pipeline
-    glrenderer = renderer
-    glrenderer.SetPass(cameraP)
-
-    #renderer.GetActiveCamera().SetPosition(-0.2, 0.2, 1)
-    #renderer.GetActiveCamera().SetFocalPoint(0, 0, 0)
-    #renderer.GetActiveCamera().SetViewUp(0, 0, 1)
-    #renderer.GetActiveCamera().Azimuth(60)
-    #renderer.GetActiveCamera().Elevation(-60)
-    camera = renderer.GetActiveCamera()
-    camera.Roll(120)
-    #camera.Azimuth(40.0)
-    camera.Elevation(-70.0)
-
-    renderer.ResetCamera()
-    renderer.GetActiveCamera().Dolly(8)
-    renderer.ResetCameraClippingRange()
-    renderWindow.SetWindowName('Shadows')
-    renderWindow.Render()
-    renderWindow.SetWindowName('Shadows')
-
-    interactor.Start()
+#    interactor.Start()
 
 
 if __name__ == '__main__':

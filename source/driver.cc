@@ -305,9 +305,11 @@ void Driver<dim>::run(std::string input_path, std::string output_path)
 
           if (file.is_open())
           {
-            file << hydrodynamicForce[0] << ", " << hydrodynamicForce[1] << ", "
-                 << hydrodynamicForce[2] << ", " << hydrodynamicMoment[0] << ", "
-                 << hydrodynamicMoment[1] << ", " << hydrodynamicMoment[2] << "\n";
+            file << hydrodynamic_pressure_center[0] << ", " << hydrodynamic_pressure_center[1]
+                 << ", " << hydrodynamic_pressure_center[2] << ", " << hydrodynamicForce[0] << ", "
+                 << hydrodynamicForce[1] << ", " << hydrodynamicForce[2] << ", "
+                 << hydrodynamicMoment[0] << ", " << hydrodynamicMoment[1] << ", "
+                 << hydrodynamicMoment[2] << "\n";
             file.close();
           }
         }
@@ -327,9 +329,11 @@ void Driver<dim>::run(std::string input_path, std::string output_path)
 
           if (file.is_open())
           {
-            file << hydrostaticForce[0] << ", " << hydrostaticForce[1] << ", "
-                 << hydrostaticForce[2] << ", " << hydrostaticMoment[0] << ", "
-                 << hydrostaticMoment[1] << ", " << hydrostaticMoment[2] << "\n";
+            file << hydrostatic_pressure_center[0] << ", " << hydrostatic_pressure_center[1] << ", "
+                 << hydrostatic_pressure_center[2] << ", " << hydrostaticForce[0] << ", "
+                 << hydrostaticForce[1] << ", " << hydrostaticForce[2] << ", "
+                 << hydrostaticMoment[0] << ", " << hydrostaticMoment[1] << ", "
+                 << hydrostaticMoment[2] << "\n";
             file.close();
           }
         }
