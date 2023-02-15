@@ -1,9 +1,14 @@
 
+from __future__ import print_function
+
+from OCC.Display.SimpleGui import init_display
+from OCC.Extend.DataExchange import read_iges_file
+
 import numpy as np
 import vtkmodules.all as vtk
 from matplotlib import cm
 
-
+import pyoccvtk as occvtk
 
 # noinspection PyUnresolvedReferences
 import vtkmodules.vtkInteractionStyle
@@ -164,6 +169,15 @@ def makeLookupTable(xmin,xmax):
 
 def main():
 
+
+    shapes = read_iges_file("/home/ole/dev/projects/pi-BEM/docs/data/KCS_Limfjord/limfjord_seabed.iges")
+    display, start_display, add_menu, add_function_to_menu = init_display()
+    display.DisplayShape(shapes, update=True)
+    start_display()
+
+
+
+
     for step in range(35):
 
         colors  = vtk.vtkNamedColors()
@@ -184,8 +198,8 @@ def main():
         Tm  = 10.8
         area = Lpp*Tm
 
-        zerocross_sphere = sphereActor([Lpp/2,0,Tm],4)
-        zerocross_sphere.GetProperty().SetColor(colors.GetColor3d("Black"))
+        LCB_sphere = sphereActor([Lpp/2-0.0148*Lpp,0,Tm],4)
+        LCB_sphere.GetProperty().SetColor(colors.GetColor3d("Black"))
 
         static_cpsphere = sphereActor(static_cp,4)
         static_cpsphere.GetProperty().SetColor(colors.GetColor3d("Red"))
@@ -193,13 +207,16 @@ def main():
         dynamic_cpsphere = sphereActor(dynamic_cp,4)
         dynamic_cpsphere.GetProperty().SetColor(colors.GetColor3d("Green"))
 
-        b = 16
-        rho  = 1000
-        u    = 1.799786422884671
+        b       = 16
+        rho     = 1000
+        u       = 1.799786422884671
+        Awp     = 6227.87
+        Vol     = 52030.0
+        sinkage = hydrodynamic_force[2]/(rho*Awp)
+        print(sinkage)
         pressure_scale = 1/2*rho*u**2
         force_scale = pressure_scale*area
-        print(hydrodynamic_force[1]/force_scale)
-        #print(static_force)
+
         xforcearrow = arrowActor([0,0,0],[hydrodynamic_force[0]/force_scale,0,0])
         yforcearrow = arrowActor(dynamic_cp,[0,hydrodynamic_force[1]/force_scale*10000,0])
         zforcearrow = arrowActor([0,0,0],[0,0,hydrodynamic_force[2]])
@@ -241,7 +258,7 @@ def main():
         renderer.AddActor(yforcearrow)
         renderer.AddActor(static_cpsphere)
         renderer.AddActor(dynamic_cpsphere)
-        renderer.AddActor(zerocross_sphere)
+        renderer.AddActor(LCB_sphere)
         
         #renderer.AddActor(zforcearrow)
 
