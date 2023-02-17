@@ -3,6 +3,10 @@ from __future__ import print_function
 
 from OCC.Display.SimpleGui import init_display
 from OCC.Extend.DataExchange import read_iges_file
+from OCC.Core.TopAbs import TopAbs_FACE
+from OCC.Core.TopExp import TopExp_Explorer
+from OCC.Core.TopoDS import topods_Face
+from OCC.Core.BRep import BRep_Tool
 
 import numpy as np
 import vtkmodules.all as vtk
@@ -169,16 +173,27 @@ def makeLookupTable(xmin,xmax):
 
 def main():
 
+    shape = read_iges_file("/home/ole/dev/projects/pi-BEM/docs/data/KCS_Limfjord/limfjord_seabed.iges")
+    seabed_actors = []
+    topExp = TopExp_Explorer()
+    topExp.Init(shape, TopAbs_FACE)
+    while topExp.More():
+        face = topods_Face(topExp.Current())
+        surface = BRep_Tool().Surface(face)
+        mapper = occvtk.OccVtk_makeMapper(surface)
+        actor = vtk.vtkActor()
+        actor.SetMapper(mapper)
+        seabed_actors.append(actor)
+        topExp.Next()
 
-    shapes = read_iges_file("/home/ole/dev/projects/pi-BEM/docs/data/KCS_Limfjord/limfjord_seabed.iges")
-    display, start_display, add_menu, add_function_to_menu = init_display()
-    display.DisplayShape(shapes, update=True)
-    start_display()
+    # display, start_display, add_menu, add_function_to_menu = init_display()
+    # display.DisplayShape(shapes, update=True)
+    # start_display()
 
 
 
 
-    for step in range(35):
+    for step in range(1):
 
         colors  = vtk.vtkNamedColors()
 
@@ -253,13 +268,17 @@ def main():
         colors.SetColor('100W Tungsten', [255, 214, 170, 255])  # Color temp. 2850°K
 
         renderer = vtkRenderer()
-        renderer.AddActor(actor)
-        renderer.AddActor(xforcearrow)
-        renderer.AddActor(yforcearrow)
-        renderer.AddActor(static_cpsphere)
-        renderer.AddActor(dynamic_cpsphere)
-        renderer.AddActor(LCB_sphere)
+        # renderer.AddActor(actor)
+        # renderer.AddActor(xforcearrow)
+        # renderer.AddActor(yforcearrow)
+        # renderer.AddActor(static_cpsphere)
+        # renderer.AddActor(dynamic_cpsphere)
+        # renderer.AddActor(LCB_sphere)
         
+        for act in seabed_actors:
+            renderer.AddActor(act)
+
+
         #renderer.AddActor(zforcearrow)
 
         renderer.SetBackground(colors.GetColor3d('Silver'))
@@ -307,10 +326,10 @@ def main():
         #renderer.GetActiveCamera().SetViewUp(0, 0, 1)
         #renderer.GetActiveCamera().Azimuth(60)
         #renderer.GetActiveCamera().Elevation(-60)
-        camera = renderer.GetActiveCamera()
-        camera.Roll(120)
+        #camera = renderer.GetActiveCamera()
+        #camera.Roll(120)
         #camera.Azimuth(40.0)
-        camera.Elevation(-70.0)
+        #camera.Elevation(-70.0)
 
         renderer.ResetCamera()
         renderer.GetActiveCamera().Dolly(8)
@@ -320,20 +339,20 @@ def main():
         renderWindow.SetWindowName('Shadows')
 
 
-        # screenshot code:
-        w2if = vtk.vtkWindowToImageFilter()
-        w2if.SetInput(renderWindow)
-        w2if.SetInputBufferTypeToRGB()
-        w2if.ReadFrontBufferOff()
-        w2if.Update()
+        # # screenshot code:
+        # w2if = vtk.vtkWindowToImageFilter()
+        # w2if.SetInput(renderWindow)
+        # w2if.SetInputBufferTypeToRGB()
+        # w2if.ReadFrontBufferOff()
+        # w2if.Update()
 
-        writer = vtk.vtkPNGWriter()
-        writer.SetFileName('pictures/KCS_Limfjord_' + str(step) + '.png')
-        writer.SetInputConnection(w2if.GetOutputPort())
-        writer.Write()
+        # writer = vtk.vtkPNGWriter()
+        # writer.SetFileName('pictures/KCS_Limfjord_' + str(step) + '.png')
+        # writer.SetInputConnection(w2if.GetOutputPort())
+        # writer.Write()
 
 
-#    interactor.Start()
+    interactor.Start()
 
 
 if __name__ == '__main__':
