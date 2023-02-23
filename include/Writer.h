@@ -16,10 +16,9 @@ public:
   virtual ~Writer()
   {}
 
-
   bool saveScalarFields(std::string                     filename,
                         const dealii::DoFHandler<2, 3> &dh,
-                        const dealii::Mapping<2, 3> &   mapping,
+                        const dealii::Mapping<2, 3>    &mapping,
                         unsigned int                    mapping_degree)
   {
     dealii::DataOut<2, 3> dataout;
