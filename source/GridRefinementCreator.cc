@@ -1,5 +1,7 @@
 #include "../include/GridRefinementCreator.h"
 
+#include "../include/ErrorMessage.h"
+
 #include "../include/AspectRatioRefinement.h"
 #include "../include/BoxRefinement.h"
 #include "../include/CurvatureRefinement.h"
@@ -27,7 +29,7 @@ GridRefinementCreator::create(const std::string &filename, dealii::ConditionalOS
   }
   catch (std::exception &e)
   {
-    pcout << e.what() << std::endl;
+    std::cout << ErrorMessage::message(__FILE__, __LINE__, e.what());
     return gridrefinement;
   }
 
@@ -47,7 +49,7 @@ GridRefinementCreator::create(const std::string &filename, dealii::ConditionalOS
   }
   catch (const std::exception &e)
   {
-    pcout << e.what() << std::endl;
+    std::cout << ErrorMessage::message(__FILE__, __LINE__, e.what());
   }
 
   try
@@ -63,7 +65,7 @@ GridRefinementCreator::create(const std::string &filename, dealii::ConditionalOS
   }
   catch (const std::exception &e)
   {
-    pcout << e.what() << std::endl;
+    std::cout << ErrorMessage::message(__FILE__, __LINE__, e.what());
   }
 
   try
@@ -96,7 +98,7 @@ GridRefinementCreator::create(const std::string &filename, dealii::ConditionalOS
   }
   catch (const std::exception &e)
   {
-    pcout << e.what() << std::endl;
+    std::cout << ErrorMessage::message(__FILE__, __LINE__, e.what());
   }
 
   try
@@ -129,7 +131,7 @@ GridRefinementCreator::create(const std::string &filename, dealii::ConditionalOS
   }
   catch (const std::exception &e)
   {
-    pcout << e.what() << std::endl;
+    std::cout << ErrorMessage::message(__FILE__, __LINE__, e.what());
   }
 
   return gridrefinement;

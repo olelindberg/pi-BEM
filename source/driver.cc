@@ -1,4 +1,5 @@
 #include "../include/driver.h"
+#include "../include/ErrorMessage.h"
 #include "../include/UTM.h"
 
 #include <boost/filesystem.hpp>
@@ -64,8 +65,8 @@ Driver<dim>::Driver()
   , mpi_communicator(MPI_COMM_WORLD)
   , n_mpi_processes(Utilities::MPI::n_mpi_processes(mpi_communicator))
   , this_mpi_process(Utilities::MPI::this_mpi_process(mpi_communicator))
-  //, _physical_domain(std::make_shared<ComputationalDomain<dim>>(mpi_communicator))
-  , _physical_domain(std::make_shared<MultiMeshDomain<dim>>(mpi_communicator))
+  , _physical_domain(std::make_shared<ComputationalDomain<dim>>(mpi_communicator))
+  //, _physical_domain(std::make_shared<MultiMeshDomain<dim>>(mpi_communicator))
   , bem_problem(std::make_shared<BEMProblem<3>>(_physical_domain, mpi_communicator))
   , boundary_conditions(std::make_shared<BoundaryConditions<3>>(_physical_domain, *bem_problem))
   , prm()
@@ -108,17 +109,8 @@ void Driver<dim>::run(std::string input_path, std::string output_path)
     pibemSettings.print();
 
     //-------------------------------------------------------------------------
-    // Read route:
-    //-------------------------------------------------------------------------
-    std::string route_filename =
-      boost::filesystem::path(input_path).append("KCS_Limfjord_route.xml").string();
-    boost::property_tree::ptree tree;
-    boost::property_tree::read_xml(route_filename, tree);
-    std::vector<dealii::Point<2>> route;
-    readgpx(tree, route);
-
-
     // Read and create body/ship:
+    //-------------------------------------------------------------------------
     std::string bodyfilename = boost::filesystem::path(input_path).append("body.json").string();
     Body        body;
     if (!BodySettingsReaderJSON::read(bodyfilename, body))
@@ -128,8 +120,33 @@ void Driver<dim>::run(std::string input_path, std::string output_path)
     }
     body.print();
 
-    _physical_domain->read_domain(input_path);
+
+    if (!_physical_domain->read_domain(input_path))
+      std::cout << ErrorMessage::message(__FILE__,
+                                         __LINE__,
+                                         "Physical domain failed reading the domain.");
     _physical_domain->refine_and_resize(input_path);
+
+
+    //-------------------------------------------------------------------------
+    // Read route:
+    //-------------------------------------------------------------------------
+    std::vector<dealii::Point<2>> route;
+    try
+    {
+      std::string route_filename =
+        boost::filesystem::path(input_path).append("KCS_Limfjord_route.xml").string();
+      boost::property_tree::ptree tree;
+      boost::property_tree::read_xml(route_filename, tree);
+      readgpx(tree, route);
+    }
+    catch (std::exception &e)
+    {
+      std::cout << ErrorMessage::message(__FILE__, __LINE__, e.what());
+      return;
+    }
+
+
 
     // Loop route:
     for (unsigned int i = 0; i < route.size() - 1; ++i)
@@ -366,12 +383,12 @@ void Driver<dim>::run(std::string input_path, std::string output_path)
   }
   catch (std::exception &e)
   {
+    std::cout << e.what() << std::endl;
     std::string filename =
       boost::filesystem::path(output_path)
         .append(std::string("error_dump_").append(boundary_conditions->output_file_name))
         .string();
     boundary_conditions->output_results(filename, 0); // \todo change to Writer in Writer.h
-    std::cout << e.what() << std::endl;
     return;
   }
   // Write a summary of all timers

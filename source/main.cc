@@ -29,8 +29,7 @@ public:
       _input_path = _vm["input-path"].as<std::string>();
   }
 
-  std::string
-  get_input_path()
+  std::string get_input_path()
   {
     return _input_path;
   };
@@ -41,8 +40,7 @@ private:
   std::string                                                  _input_path;
 };
 
-int
-main(int argc, char *argv[])
+int main(int argc, char *argv[])
 {
   try
   {
@@ -76,7 +74,7 @@ main(int argc, char *argv[])
       pname = argv[2];
 
     Driver<DEAL_II_DIMENSION> driver;
-    deal2lkit::ParameterAcceptor::initialize(pname, pname2);
+    // deal2lkit::ParameterAcceptor::initialize(pname, pname2);
 
     driver.run(options.get_input_path(), output_path);
   }

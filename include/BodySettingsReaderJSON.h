@@ -1,5 +1,8 @@
 #ifndef BODY_SETTINGS_READER_JSON_H
 #define BODY_SETTINGS_READER_JSON_H
+
+#include "ErrorMessage.h"
+
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/property_tree/ptree.hpp>
 
@@ -14,8 +17,7 @@
 class BodySettingsReaderJSON
 {
 public:
-  static bool
-  read(const std::string &filename, Body &body)
+  static bool read(const std::string &filename, Body &body)
   {
     namespace pt = boost::property_tree;
     pt::ptree root;
@@ -53,7 +55,7 @@ public:
     }
     catch (std::exception &e)
     {
-      std::cout << e.what() << std::endl;
+      std::cout << ErrorMessage::message(__FILE__, __LINE__, e.what());
       return false;
     }
   }

@@ -24,8 +24,8 @@
 #include <deal.II/dofs/dof_renumbering.h>
 #include <deal.II/dofs/dof_tools.h>
 #include <deal.II/fe/fe_q.h>
-//#include <deal.II/base/mpi.h>
-//#include <deal.II/grid/grid_tools.h>
+// #include <deal.II/base/mpi.h>
+// #include <deal.II/grid/grid_tools.h>
 
 #include <filesystem>
 
@@ -49,7 +49,7 @@ MultiMeshDomain<dim>::~MultiMeshDomain()
 {}
 
 template <int dim>
-void MultiMeshDomain<dim>::read_domain(std::string input_path)
+bool MultiMeshDomain<dim>::read_domain(std::string input_path)
 {
   std::filesystem::path root = input_path;
 
@@ -58,6 +58,8 @@ void MultiMeshDomain<dim>::read_domain(std::string input_path)
   MeshReader::read(root, setup.mesh_inputs(), *_mesh);
   _shapes    = ShapesReader::read(root, setup.shape_inputs());
   _manifolds = ManifoldCreator::make(setup.shape_inputs(), _shapes, *_mesh);
+
+  return true;
 }
 
 template <int dim>

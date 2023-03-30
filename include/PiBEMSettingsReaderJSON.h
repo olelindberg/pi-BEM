@@ -1,6 +1,8 @@
 #ifndef PIBEM_SETTINGS_READER_JSON_H
 #define PIBEM_SETTINGS_READER_JSON_H
 
+#include "ErrorMessage.h"
+
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/property_tree/ptree.hpp>
 
@@ -34,12 +36,13 @@ public:
         root.get<int>("adaptive_mesh_refinement.number_of_elements_max");
       pibemSettings.top_fraction_max =
         root.get<double>("adaptive_mesh_refinement.top_fraction_max");
+      pibemSettings.domain = (PiBEMSettings::DOMAIN)root.get<int>("domain");
 
       return true;
     }
     catch (std::exception &e)
     {
-      std::cout << e.what() << std::endl;
+      std::cout << ErrorMessage::message(__FILE__, __LINE__, e.what());
       return false;
     }
   }

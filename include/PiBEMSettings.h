@@ -6,6 +6,12 @@
 class PiBEMSettings
 {
 public:
+  enum class DOMAIN
+  {
+    SINGLE_MESH,
+    MULTI_MESH
+  };
+
   double gravity                  = 9.80665;
   double density                  = 1000;
   double aspectRatioMax           = 2.5;
@@ -14,6 +20,7 @@ public:
   int    iterMax                  = 0;
   int    number_of_elements_max   = 2000;
   double top_fraction_max         = 0.05;
+  DOMAIN domain                   = DOMAIN::SINGLE_MESH;
 
   void print()
   {
@@ -26,6 +33,7 @@ public:
     std::cout << "iterMax                   = " << iterMax << std::endl;
     std::cout << "number_of_elements_max    = " << number_of_elements_max << std::endl;
     std::cout << "top_fraction_max          = " << top_fraction_max << std::endl;
+    std::cout << "domain                    = " << (int)domain << std::endl;
   }
 };
 

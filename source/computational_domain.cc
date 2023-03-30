@@ -252,29 +252,38 @@ void ComputationalDomain<dim>::parse_parameters(ParameterHandler &prm)
 // object to which it is attached.
 
 template <int dim>
-void ComputationalDomain<dim>::read_domain(std::string input_path)
+bool ComputationalDomain<dim>::read_domain(std::string input_path)
 {
   Teuchos::TimeMonitor localTimer(*readDomainTime);
   pcout << "Reading domain ...\n";
 
   std::string grid_filename =
-    boost::filesystem::path(input_path).append(input_grid_name + "." + input_grid_format).string();
+    boost::filesystem::path(input_path)
+      .string(); //.append(input_grid_name + "." + input_grid_format).string();
   pcout << "Reading grid file: " << grid_filename << std::endl;
   std::ifstream in;
   in.open(grid_filename);
-  GridIn<dim - 1, dim> gi;
-  gi.attach_triangulation(tria);
-  if (input_grid_format == "vtk")
-    gi.read_vtk(in);
-  else if (input_grid_format == "msh")
-    gi.read_msh(in);
-  else if (input_grid_format == "inp")
-    gi.read_ucd(in, true);
-  else
-    Assert(false, ExcNotImplemented());
+  bool success = false;
+  if (in.is_open())
+  {
+    pcout << "Reading grid file2: " << grid_filename << std::endl;
+    GridIn<dim - 1, dim> gi;
+    gi.attach_triangulation(tria);
+    if (input_grid_format == "vtk")
+      gi.read_vtk(in);
+    else if (input_grid_format == "msh")
+      gi.read_msh(in);
+    else if (input_grid_format == "inp")
+      gi.read_ucd(in, true);
+    else
+      Assert(false, ExcNotImplemented());
 
-  if (use_cad_surface_and_curves)
-    _max_tol = this->read_cad_files_and_assign_manifold_projectors(input_path);
+    if (use_cad_surface_and_curves)
+      _max_tol = this->read_cad_files_and_assign_manifold_projectors(input_path);
+
+    success = true;
+  }
+  return success;
 }
 
 template <int dim>

@@ -26,7 +26,7 @@
 #include <deal.II/base/quadrature_lib.h>
 #include <deal.II/base/quadrature_selector.h>
 #include <deal.II/base/smartpointer.h>
-//#include <deal.II/base/std_cxx11/tuple.h>
+// #include <deal.II/base/std_cxx11/tuple.h>
 #include <deal.II/base/types.h>
 #include <deal.II/base/utilities.h>
 
@@ -125,7 +125,7 @@ public:
 
   /// alternative method to read initial mesh
   /// from file
-  virtual void read_domain(std::string input_path = "") override;
+  virtual bool read_domain(std::string input_path = "") override;
 
   virtual void refine_and_resize(std::string input_path = "") override;
 
@@ -281,7 +281,7 @@ private:
   std::map<unsigned int, std::vector<typename Triangulation<dim - 1, dim>::active_cell_iterator>>
                                                                        vert_to_elems;
   std::set<typename Triangulation<dim - 1, dim>::active_cell_iterator> edge_cells;
-  Manifold<dim - 1, dim> *                                             manifold;
+  Manifold<dim - 1, dim>                                              *manifold;
 
   bool   spheroid_bool, used_spherical_manifold;
   double spheroid_x_axis, spheroid_y_axis, spheroid_z_axis;

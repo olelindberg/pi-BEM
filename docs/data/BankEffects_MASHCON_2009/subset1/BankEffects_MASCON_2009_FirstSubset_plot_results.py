@@ -3,8 +3,10 @@ import matplotlib.pyplot as plt
 from numpy.core.fromnumeric import argsort
 from numpy.core.numeric import NaN
 import pandas as pd
+import os
 
-numMeshes = 8
+
+current_dir = os.path.dirname(os.path.abspath(__file__))
 
 g = 9.80665
 density = 1000
@@ -34,44 +36,48 @@ za = np.array([[2.2,	 2.7,	2.8,	 3.1],
                [10.8, 14.0,	16.1,	NaN]])
 
 
-for meshId in range(1, 3):
+#for meshId in range(1, 3):
+meshId = 2
 
-    heaveforce = []
-    for testId in range(1, 5):
+heaveforce = []
+for testId in range(1, 5):
 
-        filename = "mesh" + \
-            str(meshId) + "/case" + str(testId) + "/output/force.csv"
-        print(filename)
-        data = np.genfromtxt(filename, delimiter=",")
-        heaveforce.append(data[0][2])
+    filename = current_dir + "/mesh" + \
+        str(meshId) + "/case" + str(testId) + "/output/force.csv"
+    print(filename)
+    data = np.genfromtxt(filename, delimiter=",")
+    heaveforce.append(data[0][2])
 
-    U = 1.7997864228846707
+U = 1.7997864228846707
+forceScale = 0.5*density*U*U*Sw
+heaveforce = np.array(heaveforce)
+CZ = heaveforce/forceScale
+
+for i in range(0, 4):
+
+    U = speed[i]
+
     forceScale = 0.5*density*U*U*Sw
-    heaveforce = np.array(heaveforce)
-    CZ = heaveforce/forceScale
+    heaveforce = CZ*forceScale
+    sinkage = heaveforce/(g*density*A)
 
-    for i in range(0, 4):
+    plt.figure(1)
+    plt.plot(y, heaveforce, 'o-', label="BEM")
+    plt.xlabel(r"$Fr_h$")
+    plt.ylabel(r"$F_z [N]$")
+    plt.grid(True)
+    plt.legend()
 
-        U = speed[i]
+    plt.figure(2)
+    plt.plot(y, sinkage*1000, 'o-', label="BEM")
+    plt.plot(y, -za[i, :], 'ko-', label="EFD za at " + str(U) + " m/s")
+    plt.plot(y, -zf[i, :], 'ko--', label="EFD zf at " + str(U) + " m/s")
+    plt.xlabel(r"$y [m]$")
+    plt.ylabel(r"$sinkage [mm]$")
+    plt.grid(True)
+    plt.legend()
 
-        forceScale = 0.5*density*U*U*Sw
-        heaveforce = CZ*forceScale
+plt.figure(1)
 
-        sinkage = heaveforce/(g*density*A)
-
-        plt.figure(1)
-        plt.plot(y, heaveforce, 'o-', label="BEM")
-        plt.xlabel(r"$Fr_h$")
-        plt.ylabel(r"$F_z [N]$")
-        plt.grid(True)
-        plt.legend()
-
-        plt.figure(2)
-        plt.plot(y, sinkage*1000, 'o-', label="BEM")
-        plt.plot(y, -za[i, :], 'ko-', label="EFD za")
-        plt.plot(y, -zf[i, :], 'ko--', label="EFD zf")
-        plt.xlabel(r"$y [m]$")
-        plt.ylabel(r"$sinkage [mm]$")
-        plt.grid(True)
 
 plt.show()
