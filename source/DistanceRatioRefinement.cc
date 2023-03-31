@@ -6,7 +6,7 @@
 
 
 DistanceRatioRefinement::DistanceRatioRefinement(dealii::ConditionalOStream pcout,
-                                                 const Bnd_Box &            box,
+                                                 const Bnd_Box             &box,
                                                  double                     aspectRatioMax,
                                                  unsigned int               manifold_id_,
                                                  int                        levels_,
@@ -25,6 +25,8 @@ DistanceRatioRefinement::DistanceRatioRefinement(dealii::ConditionalOStream pcou
 
 void DistanceRatioRefinement::refine(dealii::Triangulation<2, 3> &tria)
 {
+  std::cout << "Refining based on distance ratio ...\n";
+
   for (int refineId = 0; refineId < levels; ++refineId)
   {
     for (dealii::Triangulation<2, 3>::active_cell_iterator cell = tria.begin_active();

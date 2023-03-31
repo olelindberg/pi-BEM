@@ -80,6 +80,7 @@
 #include "boundary_conditions.h"
 
 #include "IPhysicalDomain.h"
+#include "PiBEMSettings.h"
 
 using namespace dealii;
 
@@ -124,7 +125,12 @@ protected:
 
   ParameterHandler prm;
 
-  bool global_refinement;
+  bool          global_refinement;
+  Body          body;
+  PiBEMSettings pibem_setup;
+
+  void solve();
+  void post_process(const std::string &output_path, int i);
 };
 
 #endif

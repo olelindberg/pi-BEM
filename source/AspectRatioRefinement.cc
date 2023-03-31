@@ -3,6 +3,8 @@
 
 void AspectRatioRefinement::refine(dealii::Triangulation<2, 3> &tria)
 {
+  std::cout << "Refining based on aspect ratio ...\n";
+
   unsigned int refinedCellCounter = 1;
   unsigned int cycles_counter     = 0;
   // we repeat the aspect ratio refinement cycle until no cell has been

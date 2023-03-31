@@ -6,7 +6,7 @@
 
 
 BoxRefinement::BoxRefinement(dealii::ConditionalOStream pcout,
-                             const Bnd_Box &            box,
+                             const Bnd_Box             &box,
                              double                     aspectRatioMax,
                              double                     cellSizeMin,
                              unsigned int               manifold_id_,
@@ -22,6 +22,8 @@ BoxRefinement::BoxRefinement(dealii::ConditionalOStream pcout,
 
 void BoxRefinement::refine(dealii::Triangulation<2, 3> &tria)
 {
+  std::cout << "Refining inside box ...\n";
+
   for (int refineId = 0; refineId < levels; ++refineId)
   {
     for (dealii::Triangulation<2, 3>::active_cell_iterator cell = tria.begin_active();

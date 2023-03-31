@@ -6,6 +6,8 @@ from pandas.core.frame import DataFrame
 import os
 import glob
 
+current_dir = os.path.dirname(os.path.abspath(__file__))
+
 g = 9.80665
 density = 1000
 
@@ -16,7 +18,7 @@ Sw = 2*1.36418245
 sheetname = 'Open data'
 
 df = pd.read_excel(
-    '/home/ole/dev/projects/pi-BEM/docs/data/BankEffects_MASHCON_2009/open_data_bankeffects/subset2/opendata_subset2.xls', sheet_name=sheetname)
+    '/home/ole/dev/projects/pi-BEM/docs/data/BankEffects_MASHCON_2009/open_data_bankeffects/subset2/opendata_subset2.xlsx', sheet_name=sheetname)
 df = df.set_index('short name test')
 print(df)
 testIds = list(df.columns[1:])
@@ -32,6 +34,7 @@ vel = np.sqrt(U*U + V*V)
 
 FrL = vel/(g*Lpp)
 Frh = vel/(g*h)
+print("testIds:")
 print(testIds)
 print('Froude number L')
 print(FrL)
@@ -39,30 +42,23 @@ print('Froude number h')
 print(Frh)
 #meshIds = [1]
 
-for testId in testIds[2]:
+swayforce = []
+heaveforce = []
+for testId in testIds:
 
-    swayforce = []
-    heaveforce = []
-    testdir = testId
-    dirs = glob.glob(testId + "/*/")
-    dirs = sorted(dirs)
-    print(dirs)
+    filename = current_dir + "/" + testId + "/output/force.csv"
+    print(filename)
+    data = np.genfromtxt(filename, delimiter=",")
+    swayforce.append(data[0][1])
+    heaveforce.append(data[0][2])
 
-    for dir in dirs:
+heaveforce = np.array(heaveforce)
+sinkage = heaveforce/(g*density*A)
 
-        filename = dir + "output/force.csv"
-        print(filename)
-        data = np.genfromtxt(filename, delimiter=",")
-        swayforce.append(data[0][1])
-        heaveforce.append(data[0][2])
+print("Sway force")
+print(swayforceEFD)
+print(swayforce)
 
-    heaveforce = np.array(heaveforce)
-    sinkage = heaveforce/(g*density*A)
-
-    print("Sway force")
-    print(swayforceEFD)
-    print(swayforce)
-
-    print("Sinkage")
-    print(0.5*(zaEFD+zfEFD))
-    print(-1000*sinkage)
+print("Sinkage")
+print(0.5*(zaEFD+zfEFD))
+print(-1000*sinkage)

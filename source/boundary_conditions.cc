@@ -111,6 +111,7 @@ void BoundaryConditions<dim>::parse_parameters(ParameterHandler &prm)
 template <int dim>
 void BoundaryConditions<dim>::solve_problem(const Body &body)
 {
+  pcout << "Solving problem ...\n";
   potential.set_time(0);
   wind.set_time(0);
 

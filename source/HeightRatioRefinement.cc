@@ -4,6 +4,8 @@
 
 void HeightRatioRefinement::refine(dealii::Triangulation<2, 3> &tria)
 {
+  std::cout << "Refining based on height ratio ...\n";
+
   for (int iter = 0; iter < itermax; ++iter)
   {
     bool isrefining = false;

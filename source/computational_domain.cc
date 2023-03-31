@@ -1,6 +1,5 @@
-
-
 #include "../include/computational_domain.h"
+#include "../include/ErrorMessage.h"
 #include "../include/GridRefinementCreator.h"
 #include "../include/Writer.h"
 
@@ -29,6 +28,8 @@
 
 #include "Teuchos_TimeMonitor.hpp"
 #include "my_utilities.h"
+
+#include <filesystem>
 
 Teuchos::RCP<Teuchos::Time> readDomainTime = Teuchos::TimeMonitor::getNewTimer("Read domain");
 Teuchos::RCP<Teuchos::Time> refineAndResizeTime =
@@ -69,7 +70,6 @@ ComputationalDomain<dim>::ComputationalDomain(MPI_Comm comm)
   : mpi_communicator(comm)
   , n_mpi_processes(Utilities::MPI::n_mpi_processes(mpi_communicator))
   , this_mpi_process(Utilities::MPI::this_mpi_process(mpi_communicator))
-  , used_spherical_manifold(false)
   , pcout(std::cout)
 {
   // Only output on first processor.
@@ -146,45 +146,46 @@ void ComputationalDomain<dim>::declare_parameters(ParameterHandler &prm)
 template <int dim>
 void ComputationalDomain<dim>::parse_parameters(ParameterHandler &prm)
 {
-  input_grid_name              = prm.get("Input grid name");
-  input_grid_format            = prm.get("Input grid format");
-  input_cad_path               = prm.get("Input path to CAD files");
-  n_cycles                     = prm.get_integer("Number of cycles");
-  max_element_aspect_ratio     = prm.get_double("Max aspect ratio");
-  max_element_length           = prm.get_double("Max length");
-  use_cad_surface_and_curves   = prm.get_bool("Use iges surfaces and curves");
-  surface_curvature_refinement = prm.get_bool("Surface curvature adaptive refinement");
-  cells_per_circle             = prm.get_double("Cells per circle");
-  pre_global_refinements =
-    prm.get_integer("Number of global refinement to be executed before local "
-                    "refinement cycle");
-  max_curvature_ref_cycles =
-    prm.get_integer("Maximum number of curvature adaptive refinement cycles");
-  cad_to_projectors_tolerance_ratio = prm.get_double("Cad tolerance to projectors tolerance ratio");
+  setup.input_grid_name   = prm.get("Input grid name");
+  setup.input_grid_format = prm.get("Input grid format");
+  setup.input_cad_path    = prm.get("Input path to CAD files");
+  //  n_cycles                     = prm.get_integer("Number of cycles");
+  // max_element_aspect_ratio     = prm.get_double("Max aspect ratio");
+  // max_element_length           = prm.get_double("Max length");
+  setup.use_cad_surface_and_curves = prm.get_bool("Use iges surfaces and curves");
+  // surface_curvature_refinement     = prm.get_bool("Surface curvature adaptive refinement");
+  // cells_per_circle = prm.get_double("Cells per circle");
+  // pre_global_refinements =
+  // prm.get_integer("Number of global refinement to be executed before local "
+  //                "refinement cycle");
+  // max_curvature_ref_cycles =
+  // prm.get_integer("Maximum number of curvature adaptive refinement cycles");
+  setup.cad_to_projectors_tolerance_ratio =
+    prm.get_double("Cad tolerance to projectors tolerance ratio");
 
-  spheroid_bool   = prm.get_bool("Use a spheroid");
-  spheroid_x_axis = prm.get_double("Axis x dimension");
-  spheroid_y_axis = prm.get_double("Axis y dimension");
-  spheroid_z_axis = prm.get_double("Axis z dimension");
+  // spheroid_bool   = prm.get_bool("Use a spheroid");
+  // spheroid_x_axis = prm.get_double("Axis x dimension");
+  // spheroid_y_axis = prm.get_double("Axis y dimension");
+  // spheroid_z_axis = prm.get_double("Axis z dimension");
 
   prm.enter_subsection("Boundary Conditions ID Numbers");
   {
     std::vector<std::string> dirichlet_string_list =
       Utilities::split_string_list(prm.get("Dirichlet boundary ids"));
-    dirichlet_boundary_ids.resize(dirichlet_string_list.size());
+    setup.dirichlet_boundary_ids.resize(dirichlet_string_list.size());
     for (unsigned int i = 0; i < dirichlet_string_list.size(); ++i)
     {
       std::istringstream reader(dirichlet_string_list[i]);
-      reader >> dirichlet_boundary_ids[i];
+      reader >> setup.dirichlet_boundary_ids[i];
     }
 
     std::vector<std::string> neumann_string_list =
       Utilities::split_string_list(prm.get("Neumann boundary ids"));
-    neumann_boundary_ids.resize(neumann_string_list.size());
+    setup.neumann_boundary_ids.resize(neumann_string_list.size());
     for (unsigned int i = 0; i < neumann_string_list.size(); ++i)
     {
       std::istringstream reader(neumann_string_list[i]);
-      reader >> neumann_boundary_ids[i];
+      reader >> setup.neumann_boundary_ids[i];
     }
 
     // dirichlet_sur_ID1 = prm.get_integer("Dirichlet Surface 1 ID");
@@ -194,6 +195,9 @@ void ComputationalDomain<dim>::parse_parameters(ParameterHandler &prm)
     // neumann_sur_ID2 = prm.get_integer("Neumann Surface 2 ID");
     // neumann_sur_ID3 = prm.get_integer("Neumann Surface 3 ID");
   }
+
+  setup.print();
+
   prm.leave_subsection();
 }
 
@@ -255,35 +259,42 @@ template <int dim>
 bool ComputationalDomain<dim>::read_domain(std::string input_path)
 {
   Teuchos::TimeMonitor localTimer(*readDomainTime);
-  pcout << "Reading domain ...\n";
+  pcout << "\nReading domain ...\n";
 
-  std::string grid_filename =
-    boost::filesystem::path(input_path)
-      .string(); //.append(input_grid_name + "." + input_grid_format).string();
-  pcout << "Reading grid file: " << grid_filename << std::endl;
-  std::ifstream in;
-  in.open(grid_filename);
-  bool success = false;
+  std::string filename = boost::filesystem::path(input_path)
+                           .append(setup.input_grid_name + "." + setup.input_grid_format)
+                           .string();
+  pcout << "Reading grid file: " << filename << std::endl;
+  if (std::filesystem::is_directory(filename))
+  {
+    pcout << ErrorMessage::message(__FILE__, __LINE__, filename + " is a directory.");
+    return false;
+  }
+
+  std::ifstream in(filename);
   if (in.is_open())
   {
-    pcout << "Reading grid file2: " << grid_filename << std::endl;
     GridIn<dim - 1, dim> gi;
     gi.attach_triangulation(tria);
-    if (input_grid_format == "vtk")
+    if (setup.input_grid_format == "vtk")
       gi.read_vtk(in);
-    else if (input_grid_format == "msh")
+    else if (setup.input_grid_format == "msh")
       gi.read_msh(in);
-    else if (input_grid_format == "inp")
+    else if (setup.input_grid_format == "inp")
       gi.read_ucd(in, true);
     else
       Assert(false, ExcNotImplemented());
 
-    if (use_cad_surface_and_curves)
+    if (setup.use_cad_surface_and_curves)
       _max_tol = this->read_cad_files_and_assign_manifold_projectors(input_path);
-
-    success = true;
   }
-  return success;
+  else
+  {
+    pcout << ErrorMessage::message(__FILE__, __LINE__, "Opening file " + filename + " failed.");
+    return false;
+  }
+
+  return true;
 }
 
 template <int dim>
@@ -295,7 +306,7 @@ bool ComputationalDomain<dim>::read_cad_files(std::string input_path)
   while (go_on == true)
   {
     std::string color_filename =
-      (input_cad_path + "Color_" + Utilities::int_to_string(ii) + ".iges");
+      (setup.input_cad_path + "Color_" + Utilities::int_to_string(ii) + ".iges");
     std::string cad_surface_filename =
       boost::filesystem::path(input_path).append(color_filename).string();
 
@@ -326,7 +337,7 @@ bool ComputationalDomain<dim>::read_cad_files(std::string input_path)
   while (go_on == true)
   {
     std::string edge_filename =
-      (input_cad_path + "Curve_" + Utilities::int_to_string(ii) + ".iges");
+      (setup.input_cad_path + "Curve_" + Utilities::int_to_string(ii) + ".iges");
     std::string cad_curve_filename =
       boost::filesystem::path(input_path).append(edge_filename).string();
     std::ifstream f(cad_curve_filename);
@@ -417,7 +428,7 @@ ComputationalDomain<dim>::read_cad_files_and_assign_manifold_projectors(std::str
   for (unsigned int i = 0; i < cad_curves.size(); ++i)
     max_tol = fmax(max_tol, OpenCASCADE::get_shape_tolerance(cad_curves[i]));
 
-  const double tolerance = cad_to_projectors_tolerance_ratio * max_tol;
+  const double tolerance = setup.cad_to_projectors_tolerance_ratio * max_tol;
 
   this->assign_manifold_projectors(tolerance);
 
@@ -429,25 +440,12 @@ ComputationalDomain<dim>::read_cad_files_and_assign_manifold_projectors(std::str
 template <int dim>
 void ComputationalDomain<dim>::refine_and_resize(std::string input_path)
 {
-  Teuchos::TimeMonitor localTimer(*refineAndResizeTime);
-
-  pcout << "Refining and resizing ... " << std::endl;
   auto filename       = boost::filesystem::path(input_path).append("refinement.json").string();
   auto gridrefinement = GridRefinementCreator::create(filename, pcout);
 
-  Writer writer;
-  writer.save("/home/ole/dev/temp/trimeshinit.vtu", tria);
-
   // Do the refinement:
-  int cnt = 0;
   for (const auto &refinement : gridrefinement)
-  {
     refinement->refine(tria);
-    writer.save(
-      std::string("/home/ole/dev/temp/trimeshrefine").append(std::to_string(cnt)).append(".vtu"),
-      tria);
-    ++cnt;
-  }
 }
 
 

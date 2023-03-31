@@ -89,6 +89,60 @@
 using namespace dealii;
 using namespace deal2lkit;
 
+class ComputationalDomainSettings
+{
+public:
+  /// the material ID numbers in the mesh
+  /// input file, for the dirichlet_nodes
+  std::vector<unsigned int> dirichlet_boundary_ids;
+
+  /// the material ID numbers in the mesh
+  /// input file, for the neumann_nodes
+  std::vector<unsigned int> neumann_boundary_ids;
+
+  // flag to assess if the software will look for cad surfaces (form files
+  // Color_*.iges) and curves (from files Curve_*.iges), and use such geometries
+  // to refine the grid. the program will import as many curves and surfaces as
+  // there are available in the present folder, and progressively associate them
+  // to the manifold IDS available in the mesh file.
+  //
+  bool use_cad_surface_and_curves;
+
+  // flag to require surface refinement based on CAD surface curvature. Can only
+  // be activated if previous flag is true
+  //
+  bool surface_curvature_refinement;
+
+
+  // ratio between the tolerance found in the cad files and the
+  // one to be prescribed to the projectors
+  double cad_to_projectors_tolerance_ratio;
+
+  /// Strings identifying the input grid name and format
+  std::string input_grid_name;
+  std::string input_grid_format;
+  std::string input_cad_path;
+
+  void print()
+  {
+    std::cout << "\nComputational domain settings:";
+    std::cout << "\ndirichlet_boundary_ids            ";
+    for (auto id : dirichlet_boundary_ids)
+      std::cout << id << " ";
+    std::cout << "\nneumann_boundary_ids              ";
+    for (auto id : neumann_boundary_ids)
+      std::cout << id << " ";
+    std::cout << "\nuse_cad_surface_and_curves        " << use_cad_surface_and_curves;
+    std::cout << "\nsurface_curvature_refinement      " << surface_curvature_refinement;
+    std::cout << "\ncad_to_projectors_tolerance_ratio " << cad_to_projectors_tolerance_ratio;
+    std::cout << "\ninput_grid_name                   " << input_grid_name;
+    std::cout << "\ninput_grid_format                 " << input_grid_format;
+    std::cout << "\ninput_cad_path                    " << input_cad_path;
+    std::cout << "\n";
+  }
+};
+
+
 /**
  * - ComputationalDomain. This class handles, and provides to the other classes,
  * ONLY the geometry of the problem. In particular
@@ -115,12 +169,12 @@ public:
 
   virtual std::vector<unsigned int> get_dirichlet_boundary_ids() override
   {
-    return dirichlet_boundary_ids;
+    return setup.dirichlet_boundary_ids;
   };
 
   virtual std::vector<unsigned int> get_neumann_boundary_ids() override
   {
-    return neumann_boundary_ids;
+    return setup.neumann_boundary_ids;
   };
 
   /// alternative method to read initial mesh
@@ -132,15 +186,7 @@ public:
   virtual void update_triangulation() override;
 
 private:
-  /// the material ID numbers in the mesh
-  /// input file, for the dirichlet_nodes
-  std::vector<unsigned int> dirichlet_boundary_ids;
-
-  /// the material ID numbers in the mesh
-  /// input file, for the neumann_nodes
-  std::vector<unsigned int> neumann_boundary_ids;
-
-
+  ComputationalDomainSettings setup;
 
   /// method to declare the parameters
   /// to be read from the parameters file
@@ -223,50 +269,6 @@ private:
   // values to be imported from the
   // parameters file:
 
-  /// number of refining cycles
-
-  unsigned int n_cycles;
-
-  /// number of global refinement to executed before a local refinement cycle;
-
-  unsigned int pre_global_refinements;
-
-  /// maximum cell aspect ratio
-
-  double max_element_aspect_ratio;
-  double max_element_length;
-
-  // flag to assess if the software will look for cad surfaces (form files
-  // Color_*.iges) and curves (from files Curve_*.iges), and use such geometries
-  // to refine the grid. the program will import as many curves and surfaces as
-  // there are available in the present folder, and progressively associate them
-  // to the manifold IDS available in the mesh file.
-  //
-  bool use_cad_surface_and_curves;
-
-  // flag to require surface refinement based on CAD surface curvature. Can only
-  // be activated if previous flag is true
-  //
-  bool surface_curvature_refinement;
-
-  // used if curvature adaptive refinement is true. the cells are refined until
-  // their size is 1/cells_per_circle of the circumference the radius of which
-  // is the local max curvature radius
-  //
-  double cells_per_circle;
-
-  // maximum number of curvature based refinement cycles
-  unsigned int max_curvature_ref_cycles;
-
-  // ratio between the tolerance found in the cad files and the
-  // one to be prescribed to the projectors
-  double cad_to_projectors_tolerance_ratio;
-
-  /// Strings identifying the input grid name and format
-  std::string input_grid_name;
-  std::string input_grid_format;
-  std::string input_cad_path;
-
 
 
   MPI_Comm mpi_communicator;
@@ -281,10 +283,9 @@ private:
   std::map<unsigned int, std::vector<typename Triangulation<dim - 1, dim>::active_cell_iterator>>
                                                                        vert_to_elems;
   std::set<typename Triangulation<dim - 1, dim>::active_cell_iterator> edge_cells;
-  Manifold<dim - 1, dim>                                              *manifold;
 
-  bool   spheroid_bool, used_spherical_manifold;
-  double spheroid_x_axis, spheroid_y_axis, spheroid_z_axis;
+  Manifold<dim - 1, dim> *manifold;
+
 
   ConditionalOStream pcout;
 

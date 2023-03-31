@@ -16,32 +16,27 @@ public:
   virtual ~Body()
   {}
 
-  void
-  setMaterialIndices(const std::vector<int> &materialIndices)
+  void setMaterialIndices(const std::vector<int> &materialIndices)
   {
     _materialIndices = materialIndices;
   }
 
-  void
-  setWaterlineIndices(const std::vector<int> &indices)
+  void setWaterlineIndices(const std::vector<int> &indices)
   {
     _waterlineIndices = indices;
   }
 
-  const std::vector<int> &
-  getMaterialIndices() const
+  const std::vector<int> &getMaterialIndices() const
   {
     return _materialIndices;
   }
 
-  const std::vector<int> &
-  getWaterlineIndices() const
+  const std::vector<int> &getWaterlineIndices() const
   {
     return _waterlineIndices;
   }
 
-  bool
-  hasMaterial(int index) const
+  bool hasMaterial(int index) const
   {
     if (std::find(_materialIndices.begin(), _materialIndices.end(), index) !=
         _materialIndices.end())
@@ -50,8 +45,7 @@ public:
       return false;
   }
 
-  bool
-  isWaterline(int index) const
+  bool isWaterline(int index) const
   {
     if (std::find(_waterlineIndices.begin(), _waterlineIndices.end(), index) !=
         _waterlineIndices.end())
@@ -60,47 +54,40 @@ public:
       return false;
   }
 
-  void
-  setDraft(double draft)
+  void setDraft(double draft)
   {
     _draft = draft;
   }
 
-  double
-  getDraft() const
+  double getDraft() const
   {
     return _draft;
   }
 
-  void
-  setName(const std::string &name)
+  void setName(const std::string &name)
   {
     _name = name;
   }
 
-  const std::string &
-  getName() const
+  const std::string &getName() const
   {
     return _name;
   }
 
-  void
-  setCenterOfGravity(const dealii::Tensor<1, 3> &centerOfGravity)
+  void setCenterOfGravity(const dealii::Tensor<1, 3> &centerOfGravity)
   {
     _centerOfGravity = centerOfGravity;
   }
 
-  const dealii::Tensor<1, 3> &
-  getCenterOfGravity() const
+  const dealii::Tensor<1, 3> &getCenterOfGravity() const
   {
     return _centerOfGravity;
   }
 
 
-  void
-  print()
+  void print()
   {
-    std::cout << "Printing body parameters ..." << std::endl;
+    std::cout << "\nBody settings:" << std::endl;
     std::cout << "name             : " << _name << std::endl;
     std::cout << "draft            : Tm = " << _draft << std::endl;
 

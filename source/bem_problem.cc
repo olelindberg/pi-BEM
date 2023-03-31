@@ -550,7 +550,7 @@ void BEMProblem<dim>::assemble_system()
     fe_v.reinit(cell);
     cell->get_dof_indices(local_dof_indices);
 
-    const std::vector<Point<dim>> &    q_points = fe_v.get_quadrature_points();
+    const std::vector<Point<dim>>     &q_points = fe_v.get_quadrature_points();
     const std::vector<Tensor<1, dim>> &normals  = fe_v.get_normal_vectors();
 
     // We then form the integral over
@@ -988,7 +988,7 @@ void BEMProblem<dim>::_assemble_system_double_body(double z0)
     fe_v.reinit(cell);
     cell->get_dof_indices(local_dof_indices);
 
-    const std::vector<Point<dim>> &    q_points = fe_v.get_quadrature_points();
+    const std::vector<Point<dim>>     &q_points = fe_v.get_quadrature_points();
     const std::vector<Tensor<1, dim>> &normals  = fe_v.get_normal_vectors();
 
     for (types::global_dof_index i = 0; i < dh.n_dofs(); ++i) // these must now be the locally owned
@@ -1162,7 +1162,7 @@ void BEMProblem<dim>::compute_alpha()
 }
 
 template <int dim>
-void BEMProblem<dim>::vmult(TrilinosWrappers::MPI::Vector &      dst,
+void BEMProblem<dim>::vmult(TrilinosWrappers::MPI::Vector       &dst,
                             const TrilinosWrappers::MPI::Vector &src) const
 {
   serv_phi = src;
@@ -1217,7 +1217,7 @@ void BEMProblem<dim>::vmult(TrilinosWrappers::MPI::Vector &      dst,
 }
 
 template <int dim>
-void BEMProblem<dim>::compute_rhs(TrilinosWrappers::MPI::Vector &      dst,
+void BEMProblem<dim>::compute_rhs(TrilinosWrappers::MPI::Vector       &dst,
                                   const TrilinosWrappers::MPI::Vector &src) const
 {
   serv_phi     = src;
@@ -1264,8 +1264,8 @@ void BEMProblem<dim>::compute_rhs(TrilinosWrappers::MPI::Vector &      dst,
 // The next function simply solves
 // the linear system.
 template <int dim>
-void BEMProblem<dim>::solve_system(TrilinosWrappers::MPI::Vector &      phi,
-                                   TrilinosWrappers::MPI::Vector &      dphi_dn,
+void BEMProblem<dim>::solve_system(TrilinosWrappers::MPI::Vector       &phi,
+                                   TrilinosWrappers::MPI::Vector       &dphi_dn,
                                    const TrilinosWrappers::MPI::Vector &tmp_rhs)
 {
   Teuchos::TimeMonitor                       LocalTimer(*LacSolveTime);
@@ -1349,8 +1349,8 @@ void BEMProblem<dim>::solve_system(TrilinosWrappers::MPI::Vector &      phi,
 // This method performs a Bem resolution,
 // either in a direct or multipole method
 template <int dim>
-void BEMProblem<dim>::solve(TrilinosWrappers::MPI::Vector &      phi,
-                            TrilinosWrappers::MPI::Vector &      dphi_dn,
+void BEMProblem<dim>::solve(TrilinosWrappers::MPI::Vector       &phi,
+                            TrilinosWrappers::MPI::Vector       &dphi_dn,
                             const TrilinosWrappers::MPI::Vector &tmp_rhs)
 {
   if (solution_method == "Direct")
@@ -1374,8 +1374,8 @@ void BEMProblem<dim>::solve(TrilinosWrappers::MPI::Vector &      phi,
 }
 
 template <int dim>
-void BEMProblem<dim>::compute_constraints(IndexSet &                           c_cpu_set,
-                                          AffineConstraints<double> &          c,
+void BEMProblem<dim>::compute_constraints(IndexSet                            &c_cpu_set,
+                                          AffineConstraints<double>           &c,
                                           const TrilinosWrappers::MPI::Vector &tmp_rhs)
 
 {
@@ -2119,7 +2119,7 @@ void BEMProblem<dim>::hydrostatic_pressure(double                         gravit
 template <int dim>
 void BEMProblem<dim>::hydrodynamic_pressure(double                                density,
                                             const Functions::ParsedFunction<dim> &wind,
-                                            TrilinosWrappers::MPI::Vector &       pressure)
+                                            TrilinosWrappers::MPI::Vector        &pressure)
 {
   Teuchos::TimeMonitor LocalTimer(*AssembleTime);
 
@@ -2167,9 +2167,9 @@ void BEMProblem<dim>::hydrodynamic_pressure(double                              
 
 
 template <int dim>
-void BEMProblem<dim>::center_of_pressure(const Body &                         body,
+void BEMProblem<dim>::center_of_pressure(const Body                          &body,
                                          const TrilinosWrappers::MPI::Vector &pressure,
-                                         Tensor<1, dim> &                     pressure_center)
+                                         Tensor<1, dim>                      &pressure_center)
 {
   FEValues<dim - 1, dim> fe_v(*mapping,
                               *fe,
@@ -2219,10 +2219,10 @@ void BEMProblem<dim>::center_of_pressure(const Body &                         bo
 
 
 template <int dim>
-void BEMProblem<dim>::pressure_force_and_moment(const Body &                         body,
+void BEMProblem<dim>::pressure_force_and_moment(const Body                          &body,
                                                 const TrilinosWrappers::MPI::Vector &pressure,
-                                                Tensor<1, dim> &                     force,
-                                                Tensor<1, dim> &                     moment)
+                                                Tensor<1, dim>                      &force,
+                                                Tensor<1, dim>                      &moment)
 {
   Teuchos::TimeMonitor LocalTimer(*AssembleTime);
 
@@ -2249,7 +2249,7 @@ void BEMProblem<dim>::pressure_force_and_moment(const Body &                    
       fe_v.reinit(cell);
       cell->get_dof_indices(local_dof_indices);
 
-      const std::vector<Point<dim>> &    q_points  = fe_v.get_quadrature_points();
+      const std::vector<Point<dim>>     &q_points  = fe_v.get_quadrature_points();
       const std::vector<Tensor<1, dim>> &q_normals = fe_v.get_normal_vectors();
 
       std::vector<double> q_pressure(q_points.size());
@@ -2293,7 +2293,7 @@ Tensor<1, dim> BEMProblem<dim>::volume_integral(const Body &body)
     if (cell->subdomain_id() == this_mpi_process && body.hasMaterial(cell->material_id()))
     {
       fe_v.reinit(cell);
-      const std::vector<Point<dim>> &    q_points = fe_v.get_quadrature_points();
+      const std::vector<Point<dim>>     &q_points = fe_v.get_quadrature_points();
       const std::vector<Tensor<1, dim>> &normals  = fe_v.get_normal_vectors();
 
       for (unsigned int q = 0; q < n_q_points; ++q)
@@ -2311,9 +2311,9 @@ Tensor<1, dim> BEMProblem<dim>::volume_integral(const Body &body)
 template <int dim>
 void BEMProblem<dim>::free_surface_elevation(double                               gravity,
                                              double                               density,
-                                             const Body &                         body,
+                                             const Body                          &body,
                                              const TrilinosWrappers::MPI::Vector &pressure,
-                                             std::vector<Point<dim>> &            elevation)
+                                             std::vector<Point<dim>>             &elevation)
 {
   dealii::Vector<double> pressure_local(pressure);
 

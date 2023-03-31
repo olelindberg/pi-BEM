@@ -54,8 +54,6 @@ int main(int argc, char *argv[])
     Utilities::MPI::MPI_InitFinalize mpi_initialization(argc, argv, threads);
     std::cout << "MPI initialized with " << threads << " threads" << std::endl;
 
-
-
     auto output_path = boost::filesystem::path(options.get_input_path()).append("output").string();
     if (!boost::filesystem::exists(output_path))
     {
@@ -74,7 +72,7 @@ int main(int argc, char *argv[])
       pname = argv[2];
 
     Driver<DEAL_II_DIMENSION> driver;
-    // deal2lkit::ParameterAcceptor::initialize(pname, pname2);
+    deal2lkit::ParameterAcceptor::initialize(pname, pname2);
 
     driver.run(options.get_input_path(), output_path);
   }
