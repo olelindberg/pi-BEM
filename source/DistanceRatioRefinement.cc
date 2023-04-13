@@ -55,4 +55,5 @@ void DistanceRatioRefinement::refine(dealii::Triangulation<2, 3> &tria)
     tria.prepare_coarsening_and_refinement();
     tria.execute_coarsening_and_refinement();
   }
+  std::cout << "Number of global active cells: " << tria.n_global_active_cells() << std::endl;
 }

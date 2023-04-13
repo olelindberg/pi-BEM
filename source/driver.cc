@@ -139,43 +139,6 @@ void Driver<dim>::post_process(const std::string &output_path, int i)
   pcout << "Static pressure center :     " << hydrostatic_pressure_center << "\n";
   pcout << "Dynamic pressure center:     " << hydrodynamic_pressure_center << "\n";
 
-  // if (false)
-  // {
-  //   BRepBuilderAPI_MakeWire wirebuilder;
-  //   for (auto id : body.getWaterlineIndices())
-  //     wirebuilder.Add(TopoDS::Wire(_physical_domain->cad_curves[id - 11]));
-  //   if (wirebuilder.IsDone())
-  //   {
-  //     double         x0 = body.getCenterOfGravity()[0];
-  //     double         y0 = body.getCenterOfGravity()[1];
-  //     SurfaceMoments sm(x0, y0);
-  //     if (!WireUtil::surfaceMoments(wirebuilder.Wire(), sm))
-  //       pcout << "Surface moments failed ..." << std::endl;
-
-  //     pcout << "x0  : " << sm.getx0() << std::endl;
-  //     pcout << "y0  : " << sm.gety0() << std::endl;
-  //     pcout << "S0  : " << sm.getS0() << std::endl;
-  //     pcout << "Sx  : " << sm.getSx() << std::endl;
-  //     pcout << "Sy  : " << sm.getSy() << std::endl;
-  //     pcout << "Sxx : " << sm.getSxx() << std::endl;
-  //     pcout << "Sxy : " << sm.getSxy() << std::endl;
-  //     pcout << "Syy : " << sm.getSyy() << std::endl;
-  //   }
-  // }
-  dealii::Point<3> tmp;
-  for (int i = 0; i < 3; ++i)
-    tmp[i] = hydrostatic_pressure_center[i];
-  auto wpm = bem_problem->water_plane_moments(body, tmp);
-
-  pcout << "S0  = " << wpm.getS0() << "\n";
-  // pcout << "Sx  = " << wpm.getSx() << "\n";
-  // pcout << "Sy  = " << wpm.getSy() << "\n";
-  // pcout << "Sxx = " << wpm.getSxx() << "\n";
-  // pcout << "Sxy = " << wpm.getSxy() << "\n";
-  // pcout << "Syy = " << wpm.getSyy() << "\n";
-
-
-
   //-------------------------------------------------------------------------
   // Pressure Forces:
   //-------------------------------------------------------------------------
@@ -239,7 +202,8 @@ void Driver<dim>::post_process(const std::string &output_path, int i)
       {
         file.open(filename, std::fstream::out);
         if (file.is_open())
-          file << "# Fx [N], Fy [N], Fz [N], Mx [Nm], My [Nm], Mz [Nm]\n";
+          file
+            << "# CPx [m], CPy [m], CPz [m], Fx [N], Fy [N], Fz [N], Mx [Nm], My [Nm], Mz [Nm]\n";
       }
       else
         file.open(filename, std::fstream::app);

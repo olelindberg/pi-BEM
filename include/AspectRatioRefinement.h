@@ -10,10 +10,11 @@ class AspectRatioRefinement : public GridRefinement
 {
 public:
   AspectRatioRefinement(dealii::ConditionalOStream pcout,
-                        const std::vector<int> &   manifold_id_,
+                        const std::vector<int>    &manifold_id_,
                         int                        itermax_,
-                        double                     aspect_ratio_max_)
-    : GridRefinement(pcout)
+                        double                     aspect_ratio_max_,
+                        bool                       verbose = false)
+    : GridRefinement(pcout, verbose)
     , manifold_id(manifold_id_)
     , itermax(itermax_)
     , aspect_ratio_max(aspect_ratio_max_)

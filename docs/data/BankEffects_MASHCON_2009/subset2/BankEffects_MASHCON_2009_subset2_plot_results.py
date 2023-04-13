@@ -44,16 +44,17 @@ print(Frh)
 
 swayforce = []
 heaveforce = []
-for testId in testIds:
+for testId in testIds[1]:
 
-    filename = current_dir + "/" + testId + "/output/force.csv"
+    filename = current_dir + "/" + testId + "/output/hydrodynamic_force.csv"
     print(filename)
     data = np.genfromtxt(filename, delimiter=",")
-    swayforce.append(data[0][1])
-    heaveforce.append(data[0][2])
+    print(data)
+    swayforce.append(data[4])
+    heaveforce.append(data[5])
 
 heaveforce = np.array(heaveforce)
-sinkage = heaveforce/(g*density*A)
+sinkage = (heaveforce-30)/(g*density*A)
 
 print("Sway force")
 print(swayforceEFD)

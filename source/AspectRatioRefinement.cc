@@ -4,12 +4,11 @@
 void AspectRatioRefinement::refine(dealii::Triangulation<2, 3> &tria)
 {
   std::cout << "Refining based on aspect ratio ...\n";
-
   unsigned int refinedCellCounter = 1;
-  unsigned int cycles_counter     = 0;
+  unsigned int iter               = 0;
   // we repeat the aspect ratio refinement cycle until no cell has been
   // flagged for refinement, or until we reach a maximum of 10 cycles
-  while (refinedCellCounter > 0 && (cycles_counter < (unsigned int)itermax))
+  while (refinedCellCounter > 0 && (iter < (unsigned int)itermax))
   {
     // the refined cells counter is zeroed at the start of each cycle
     refinedCellCounter = 0;
@@ -42,6 +41,15 @@ void AspectRatioRefinement::refine(dealii::Triangulation<2, 3> &tria)
         double aspect_ratio = max_extent / min_extent;
         if (aspect_ratio > aspect_ratio_max)
         {
+          if (_verbose)
+          {
+            std::cout << "iter " << iter;
+            std::cout << ", cell id " << cell->global_active_cell_index();
+            std::cout << ", aspect_ratio " << aspect_ratio;
+            std::cout << ", min_extent " << min_extent;
+            std::cout << ", max_extent " << max_extent;
+            std::cout << std::endl;
+          }
           cell->set_refine_flag(dealii::RefinementCase<2>::cut_axis(max_extent_dim));
           refinedCellCounter++;
         }
@@ -53,6 +61,7 @@ void AspectRatioRefinement::refine(dealii::Triangulation<2, 3> &tria)
     tria.execute_coarsening_and_refinement();
 
     //    make_edges_conformal(_withDoubleNodes);
-    cycles_counter++;
+    ++iter;
   }
+  std::cout << "Number of global active cells: " << tria.n_global_active_cells() << std::endl;
 }

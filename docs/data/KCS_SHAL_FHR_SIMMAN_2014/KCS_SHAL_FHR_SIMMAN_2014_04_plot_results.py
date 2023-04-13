@@ -1,9 +1,15 @@
-from NumericalUncertainty import NumericalUncertainty
+import os
+import sys
+
+current_dir = os.path.dirname(os.path.abspath(__file__))
+#from NumericalUncertainty import NumericalUncertainty
 import pyvista as pv
 import numpy as np
 import matplotlib.pyplot as plt
 from numpy.core.fromnumeric import argsort
 import pandas as pd
+
+
 
 saveFigures = True
 
@@ -34,8 +40,8 @@ V0 = 52030
 
 Tm_model = 0.2050
 Tm_full = 10.8
-df = pd.read_csv('pmm_app_shal_fhr_App01_pure_surge.csv')
-df_fs = pd.read_csv('pmm_app_shal_fhr_App01_pure_surge_full_scale.csv')
+df = pd.read_csv(current_dir + '/pmm_app_shal_fhr_App01_pure_surge.csv')
+df_fs = pd.read_csv(current_dir + '/pmm_app_shal_fhr_App01_pure_surge_full_scale.csv')
 
 U_fullscale = df_fs['surge velocity [m/s]'].values
 h_fullscale = df_fs['depth [m]'].values
@@ -69,7 +75,7 @@ for testId in range(0, len(testNames)):
     for meshId in meshes:
 
         meshName = "mesh0" + str(meshId)
-        pathName = testName + "/" + meshName
+        pathName = current_dir + "/" + testName + "/" + meshName
 
         filename = pathName + "/output/force.csv"
         data = np.genfromtxt(filename, delimiter=",")
@@ -102,10 +108,10 @@ pitch = pitchmomentAll/((g*density*V0*GML))
 
 perm = argsort(Frh)
 
-sink_unc = 0*sinkage
-for i in range(sinkage.shape[0]):
-    sink_unc[i, :] = NumericalUncertainty(
-        elementSizeAll[i, :], sinkage[i, :], showNumericalUncertainty)
+# sink_unc = 0*sinkage
+# for i in range(sinkage.shape[0]):
+#     sink_unc[i, :] = NumericalUncertainty(
+#         elementSizeAll[i, :], sinkage[i, :], showNumericalUncertainty)
 
 cnt = sinkage.shape[1]-1
 
@@ -120,11 +126,11 @@ if (showHeaveForce):
 if (showSinkage):
     plt.figure(2)
     plt.plot(Frh[perm], 0.001*sink_m[perm]/Tm_model, 'ko-', label="EFD")
-    plt.fill_between(Frh[perm],
-                     -(sinkage[perm, cnt] +
-                       sink_unc[perm, cnt]) / Tm_full,
-                     -(sinkage[perm, cnt] -
-                       sink_unc[perm, cnt]) / Tm_full, color='lightgray', edgeColor="gray", label="95% confidence band")
+    # plt.fill_between(Frh[perm],
+    #                  -(sinkage[perm, cnt] +
+    #                    sink_unc[perm, cnt]) / Tm_full,
+    #                  -(sinkage[perm, cnt] -
+    #                    sink_unc[perm, cnt]) / Tm_full, color='lightgray', edgeColor="gray", label="95% confidence band")
     plt.plot(Frh[perm], -sinkage[perm, cnt] /
              Tm_full, 'ro-', label="BEM")
     plt.xlabel(r"$Fr_h$")

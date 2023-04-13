@@ -20,9 +20,8 @@ The double body flow model is based on potential flow theory, hence the water is
 compressible, inviscid and irrotational, and where the fluid velocity is the gradient of the velocity potential $u = \nabla \phi$. 
 Mass conservation is satisfied through the Laplace equation for the velocity potential
 \begin{equation}
-	\nabla \phi = 0, \quad z \in [-h,0],
+	\nabla^2 \phi = 0, \quad z \in [-h,0],
 \end{equation}
-
 where $h$ is the sea depth and $z = 0$ is still water level. At the seabed the no-flux boundary condition applies
 \begin{equation}
 \V{n} \cdot \nabla \phi = 0, \quad z = -h, 
@@ -30,7 +29,7 @@ where $h$ is the sea depth and $z = 0$ is still water level. At the seabed the n
 where $\V{n} = (n_x, n_y, n_z)^T$ is the normal vector to the seabed, and the bodies within the fluid are likewise
 subject a no-flux boundary condition
 \begin{equation}
-\V{n} \cdot \nabla \phi = n \cdot \V{u}_B, (x, y, z) \in S_B, 
+\V{n} \cdot \nabla \phi = n \cdot \V{u}_B, \quad (x, y, z) \in S_B, 
 \end{equation}
 where $u_B$ is the velocity of the body and $S_B$ is the surface of the body of the body. A ship navigating in an
 open sea has the far-field boundary condition [9]

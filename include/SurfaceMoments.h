@@ -9,77 +9,75 @@ public:
     , _y0(y0)
   {}
 
-  double
-  getx0() const
+  double getx0() const
   {
     return _x0;
   }
-  double
-  gety0() const
+  double gety0() const
   {
     return _y0;
   }
-  double
-  getS0() const
+  double getS0() const
   {
     return _S0;
   }
 
-  double
-  getSx() const
+  double getSx() const
   {
     return _Sx;
   }
-  double
-  getSy() const
+  double getSy() const
   {
     return _Sy;
   }
-  double
-  getSxx() const
+  double getSxx() const
   {
     return _Sxx;
   }
-  double
-  getSxy() const
+  double getSxy() const
   {
     return _Sxy;
   }
-  double
-  getSyy() const
+  double getSyy() const
   {
     return _Syy;
   }
 
-  void
-  setS0(double val)
+  void setS0(double val)
   {
     _S0 = val;
   }
-  void
-  setSx(double val)
+  void setSx(double val)
   {
     _Sx = val;
   }
-  void
-  setSy(double val)
+  void setSy(double val)
   {
     _Sy = val;
   }
-  void
-  setSxx(double val)
+  void setSxx(double val)
   {
     _Sxx = val;
   }
-  void
-  setSxy(double val)
+  void setSxy(double val)
   {
     _Sxy = val;
   }
-  void
-  setSyy(double val)
+  void setSyy(double val)
   {
     _Syy = val;
+  }
+
+  void print()
+  {
+    std::cout << "x0  : " << _x0 << std::endl;
+    std::cout << "y0  : " << _y0 << std::endl;
+    std::cout << "S0  : " << _S0 << std::endl;
+    std::cout << "Sx  : " << _Sx << std::endl;
+    std::cout << "Sy  : " << _Sy << std::endl;
+    std::cout << "Sxx : " << _Sxx << std::endl;
+    std::cout << "Sxy : " << _Sxy << std::endl;
+    std::cout << "Syy : " << _Syy << std::endl;
   }
 
 private:

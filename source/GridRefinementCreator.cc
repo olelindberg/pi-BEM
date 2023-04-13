@@ -2,6 +2,7 @@
 
 #include "../include/ErrorMessage.h"
 
+#include "../include/AreaRefinement.h"
 #include "../include/AspectRatioRefinement.h"
 #include "../include/BoxRefinement.h"
 #include "../include/CurvatureRefinement.h"
@@ -47,8 +48,9 @@ GridRefinementCreator::create(const std::string &filename, dealii::ConditionalOS
           for (pt::ptree::value_type &id : child.get_child("manifold_ids"))
             manifold_ids.push_back(id.second.get_value<int>());
           double refinement_levels = child.get<double>("refinement_levels");
+          bool   verbose           = child.get<bool>("verbose", false);
           gridrefinement.push_back(std::make_shared<AspectRatioRefinement>(
-            pcout, manifold_ids, refinement_levels, aspect_ratio_max));
+            pcout, manifold_ids, refinement_levels, aspect_ratio_max, verbose));
         }
       }
 
@@ -64,6 +66,26 @@ GridRefinementCreator::create(const std::string &filename, dealii::ConditionalOS
         }
       }
 
+      if (node.first == "areaRefinement")
+      {
+        auto child = node.second;
+        if (!child.empty())
+        {
+          std::vector<int> manifold_ids;
+          for (pt::ptree::value_type &id : child.get_child("manifold_ids"))
+            manifold_ids.push_back(id.second.get_value<int>());
+
+          int    refinement_levels = child.get<int>("refinement_levels");
+          double area_max          = child.get<double>("area_max");
+          double aspect_ratio_max  = child.get<double>("aspect_ratio_max");
+          bool   verbose           = child.get<bool>("verbose", false);
+
+          gridrefinement.push_back(std::make_shared<AreaRefinement>(
+            pcout, manifold_ids, aspect_ratio_max, refinement_levels, area_max, verbose));
+        }
+      }
+
+
       if (node.first == "distanceRatioRefinement")
       {
         auto child = node.second;
@@ -72,7 +94,7 @@ GridRefinementCreator::create(const std::string &filename, dealii::ConditionalOS
           int    manifold_id        = child.get<int>("manifold_id");
           int    refinement_levels  = child.get<int>("refinement_levels");
           double distance_ratio_max = child.get<double>("distance_ratio_max");
-          double aspectRatioMax     = child.get<double>("aspectRatioMax");
+          double aspect_ratio_max   = child.get<double>("aspect_ratio_max");
           double xmin               = child.get<double>("xmin");
           double xmax               = child.get<double>("xmax");
           double ymin               = child.get<double>("ymin");
@@ -89,7 +111,7 @@ GridRefinementCreator::create(const std::string &filename, dealii::ConditionalOS
 
 
           gridrefinement.push_back(std::make_shared<DistanceRatioRefinement>(
-            pcout, box, aspectRatioMax, manifold_id, refinement_levels, distance_ratio_max));
+            pcout, box, aspect_ratio_max, manifold_id, refinement_levels, distance_ratio_max));
         }
       }
 
@@ -100,8 +122,8 @@ GridRefinementCreator::create(const std::string &filename, dealii::ConditionalOS
         {
           int    manifold_id       = child.get<int>("manifold_id");
           int    refinement_levels = child.get<int>("refinement_levels");
-          double aspectRatioMax    = child.get<double>("aspectRatioMax");
-          double cellSizeMin       = child.get<double>("cellSizeMin");
+          double aspect_ratio_max  = child.get<double>("aspect_ratio_max");
+          double area_min          = child.get<double>("area_min");
 
           double xmin = child.get<double>("xmin");
           double xmax = child.get<double>("xmax");
@@ -118,7 +140,7 @@ GridRefinementCreator::create(const std::string &filename, dealii::ConditionalOS
           box.Add(pmax);
 
           gridrefinement.push_back(std::make_shared<BoxRefinement>(
-            pcout, box, aspectRatioMax, cellSizeMin, manifold_id, refinement_levels));
+            pcout, box, aspect_ratio_max, area_min, manifold_id, refinement_levels));
         }
       }
     }

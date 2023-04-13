@@ -4,17 +4,16 @@
 #include <chrono>
 #include <gp_Pnt.hxx>
 
-
 BoxRefinement::BoxRefinement(dealii::ConditionalOStream pcout,
                              const Bnd_Box             &box,
                              double                     aspectRatioMax,
-                             double                     cellSizeMin,
+                             double                     area_min,
                              unsigned int               manifold_id_,
                              int                        levels_)
   : GridRefinement(pcout)
   , _box(box)
   , _aspectRatioMax(aspectRatioMax)
-  , _cellSizeMin(cellSizeMin)
+  , _area_min(area_min)
   , manifold_id(manifold_id_)
   , levels(levels_)
 {}
@@ -30,10 +29,7 @@ void BoxRefinement::refine(dealii::Triangulation<2, 3> &tria)
          cell != tria.end();
          ++cell)
     {
-      double l1   = cell->extent_in_direction(0);
-      double l2   = cell->extent_in_direction(1);
-      double lmin = std::min(l1, l2);
-      if (lmin > _cellSizeMin && cell->manifold_id() == manifold_id)
+      if (cell->manifold_id() == manifold_id)
       {
         Bnd_Box boxx;
         for (int i = 0; i < 4; ++i)
@@ -42,10 +38,14 @@ void BoxRefinement::refine(dealii::Triangulation<2, 3> &tria)
           boxx.Add(gp_Pnt(pnt[0], pnt[1], pnt[2]));
         }
 
-        auto start2 = std::chrono::high_resolution_clock::now();
         if (!_box.IsOut(boxx))
         {
-          RefinementUtil::aspectRatioRefinement(_aspectRatioMax, cell);
+          double aspect_ratio = RefinementUtil::aspectRatio(cell);
+          double area         = cell->measure();
+          if (aspect_ratio > _aspectRatioMax)
+            RefinementUtil::aspectRatioRefinement(_aspectRatioMax, cell);
+          else if (area > _area_min)
+            RefinementUtil::aspectRatioRefinement(_aspectRatioMax, cell);
         }
       }
     }
@@ -53,4 +53,5 @@ void BoxRefinement::refine(dealii::Triangulation<2, 3> &tria)
     tria.prepare_coarsening_and_refinement();
     tria.execute_coarsening_and_refinement();
   }
+  std::cout << "Number of global active cells: " << tria.n_global_active_cells() << std::endl;
 }

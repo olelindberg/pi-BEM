@@ -12,9 +12,24 @@ class RefinementUtil
 {
 public:
   template <typename cell_type>
-  static void
-  aspectRatioRefinement(double                                             aspectRatioMax,
-                        cell_type &cell)
+  static double aspectRatio(cell_type &cell)
+  {
+    unsigned int max_extent_dim = 0;
+    unsigned int min_extent_dim = 1;
+    if (cell->extent_in_direction(0) < cell->extent_in_direction(1))
+    {
+      max_extent_dim = 1;
+      min_extent_dim = 0;
+    }
+    double min_extent = cell->extent_in_direction(min_extent_dim);
+    double max_extent = cell->extent_in_direction(max_extent_dim);
+
+    return max_extent / min_extent;
+  }
+
+
+  template <typename cell_type>
+  static void aspectRatioRefinement(double aspectRatioMax, cell_type &cell)
   {
     unsigned int max_extent_dim = 0;
     unsigned int min_extent_dim = 1;

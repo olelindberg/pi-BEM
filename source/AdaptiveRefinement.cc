@@ -28,13 +28,13 @@ AdaptiveRefinement::AdaptiveRefinement(dealii::ConditionalOStream pcout,
 
 bool AdaptiveRefinement::refine(unsigned int                                 np,
                                 unsigned int                                 pid,
-                                const dealii::FiniteElement<2, 3> &          fe,
-                                const dealii::FiniteElement<2, 3> &          gradient_fe,
-                                dealii::DoFHandler<2, 3> &                   dh,
-                                dealii::DoFHandler<2, 3> &                   gradient_dh,
+                                const dealii::FiniteElement<2, 3>           &fe,
+                                const dealii::FiniteElement<2, 3>           &gradient_fe,
+                                dealii::DoFHandler<2, 3>                    &dh,
+                                dealii::DoFHandler<2, 3>                    &gradient_dh,
                                 const dealii::TrilinosWrappers::MPI::Vector &potential,
                                 const dealii::TrilinosWrappers::MPI::Vector &velocity,
-                                dealii::Triangulation<2, 3> &                tria)
+                                dealii::Triangulation<2, 3>                 &tria)
 {
   double cellSizeMin = std::numeric_limits<double>::max();
   for (cell_it cell = dh.begin_active(); cell != dh.end(); ++cell)
@@ -168,5 +168,7 @@ bool AdaptiveRefinement::refine(unsigned int                                 np,
 
     isrefined = true;
   }
+  std::cout << "Number of global active cells: " << tria.n_global_active_cells() << std::endl;
+
   return isrefined;
 }

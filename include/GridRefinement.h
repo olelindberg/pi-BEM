@@ -10,8 +10,9 @@
 class GridRefinement : public IGridRefinement
 {
 public:
-  GridRefinement(dealii::ConditionalOStream pcout)
+  GridRefinement(dealii::ConditionalOStream pcout, bool verbose = false)
     : _pcout(pcout)
+    , _verbose(verbose)
   {}
   virtual ~GridRefinement()
   {}
@@ -20,8 +21,7 @@ public:
 
 protected:
   dealii::ConditionalOStream _pcout;
-
-private:
+  bool                       _verbose = false;
 };
 
 #endif // GRID_REFINEMENT_H

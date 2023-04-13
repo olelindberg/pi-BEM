@@ -36,4 +36,5 @@ void HeightRatioRefinement::refine(dealii::Triangulation<2, 3> &tria)
     else
       break;
   }
+  std::cout << "Number of global active cells: " << tria.n_global_active_cells() << std::endl;
 }

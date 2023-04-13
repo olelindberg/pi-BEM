@@ -1,32 +1,43 @@
 {
+    "areaRefinement": {
+        "area_max": 0.005,
+        "aspect_ratio_max": 2.0,
+        "manifold_ids": [
+            1,
+            2
+        ],
+        "refinement_levels": 1000,
+        "verbose": "false"
+    },
     "aspectRatioRefinement": {
         "aspect_ratio_max": 2.0,
         "manifold_ids": [
             1,
             2
         ],
-        "refinement_levels": 1000
-    },
-    "heightRatioRefinement": {
-        "height_ratio_max": 0.3,
         "refinement_levels": 0
     },
-    "distanceRatioRefinement": {
-        "distance_ratio_max": 1.0,
-        "aspectRatioMax": 2.0,
-        "manifold_id": 3,
+    "heightRatioRefinement": {
+        "height_ratio_max": 0.15,
+        "refinement_levels": 1000
+    },
+    "aspectRatioRefinement": {
+        "aspect_ratio_max": 10.0,
+        "manifold_ids": [
+            3
+        ],
         "refinement_levels": 1000
     },
     "boxRefinement": {
         "manifold_id": 3,
-        "refinement_levels": 3,
-        "aspectRatioMax": 2.0,
-        "cellSizeMin": 0.05,
+        "aspect_ratio_max": 2.0,
+        "area_min": 0.02,
         "xmin": 14.5,
         "xmax": 19.5,
-        "ymin": -0.5,
-        "ymax": 1.0,
+        "ymin": -1.0,
+        "ymax": 1.5,
         "zmin": -1000,
-        "zmax": 1000
+        "zmax": 1000,
+        "refinement_levels": 1000
     }
 }
