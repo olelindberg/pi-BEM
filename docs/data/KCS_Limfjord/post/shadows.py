@@ -233,7 +233,7 @@ def main():
         force_scale = pressure_scale*area
 
         xforcearrow = arrowActor([0,0,0],[hydrodynamic_force[0]/force_scale,0,0])
-        yforcearrow = arrowActor(dynamic_cp,[0,hydrodynamic_force[1]/force_scale*10000,0])
+        yforcearrow = arrowActor(dynamic_cp,[0,hydrodynamic_force[1]/force_scale*20000,0])
         zforcearrow = arrowActor([0,0,0],[0,0,hydrodynamic_force[2]])
 
         # Create the mapper that corresponds the objects of the vtk.vtk file

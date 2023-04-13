@@ -124,6 +124,7 @@ where the free surface elevation is $\eta = z-z_{SWL}$. Secondly, both the veloc
 Insertion of the expansions \eqref{eq_phi_tay_exp}, \eqref{eq_phi_per_exp} and \eqref{eq_eta_per_exp} in the Bernoulli equation \eqref{eq_bernoulli} and keeping only the zero'th order terms gives
 \begin{equation}
 	p(x, y, z) \approx -\rho \left(\D{\phi_0}{t} -\V{V} \cdot \nabla \phi_0 + \frac{1}{2} \nabla \phi_0 \cdot \nabla \phi_0 + gz \right),
+	\label{eq_bernoulli_exp}
 \end{equation}
 and evaluation of this at the free surface, where the atmospheric pressure is assumed to be zero, and keeping only the zero'th order terms gives
 \begin{equation}
@@ -131,11 +132,11 @@ and evaluation of this at the free surface, where the atmospheric pressure is as
 \end{equation}
 Now the surface integral for hydrodynamic force is split into the part under $SWL$ and the variation from $SWL$ due to $\eta$
 \begin{align}
-	\V{F} &= \int\limits_{S_{B,SWL}} p(x, y, z) ~\V{n} dS + \int\limits_{S_{B,\eta}} p(x, y, z) ~\V{n} dS.
+	\V{F} &= \int\limits_{S_{B,SWL}} p(x, y, z) ~\V{n} dS + \int\limits_{ S_B\backslash S_{B,SWL}} p(x, y, z) ~\V{n} dS.
 \end{align}
-Application of the divergence theorem to the latter integral gives
+The latter integral is simplified by insertion of the expanded pressure \eqref{eq_bernoulli_exp} and the vertical integration limits from $z_{SWL}$ to $z_{SWL}+\eta_0$
 \begin{align}
-	\V{F} &= \int\limits_{S_{B,SWL}} p(x, y, z) ~\V{n} dS + \int \int\limits_{-b(x)}^{b(x)} \int\limits_{z_{SWL}}^{z_{SWL}+\eta_0} p(x, y, z) ~ dxdydz.
+	\V{F} &= \int\limits_{S_{B,SWL}} p(x, y, z) ~\V{n} dS + \frac{1}{2}\rho g\int  \eta_{0,y<0}^2 ~dx- \frac{1}{2}\rho g\int\eta_{0,y>0}^2 ~ dx.
 \end{align}
 
 
