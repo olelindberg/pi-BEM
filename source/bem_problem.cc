@@ -2372,14 +2372,15 @@ void BEMProblem<dim>::free_surface_elevation(double                             
             elevation.push_back(elev);
             auto n = q_normals[q];
 
-            n[2]       = 0.0;
             double lng = std::sqrt(n[0] * n[0] + n[1] * n[1]);
             n[0] /= lng;
             n[1] /= lng;
+            n[2] = 0.0;
 
             // std::cout << n[0] << ", " << n[1] << ", " << n[2] << std::endl;
-
-            force_y += p * n[1] * fe_face_values.JxW(q);
+            double zSWL = 0.0;
+            double eta0 = elev[2] - zSWL;
+            force_y += 0.5 * density * gravity * eta0 * eta0 * n[1] * fe_face_values.JxW(q);
             force_z += elev[1] * p * fe_face_values.JxW(q);
 
           } // for q

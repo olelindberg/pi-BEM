@@ -95,12 +95,14 @@ GridRefinementCreator::create(const std::string &filename, dealii::ConditionalOS
           int    refinement_levels  = child.get<int>("refinement_levels");
           double distance_ratio_max = child.get<double>("distance_ratio_max");
           double aspect_ratio_max   = child.get<double>("aspect_ratio_max");
+          double area_min           = child.get<double>("area_min");
           double xmin               = child.get<double>("xmin");
           double xmax               = child.get<double>("xmax");
           double ymin               = child.get<double>("ymin");
           double ymax               = child.get<double>("ymax");
           double zmin               = child.get<double>("zmin");
           double zmax               = child.get<double>("zmax");
+          bool   verbose            = child.get<bool>("verbose", false);
 
           gp_Pnt pmin(xmin, ymin, zmin);
           gp_Pnt pmax(xmax, ymax, zmax);
@@ -110,8 +112,14 @@ GridRefinementCreator::create(const std::string &filename, dealii::ConditionalOS
           box.Add(pmax);
 
 
-          gridrefinement.push_back(std::make_shared<DistanceRatioRefinement>(
-            pcout, box, aspect_ratio_max, manifold_id, refinement_levels, distance_ratio_max));
+          gridrefinement.push_back(std::make_shared<DistanceRatioRefinement>(pcout,
+                                                                             box,
+                                                                             aspect_ratio_max,
+                                                                             area_min,
+                                                                             manifold_id,
+                                                                             refinement_levels,
+                                                                             distance_ratio_max,
+                                                                             verbose));
         }
       }
 

@@ -14,22 +14,17 @@
 
 \title{Instructions to Prepare a Full Paper for the X International Conference on Computational Methods in Marine Engineering MARINE 2023}
 
-\author{First A. Author$^{1*}$, Second B. Author$^{\dag}$ and Third C. Author$^{\dag}$}
+\author{Ole Lindberg$^{1}$, Ole Vilmann$^{1*}$ and Michael Jeppesen$^{1}$}
 
 \heading{First A. Author, Second B. Author and Third C. Author}
 
-\address{$^{1}$ International Center for Numerical Methods in Engineering (CIMNE),
-Universidad Polit\'{e}cnica de Catalu\~{n}a,
-Campus Norte UPC, 08034 Barcelona, Spain,
-e-mail: congress@cimne.upc.edu, web page: http://www.cimne.com/
-\and
-$^{\dag}$ Spanish Association for Numerical Methods in Engineering (SEMNI),
-Edificio C1, Campus Norte UPC,
-Gran Capit\'{a}n s/n, 08034 Barcelona, Spain,
-e-mail: semni@cimne.upc.edu - Web page: http://www.semni.org\\[.5cm]
-$^{*}$ Corresponding author: First Author, First.Author@cimne.upc.edu}
+\address{$^{1}$ Department of Simulation, Training and Ports, FORCE Technology,
+	Hjortekærvej 99, DK-2800 Lyngby, Denmark, web page: https://forcetechnology.com
+	\and
+	$^{*}$ Corresponding author: Ole Vilmann, ov@forcetechnology.com}
 
 \newcommand{\V}[1]{\boldsymbol{#1}}
+\newcommand{\M}[1]{\mathbf{#1}}
 \newcommand{\nn}{\nonumber}
 \newcommand{\D}[2]{\frac{\partial #1}{\partial #2}}
 
@@ -40,7 +35,7 @@ $^{*}$ Corresponding author: First Author, First.Author@cimne.upc.edu}
 
 \begin{center}{\bf ABSTRACT}\end{center}
 
-Authors should use this document as a template. The Title is mixed case (initial capitals followed by lower case on all words except articles, conjunctions, and prepositions, which should appear entirely in lower case). The Abstract is a brief description of the entire paper, including the scope, the methodology and the key conclusions. It should be no longer than 250 words. The Abstract is followed by a list of up to six keywords, each separated by semi column. The Nomenclature follows after the list of keywords. Symbols should be in italic and listed in alphabetical order. First include Roman symbols, then Greek symbols, and finally the list of acronyms in Roman font. When the subscripts are made of more than one letter, use Roman font, otherwise use Italic (for example, I\_beam and I\_x). The units of all symbols should be included in squared brackets without using fractions and separated by a space (for example, m s-1), while acronyms should not have units and should not be used in equations.
+Abstractttt
 
 \noindent {\bf Keywords}: keyword 1; keyword 2; keyword 3; keyword 4; keyword 5; keyword 6.
 
@@ -62,22 +57,27 @@ ${\tau }_x$ & Skin friction in the $x$-direction [Pa]\\
 
 \section{INTRODUCTION}
 
-This is the first section in the main body of the text after the Nomenclature. Please assure that a comprehensive critical review of the relevant literature is included. When necessary, use Column Break to avoid finishing a page with a heading.
+Safe and efficient navigation of large ships in shallow and confined water is a challenge. 
 
-\section{SUBMISSION REQUIREMENTS}
+New container ships are enlarged to increase fuel efficiency and offshore installation vessels are larger to accommodate as many wind turbine parts as possible. 
 
-The manuscript should be prepared in Microsoft Word or Latex using this template or the Latex companion. A PDF version of the manuscript can be submitted.
+Often these ships must navigate shallow and confined fjords or navigation channels to reach inland ports. We must ensure safe, predictable, and efficient navigation in these shallow and confined waters, and protect the marine environment in coastal areas. 
 
-Articles must be written either in American or British English. Articles that have been carefully proofread will be accepted for review, while articles that are clearly unacceptable will be returned to the Author(s) without being reviewed.
+Safety is assessed by maritime engineering analysis tools and maintained by training of maritime officers in maritime simulators.
 
-There is no limitation to the maximum number of pages.
+In order to address the challenges, we are developing new numerical tools for prediction of squat, bank effects and ship to ship interaction. Our goal is to accurately calculate the hydrodynamic interaction forces and moments on ships in real-time in maritime training simulators. Ships navigating in coastal and inland waterways are sailing relatively slow, hence both the length- and depth-based Froude numbers are small (< 0.2), and the well-known double body model gives a valid approximation of the hydrodynamic ship flow. We are using the state-of-the-art boundary element model pi-BEM [1] to solve the double body potential flow problem. 
 
-Articles must be original, must not have been published previously or be pending publication anywhere else, and cannot be under review by any other forum.
+pi-BEM has higher order polynomial elements, numerical quadrature for singular integrals, adaptive multi resolution quadrilateral mesh generation directly on the ships CAD geometry, fast multipole optimization of matrix vector products and MPI parallelization. 
 
-Metadata underpinning the results, and additional material such as, for instance, videos and simulations, can be submitted in separate files and will be made available together with the electronic version of the paper on the conference website. Metadata and additional material will not be peer reviewed.
+We have extended the pi-BEM by streamlined pre-processing of the CAD geometry, developed new error-estimators for the adaptive multiresolution, developed numerical methods for calculation of flow separation along geometrical edges, compared squat prediction and bank effects with experiments for the ship models KCS and KVLCC2 [2].
 
 
-\section{DOUBLE BODY MODEL}
+
+bank forces and moments between our BEM model and model experiments 
+
+assessment of navigation limits in the Limfjord in Northern Denmark.
+
+\section{DOUBLE BODY POTENTIAL FLOW MODEL}
 The hydrodynamic interaction force between a ship and other ships, the seabed, banks or fixed structures is strongly related to pressure changes due to increased or decreased flow velocity around the ship. The physical problem resembles that of a Venturi pipe. A mathematical model for calculation of a ships hydrodynamic interaction forces should capture the the Venturi pipe effect between the ships. Fortunately thats excately what the \emph{double body flow model} does. In the double body flow model is to assume that the free surface is flat and the body is mirrored the body and solution around
 the still water level.
 The double body flow model is based on potential flow theory, hence the water is assumed to be in-
@@ -110,7 +110,7 @@ The hydrodynamic force on the submerged body is
 	\label{eq_hydrodynamic_pressure_force} 
 \end{equation}
 
-\subsection{Linearization and pertubation expansion}
+\subsection{Linearization and Pertubation Expansion}
 First we Taylor expand the velocity potential around the still water level, $z_{SWL}$,
 \begin{equation}
 	\phi(x,y,z) = \phi(x,y,z_{SWL}) + \eta \left.\D{\phi}{z}\right|_{x,y,z_{SWL}} + \mathcal{O}(\eta^2),
@@ -136,39 +136,125 @@ Now the surface integral for hydrodynamic force is split into the part under $SW
 \end{align}
 The latter integral is simplified by insertion of the expanded pressure \eqref{eq_bernoulli_exp} and the vertical integration limits from $z_{SWL}$ to $z_{SWL}+\eta_0$
 \begin{align}
+	\V{F} &= \int\limits_{S_{B,SWL}} p(x, y, z) ~\V{n} dS + \frac{1}{2}\rho g\int \int\limits_{z_{SWL}}^{z_{SWL}+\eta_0}  \eta_{0,y<0}^2 ~dzdx- \frac{1}{2}\rho g\int\eta_{0,y>0}^2 ~ dx. \\
 	\V{F} &= \int\limits_{S_{B,SWL}} p(x, y, z) ~\V{n} dS + \frac{1}{2}\rho g\int  \eta_{0,y<0}^2 ~dx- \frac{1}{2}\rho g\int\eta_{0,y>0}^2 ~ dx.
 \end{align}
 
+\section{BATHYMETRY MODEL}
+Bathymetry model here understood as an interpolation of depth measurements. Harbor authorities often measure the depth in the navigation channel to the harbor regularly (multiply times per year), to know the maximum allowed ship draft for safe passage to the harbor. These depth measurements are made with sounding equipment and often presented in an uniform quadrilateral grid with e.g. $0.5$m or $1.0$m distance between the grid points. Thus, high-quality data in navigation channels are available for application in numerical models for squat and bank-effect calculations. However, the hydrodynamic pressure on ships is greatly affected by the depth outside the navigation channels, where the depth is sparsely measured. Sources for depth measurements in these areas are often limited to whats available in navigation charts or from satellite-derived bathymetry (SDB). The SDB method does not work well in deeper areas or in muddy waters where light penetration is limited. Therefor, the one often has to rely on the navigation chart. 
 
+The interpolation point set is highly regular in some areas and sparse and scattered in other areas. Geospatial interpolation methods for scattered data like \emph{kriging} is an obvious choice. Here we have used \emph{hole filling} methods from computational geometry. 
 
-\subsection{Sub-Headings}
-
-Sub-headings are numbered, mixed case (initial capitals followed by lower case on all words except articles, conjunctions, and prepositions, which should appear entirely in lower case), and bold.
-
-\subsubsection {Additional Sub-Headings}
-
-Additional sub-headings should be numbered, mixed case and bold.
-
-\section{ARTICLE FORMAT}
-\subsection{Page Setup and Page Numbers}
-
-The margins of this template are as in Table 1. The page numbers format is as in Table 2.
-
-\subsection{Equations}
-
-Equations must be included using the command Equation in the tab Insert. Please use punctuations as appropriate together with the equations (see examples below). Equations should be numbered consecutively using numbers enclosed in parentheses. The equation number can be added including \# followed by the equation number between parentheses at the end of the equation. For example, within the Equation environment, typing a=b,\#(1) and hitting return results in:
+The interpolation point set consist of soundings, coastline vertices and depth contour vertices from navigation charts and high-resolution soundings, in total scattered $N$ points
 \begin{equation}
-Ax = b
-\label{eq1}
+\V{x}_i = 	 \left[ \begin{matrix}
+	 	x_i \\ y_i \\ z_i
+	 \end{matrix} \right], \quad i=1,\ldots,N,
+ \label{eq_points}
 \end{equation}
-where the meaning of each symbols such as $a$ and $b$ should be defined in the text before or immediately after, such as here, when they are used for the first time. Another example is as follow. The drag coefficient, which is defined as
+where $x$ and $y$ are the horizontal UTM coordinates and $z$ is the vertical coordinate relative to the WSG 84 reference ellipsoid. The objective is to construct a fair interpolation function for the vertical coordinate $p(x,y)$ based on this point set. To construct a fair interpolation function we make a weighted least squares (WLS) fit of the point set, given by the minimization of the WLS functional (with Tikhonov regularization)
 \begin{equation}
-C_D=\frac{1.328}{\sqrt{Re_L}},
-\label{eq2}
+	f_{WLS} = \frac{1}{2}\sum_{i=1}^N \left(p(x_i,y_i)- z_i \right)^2 + \frac{1}{2}\lambda z_i^2 ,
 \end{equation}
-depends on the Reynolds number, $Re_L$, based on the ship length $L$.
+and minimization of the bathymetry surface bending energy, which gives a minimal energy surface (MES),
+\begin{equation}
+	f_{MES} = \int_{\Gamma} \kappa_1^2 + \kappa_2^2 ~dA,
+\end{equation}
+where $\Gamma \in \mathbb{R}^2$ is horizontal area and the $\kappa_1$ and $\kappa_2$ are the principal curvatures of the $p(x,y)$ surface. The horizontal area $\Gamma$ is subdivided into $M$ non-overlapping axis aligned quadrilaterals. On each quadrilateral the interpolating polynomial $p(x,y)$ represented two-dimensional $5^{th}$ order Bezier polynomials, here define on the unit reference square
+\begin{equation}
+	S(u,v) = \sum_{i=0}^n\sum_{j=0}^m B_{i,n}(u)B_{j,n}(v) p_{i,j}, \quad n=m=5, \quad 0 \leq u,v \leq 1.
+\end{equation}
+Since the quadrilaterals are axis aligned the mappings from the $x,y$ coordinates to the $u,v$ coordinates are univariate linear functions. Between the quadrilaterals we require $C^0$, $C^1$ and $C^2$ continuity. For the $5^{th}$ order Bezier polynomial, with $36$ degrees of freedom, that gives nine constraints for each of the four vertices in the quadrilateral, in other words we require the continuity of the derivatives
+\begin{equation}
+	p,~p_x,~p_y,~p_{xx},~p_{xy},~p_{yy},~p_{xxy},~p_{xyy},~p_{xxyy}
+\end{equation}
+at the vertices. Furthermore, we require the interpolating polynomial to bounded upwards by the still water level 
+\begin{equation}
+	p(x,y)< z_{SWL}, \quad x,y \in \Gamma.
+\end{equation}
 
- Use the Equation environment also in the main text to avoid that the symbols appear with different fronts in the equation and in the text (for example, $a$ vs a, and $L$ vs L). Every symbol must also be included in the Nomenclature at the beginning of the article.
+This bounded constrained optimization problem is formulated as 
+\begin{align}
+	&\min~f_{WLS} \quad \mathrm{and} \quad \min ~f_{MES} \nn \\
+	&s.t. \nn	\\
+	&[p]_{ij} =[p_x]_{ij}=[p_y]_{ij}=[p_{xx}]_{ij}=[p_{xy}]_{ij}=[p_{yy}]_{ij}=[p_{xxy}]_{ij}=[p_{xyy}]_{ij}=[p_{xxyy}]_{ij}=0, \nn \\
+	& i=1,\ldots,K, \quad j=1,\ldots,L(i), \nn \\
+	& 	p(x,y)< z_{SWL}, \quad x,y \in \Gamma.
+	\label{eq_opt1}
+\end{align}
+where $[]$ is the jump operator, $K$ is the number of vertices and $L(i)$ is the number of element interfaces adjacent to the $i^{th}$ vertex. 
+
+Solution of \eqref{eq_opt1} requires an minimization solver for two objective functions. Such solvers exist, but we find them to be exotic and beyond whats available in common optimization libraries. Instead we reformulate the WLS objective function into a inequality constraint. We solve the WLS problem by setting the gradient of $f_{WLS}$ with respect to $p_{i,j}$ equal to zero. In vector notation the WLS objective function is 
+\begin{equation}
+f_{WLS} = \frac{1}{2} (\M{A}\V{p}-\V{z})^T W (\M{A}\V{p}-\V{z}) + \frac{1}{2} \lambda \V{p}^T\V{p},
+\end{equation}
+and its gradient equal to zero
+\begin{equation}
+\V{g} = \D{f_{WLS}}{\V{p}} = \M{A}^T\M{W}\M{A}\V{p} - 2\M{A}^T\M{W}\V{z} + \lambda \V{p} = 0.
+\end{equation}
+Now, instead of solving the WLS problem we can formulate it as inequality constraint for the negative elementwise gradient squared
+\begin{equation}
+	- g_i^2 \geq 0.
+\end{equation}
+This will push the gradient towards zero. Now the bounded constraint optimization problem looks like this
+\begin{align}
+	&\min ~f_{MES} \nn \\
+	&s.t. \nn	\\
+	& - g_i^2 \geq 0 \nn \\
+	&[p]_{ij} =[p_x]_{ij}=[p_y]_{ij}=[p_{xx}]_{ij}=[p_{xy}]_{ij}=[p_{yy}]_{ij}=[p_{xxy}]_{ij}=[p_{xyy}]_{ij}=[p_{xxyy}]_{ij}=0, \nn \\
+	& i=1,\ldots,K, \quad j=1,\ldots,L(i), \nn \\
+	& 	p(x,y)< z_{SWL}, \quad x,y \in \Gamma.
+	\label{eq_opt1}
+\end{align}
+which we can solve with a standard minimization solver.
+
+\subsection{Mesh Generation}
+In this section we describe how the multi-resolution quad-tree mesh is generated which keeps a $5^{th}$ order Bezier polynomial in each element.
+
+First we find the axis aligned bounding box of the point set \eqref{eq_points} and extend the shorter side to equal the longer side. In this square, we generate a quad-tree mesh by subdividing the tree-nodes until there is a specified number of points in each leaf-node. From this quad-tree we generate a \emph{doubly connected edge list} (DCEL). Then a Bezier polynomial is assigned to each face of the DCEL and the mesh is ready for finding a fair interpolating surface.
+
+\subsection{Solver}
+The minimization problem includes both inequality and equality constraints and solution bounds. We found that the \emph{barrier-based primal-dual interior point method} (PDIPM) available is in PETSc TAO [REF] is capable of solving this problem.
+
+\section{VALIDATION SQUAT AND BANK-EFFECTS}
+The squat calculation of the double body $\pi$-BEM has been extensively validated in [MASHCON REF]. Comparing to the shallow water experiments published in SIMMAN 2013, for both the KCS and KVLCC2 models, we found that sinkage is accurately predicted for moderate depth Froude numbers $Fr_h<0.2$. 
+
+The sway force on KVLCC2 due to the presence of a vertical wall was also calculated in [MASHCON REF] and found to be mainly between the EFD sway forces obtained with and without propulsion, respectively. This was a hint that the sway force calculation was satisfactory, but more detailed validation is needed for sloping banks both with and without surface penetrating of the bathymetry. We anticipated examination of the sway and yaw force against the bank-effect experiments published in [ref MASHCON 2009], but have realized that these experiments are for relatively high depth Froude numbers $Fr_h$ and that the published experiments are simply to few for meaningful comparison. To our knowledge, there are no other open data publications with bank-effects for sloping banks, so hopefully we will be able to make the necessary experiments or more open data on bank effects will be published in the future.  
+
+\section{APPLICATION: NAVIGATION ON LIMFJORDEN}
+Limfjorden is a fjord in northern Denmark that cuts through Jutland from the North Sea in west to Kattegat in east. Port of Aalborg is an inland harbor located in the eastern part of Limfjorden approximately $10$ nm from Kattegat. The renewable energy industry in Aalborg depends on safe maritime transport on Limfjorden with e.g. large offshore supply ships.
+
+We are building the bathymetry model based on high-resolution ($1$m$\times$$1$m) soundings in the navigation channel, sounding from the navigation chart and vertices from $0$m, $2$m, $6$m and $10$m depth contours. The number of high-resolution points in the navigation channel is $5746216$ and the number of sounding points and contour vertices are $4089$. A total $5750305$ points. The scattered point set is seen in figure \ref{fig:screenshot-from-2023-04-17-20-23-15}.
+
+\begin{figure}
+	\centering
+	\includegraphics[width=1.0\linewidth]{"Screenshot from 2023-04-17 20-23-15"}
+	\caption{}
+	\label{fig:screenshot-from-2023-04-17-20-23-15}
+\end{figure}
+
+The axis aligned bounding box for the quad-tree generation covers an area of $21.287$km $\times$ $21.287$km. The maximum depth of the quad-tree is $8$ and the maximum number of points per leaf node is $2$. The resulting quad-tree has $3886$ leaf nodes. From the quad-tree we build a DCEL mesh, with $3886$ vertices and $3254$ faces, which is seen in figure \ref{fig:screenshot-from-2023-04-17-20-43-40}. 
+
+\begin{figure}
+	\centering
+	\includegraphics[width=1.0\linewidth]{"Screenshot from 2023-04-17 20-43-40"}
+	\caption{}
+	\label{fig:screenshot-from-2023-04-17-20-43-40}
+\end{figure}
+
+\begin{figure}
+	\centering
+	\includegraphics[width=0.7\linewidth]{"Screenshot from 2023-04-17 21-43-39"}
+	\caption{}
+	\label{fig:screenshot-from-2023-04-17-21-43-39}
+\end{figure}
+
+\begin{figure}
+	\centering
+	\includegraphics[width=0.7\linewidth]{"Screenshot from 2023-04-17 21-41-58"}
+	\caption{}
+	\label{fig:screenshot-from-2023-04-17-21-41-58}
+\end{figure}
 
 \subsection{Tables}
 
@@ -231,6 +317,11 @@ First page number && 1 \\
 \subsection{Inquiries}
 
  If you have any questions about the preparation or submission of your article as instructed here, please send an email to marine@cimne.upc.edu.
+
+\section{DISCUSSION}
+Bathymetry model kriging 
+% 	https://help.arcgis.com/en/arcgisdesktop/10.0/help/index.html#//009z00000076000000.htm
+% https://www.publichealth.columbia.edu/research/population-health-methods/kriging-interpolation
 
 
 \section{CONCLUSIONS}

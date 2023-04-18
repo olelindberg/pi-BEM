@@ -44,7 +44,7 @@ print(Frh)
 
 swayforce = []
 heaveforce = []
-for testId in testIds[1]:
+for testId in testIds[7]:
 
     filename = current_dir + "/" + testId + "/output/hydrodynamic_force.csv"
     print(filename)

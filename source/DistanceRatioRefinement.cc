@@ -8,12 +8,15 @@
 DistanceRatioRefinement::DistanceRatioRefinement(dealii::ConditionalOStream pcout,
                                                  const Bnd_Box             &box,
                                                  double                     aspectRatioMax,
+                                                 double                     area_min,
                                                  unsigned int               manifold_id_,
                                                  int                        levels_,
-                                                 double                     distanceRatioMax)
-  : GridRefinement(pcout)
+                                                 double                     distanceRatioMax,
+                                                 bool                       verbose)
+  : GridRefinement(pcout, verbose)
   , _box(box)
   , _aspectRatioMax(aspectRatioMax)
+  , _area_min(area_min)
   , manifold_id(manifold_id_)
   , levels(levels_)
   , _distanceRatioMax(distanceRatioMax)
@@ -26,6 +29,14 @@ DistanceRatioRefinement::DistanceRatioRefinement(dealii::ConditionalOStream pcou
 void DistanceRatioRefinement::refine(dealii::Triangulation<2, 3> &tria)
 {
   std::cout << "Refining based on distance ratio ...\n";
+  if (_verbose)
+  {
+    _pcout << "manifold_id      " << manifold_id << std::endl;
+    _pcout << "levels           " << levels << std::endl;
+    _pcout << "aspectRatioMax   " << _aspectRatioMax << std::endl;
+    _pcout << "distanceRatioMax " << _distanceRatioMax << std::endl;
+  }
+
 
   for (int refineId = 0; refineId < levels; ++refineId)
   {
@@ -35,21 +46,36 @@ void DistanceRatioRefinement::refine(dealii::Triangulation<2, 3> &tria)
     {
       if (cell->manifold_id() == manifold_id)
       {
-        std::vector<dealii::Point<3>> pnts;
-        for (int i = 0; i < 4; ++i)
-          pnts.push_back(cell->vertex(i));
+        double area = cell->measure();
+        if (area > _area_min)
+        {
+          std::vector<dealii::Point<3>> pnts;
+          for (int i = 0; i < 4; ++i)
+            pnts.push_back(cell->vertex(i));
 
-        Bnd_Box boxx;
-        for (const auto pnt : pnts)
-          boxx.Add(gp_Pnt(pnt[0], pnt[1], pnt[2]));
+          Bnd_Box boxx;
+          for (const auto pnt : pnts)
+            boxx.Add(gp_Pnt(pnt[0], pnt[1], pnt[2]));
 
-        const auto dist = std::max(_box.Distance(boxx), _boxLengthMax);
+          const auto dist = _box.Distance(boxx);
+          if (dist > 0.0)
+          {
+            double cellLength =
+              std::max(cell->extent_in_direction(0), cell->extent_in_direction(1));
+            auto distRatio = cellLength / dist;
 
-        double cellLength = std::max(cell->extent_in_direction(0), cell->extent_in_direction(1));
-        auto   distRatio  = cellLength / dist;
-
-        if (distRatio > _distanceRatioMax)
-          RefinementUtil::aspectRatioRefinement(_aspectRatioMax, cell);
+            if (distRatio > _distanceRatioMax)
+            {
+              if (_verbose)
+              {
+                _pcout << "dist       " << dist << std::endl;
+                _pcout << "cellLength " << cellLength << std::endl;
+                _pcout << "distRatio  " << distRatio << std::endl;
+              }
+              RefinementUtil::aspectRatioRefinement(_aspectRatioMax, cell);
+            }
+          }
+        }
       }
     }
     tria.prepare_coarsening_and_refinement();

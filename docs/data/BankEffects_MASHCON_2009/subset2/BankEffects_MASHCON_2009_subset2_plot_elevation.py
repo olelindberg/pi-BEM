@@ -7,10 +7,11 @@ import os
 current_dir = os.path.dirname(os.path.abspath(__file__))
 
 u = 0.343
+
 rho = 1000
 g = 9.80665
 
-p0 = 0.5*rho*u*u
+stagnation_pressure = 0.5*rho*u*u
 
 data = np.genfromtxt(current_dir+"/B/output/elevation.csv", delimiter=",")
 y0 = 0.265
@@ -38,22 +39,37 @@ xprt = x[id]
 yprt = y[id]
 zprt = z[id]
 
-pstb = rho*g*zstb
-pprt = rho*g*zprt
+hh = zstb-zprt
 
-Fyprt   = np.trapz(-pprt,xprt)
-Fystb   = np.trapz(pstb,xstb)
-Fy      = Fyprt+Fystb
+stb = 0.5*rho*g*np.abs(zstb)*zstb
+prt = 0.5*rho*g*np.abs(zprt)*zprt
 
+Fyprt   = np.trapz(prt,xprt)
+Fystb   = np.trapz(stb,xstb)
+Fy      = Fystb-Fyprt
+
+print(Fystb)
+print(Fyprt)
 print(Fy)
 
+
+
 fig = plt.figure()
-plt.plot(xprt,0*xprt + p0,'b')
-plt.plot(xprt,pprt,'r')
-plt.plot(xstb,pstb,'g')
+#plt.plot(xprt,0*xprt + p0,'b')
+plt.plot(xprt,zprt,'r')
+plt.plot(xstb,zstb,'g')
+plt.plot(xstb,hh,'b')
 #ax.scatter(xx, yy, zz, color='red')
 plt.grid(True)
 plt.xlabel('x')
 plt.ylabel('y')
+
+fig = plt.figure()
+plt.plot(xprt,prt,'r')
+plt.plot(xstb,stb,'g')
+plt.grid(True)
+plt.xlabel('x')
+plt.ylabel('y')
+
 
 plt.show()
