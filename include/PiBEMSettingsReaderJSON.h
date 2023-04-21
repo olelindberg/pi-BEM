@@ -37,6 +37,7 @@ public:
       pibemSettings.top_fraction_max =
         root.get<double>("adaptive_mesh_refinement.top_fraction_max");
       //      pibemSettings.domain = (PiBEMSettings::DOMAIN)root.get<int>("domain");
+      pibemSettings.route_enabled = root.get<bool>("route_enabled");
 
       return true;
     }

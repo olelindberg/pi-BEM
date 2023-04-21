@@ -9,13 +9,13 @@ AreaRefinement::AreaRefinement(dealii::ConditionalOStream pcout,
                                const std::vector<int>    &manifold_id_,
                                double                     aspectRatioMax,
                                int                        levels_,
-                               double                     areaMax,
+                               double                     area_min,
                                bool                       verbose)
   : GridRefinement(pcout, verbose)
   , manifold_id(manifold_id_)
   , _aspectRatioMax(aspectRatioMax)
   , levels(levels_)
-  , _areaMax(areaMax)
+  , _area_min(area_min)
 {}
 
 
@@ -34,7 +34,7 @@ void AreaRefinement::refine(dealii::Triangulation<2, 3> &tria)
           manifold_id.end())
       {
         double area = cell->measure();
-        if (area > _areaMax)
+        if (area > _area_min)
         {
           if (_verbose)
           {

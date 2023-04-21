@@ -1,3 +1,10 @@
+import os
+import sys
+
+current_dir = os.path.dirname(os.path.realpath(__file__))
+print(current_dir)
+sys.path.insert(0, current_dir + '/../pyNumericalUncertainty')
+
 from NumericalUncertainty import NumericalUncertainty
 import pyvista as pv
 import numpy as np
@@ -5,11 +12,11 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import pandas as pd
 from pandas.core.frame import DataFrame
-import os
 import glob
 import math
 
-showUncertaintyPlots = False
+
+showUncertaintyPlots = True
 saveFigures = True
 testNames = ['case1', 'case2', 'case3']
 meshes = [1, 2, 3, 4, 5]
@@ -32,7 +39,6 @@ print(sinkage_barehull[0:3])
 print(ypos[0:3])
 print(Ypropulsion[0:3])
 print(Ybarehull[0:3])
-adsf
 
 g = 9.80665
 density = 1000
@@ -51,7 +57,7 @@ swayforceAll = []
 elementSizeAll = []
 numElementsAll = []
 
-for testId in range(0, len(testNames)):
+for testId in range(0,len(testNames)):
 
     testName = testNames[testId]
 
@@ -63,17 +69,17 @@ for testId in range(0, len(testNames)):
     for meshId in meshes:
 
         meshName = "mesh" + str(meshId)
-        pathName = testName + "/" + meshName
+        pathName = current_dir + "/" + testName + "/" + meshName
 
-        filename = pathName + "/output/force.csv"
+        filename = pathName + "/output/hydrodynamic_force.csv"
         data = np.genfromtxt(filename, delimiter=",")
-
+        print(data)
         filename = pathName + "/output/result_scalar_results.vtu"
         mesh = pv.read(filename)
         mesh = mesh.compute_cell_sizes(length=False, volume=False)
 
-        swayforce.append(data[0][1])
-        heaveforce.append(data[0][2])
+        swayforce.append(data[4])
+        heaveforce.append(data[5])
         elementSize.append(np.sqrt(np.min(mesh.get_array('Area'))))
         numElements.append(mesh.number_of_cells)
 
@@ -110,7 +116,7 @@ plt.fill_between(ypos[0:3],
                  -(swayforceAll[:, cnt] / forceScale +
                    sway_unc[:, cnt]),
                  -(swayforceAll[:, cnt] / forceScale -
-                   sway_unc[:, cnt]), color='lightgray', edgeColor="gray", label="95% confidence band")
+                   sway_unc[:, cnt]), color='lightgray', label="95% confidence band")
 plt.plot(ypos[0:3], - swayforceAll[:, cnt]/forceScale, 'r-o', label='BEM')
 plt.grid(True)
 plt.legend()
@@ -128,7 +134,7 @@ plt.fill_between(ypos[0:3],
                  -(sinkage[:, cnt] +
                    sink_unc[:, cnt]) / Tm,
                  -(sinkage[:, cnt] -
-                   sink_unc[:, cnt]) / Tm, color='lightgray', edgeColor="gray", label="95% confidence band")
+                   sink_unc[:, cnt]) / Tm, color='lightgray', label="95% confidence band")
 
 plt.plot(ypos[0:3], - sinkage[:, cnt]/Tm, 'r-o', label='BEM')
 plt.grid(True)

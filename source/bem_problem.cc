@@ -2334,9 +2334,6 @@ void BEMProblem<dim>::free_surface_elevation(double                             
   DoFTools::map_dofs_to_support_points<dim - 1, dim>(*mapping, dh, support_points);
   std::vector<types::global_dof_index> local_dof_indices(fe->dofs_per_cell);
 
-  double force_y = 0.0;
-  double force_z = 0.0;
-
   for (const auto &cell : dh.active_cell_iterators())
   {
     if (body.hasMaterial(cell->material_id()))
@@ -2370,18 +2367,6 @@ void BEMProblem<dim>::free_surface_elevation(double                             
             elev[1] = qpoints[q][1];
             elev[2] = p / (density * gravity);
             elevation.push_back(elev);
-            auto n = q_normals[q];
-
-            double lng = std::sqrt(n[0] * n[0] + n[1] * n[1]);
-            n[0] /= lng;
-            n[1] /= lng;
-            n[2] = 0.0;
-
-            // std::cout << n[0] << ", " << n[1] << ", " << n[2] << std::endl;
-            double zSWL = 0.0;
-            double eta0 = elev[2] - zSWL;
-            force_y += 0.5 * density * gravity * eta0 * eta0 * n[1] * fe_face_values.JxW(q);
-            force_z += elev[1] * p * fe_face_values.JxW(q);
 
           } // for q
         }   // if line at bnd
@@ -2389,8 +2374,6 @@ void BEMProblem<dim>::free_surface_elevation(double                             
     }       // if this cpu
   }         // for cell in active cells
 
-  std::cout << "Force in y direction " << force_y << std::endl;
-  std::cout << "Force in z direction " << force_z << std::endl;
   return;
 }
 

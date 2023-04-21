@@ -2,6 +2,11 @@ from ErrorEstimateAndStandardDeviation import *
 import matplotlib.pyplot as plt
 
 
+"""
+L. Eça, M. Hoekstra, 
+"A procedure for the estimation of the numerical uncertainty of CFD calculations based on grid refinement studies", 
+Journal of Computational Physics 262 (2014) 104-130
+"""
 def NumericalUncertainty(h, phi, showPlots):
 
     # h = h(1: end)

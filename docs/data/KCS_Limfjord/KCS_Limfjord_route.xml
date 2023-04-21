@@ -1,8 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <gpx xmlns="http://www.topografix.com/GPX/1/1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd" version="1.1" creator="gpx.py -- https://github.com/tkrajina/gpxpy">
   <rte>
-    <rtept lat="56.961335432174764" lon="10.38041124840917">
-    </rtept>
     <rtept lat="56.961487729887544" lon="10.379788849777768">
     </rtept>
     <rtept lat="56.96163998501429" lon="10.379166661748014">

@@ -21,7 +21,7 @@ public:
   int         number_of_elements_max   = 2000;
   double      top_fraction_max         = 0.05;
   DOMAIN_TYPE domain_type              = DOMAIN_TYPE::SINGLE_MESH;
-  bool        route_enabled            = false;
+  bool        route_enabled            = true;
 
   void print()
   {

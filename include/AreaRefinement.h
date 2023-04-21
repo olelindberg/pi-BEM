@@ -12,7 +12,7 @@ public:
                  const std::vector<int>    &manifold_id_,
                  double                     aspectRatioMax,
                  int                        levels_,
-                 double                     areaMax,
+                 double                     area_min,
                  bool                       verbose);
   virtual ~AreaRefinement(){};
 
@@ -24,6 +24,6 @@ private:
   int levels = 0;
 
   double _aspectRatioMax = 0.0;
-  double _areaMax        = 0.0;
+  double _area_min       = 0.0;
 };
 #endif // AREA_REFINEMENT_H

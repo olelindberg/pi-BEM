@@ -76,12 +76,12 @@ GridRefinementCreator::create(const std::string &filename, dealii::ConditionalOS
             manifold_ids.push_back(id.second.get_value<int>());
 
           int    refinement_levels = child.get<int>("refinement_levels");
-          double area_max          = child.get<double>("area_max");
+          double area_min          = child.get<double>("area_min");
           double aspect_ratio_max  = child.get<double>("aspect_ratio_max");
           bool   verbose           = child.get<bool>("verbose", false);
 
           gridrefinement.push_back(std::make_shared<AreaRefinement>(
-            pcout, manifold_ids, aspect_ratio_max, refinement_levels, area_max, verbose));
+            pcout, manifold_ids, aspect_ratio_max, refinement_levels, area_min, verbose));
         }
       }
 

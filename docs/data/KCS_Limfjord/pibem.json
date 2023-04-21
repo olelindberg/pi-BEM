@@ -4,9 +4,9 @@
     "adaptive_mesh_refinement": {
         "aspectRatioMax": 4.0,
         "cellSizeMin": 0.0000001,
-        "adaptiveRefinementLevels": 2,
+        "adaptiveRefinementLevels": 0,
         "iterMax": 1000,
-        "number_of_elements_max": 1500,
+        "number_of_elements_max": 2000,
         "top_fraction_max": 0.05
     }
 }
