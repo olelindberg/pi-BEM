@@ -1,17 +1,3 @@
-# Parameter file generated with 
-# D2K_GIT_BRANCH=       master
-# D2K_GIT_SHORTREV=     9762009
-# DEAL_II_GIT_BRANCH=   master
-# DEAL_II_GIT_SHORTREV= d984c95
-subsection BEMFMA<3>
-  subsection FMA Params
-    set FMA Truncation Order = 6
-  end
-  subsection Octree Params
-    set Maximum Number of Collocation Points per Childless Block = 20
-    set Number of Octree Levels                                  = 10
-  end
-end
 subsection BEMProblem<3>
   set Continuos gradient across edges = true
   set Mapping Q Degree                = 2
@@ -27,8 +13,8 @@ subsection BEMProblem<3>
     set Log frequency = 1
     set Log history   = true
     set Log result    = true
-    set Max steps     = 3000
-    set Tolerance     = 1.e-7
+    set Max steps     = 1000
+    set Tolerance     = 1.e-1
   end
   set Symmetry plane z level = 14.5
 end
@@ -99,11 +85,4 @@ subsection Vector data out
   set Problem base name              = solution
   set Solution names                 = u
   set Subdivisions                   = 1
-end
-subsection deal2lkit::ParsedGridRefinement
-  set Bottom fraction                        = 0.0
-  set Maximum number of cells (if available) = 0
-  set Order (optimize)                       = 2
-  set Refinement strategy                    = fraction
-  set Top fraction                           = 0.300000
 end

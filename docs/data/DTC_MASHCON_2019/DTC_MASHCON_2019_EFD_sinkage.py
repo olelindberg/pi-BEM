@@ -1,6 +1,9 @@
 import numpy as np 
 import matplotlib.pyplot as plt
+import os
 
+
+current_dir = os.path.dirname(os.path.abspath(__file__))
 
 g               = 9.80665
 density         = 1000
@@ -9,6 +12,8 @@ Lpp_model       = 3.984
 scale           = Lpp_full/Lpp_model
 Tm_model        = 0.163
 Tm_full         = 14.5
+Btank_model     = 7
+Btank_full      = Btank_model*scale
 waterplanearea  = 22032
 depth_model     = np.array([2.0*Tm_model,2.0*Tm_model,1.2*Tm_model])
 velocity_model  = [0.327,0.872,0.327]
@@ -16,9 +21,12 @@ FnL              = velocity_model/np.sqrt(g*Lpp_model)
 Fnh              = velocity_model/np.sqrt(g*depth_model)
 velocity_full   = FnL*np.sqrt(g*Lpp_full)
 
-C1 = np.genfromtxt("C1.dat",delimiter="")
-C2 = np.genfromtxt("C2.dat",delimiter="")
-C3 = np.genfromtxt("C3.dat",delimiter="")
+print("B tank full", Btank_full)
+
+
+C1 = np.genfromtxt(current_dir + "/C1.dat",delimiter="")
+C2 = np.genfromtxt(current_dir + "/C2.dat",delimiter="")
+C3 = np.genfromtxt(current_dir + "/C3.dat",delimiter="")
 
 t = np.array([0,230])
 

@@ -4,8 +4,11 @@ import math
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
+import os
 
-data = np.genfromtxt("C3/output/elevation.csv",delimiter=",")
+current_dir = os.path.dirname(os.path.abspath(__file__))
+
+data = np.genfromtxt(current_dir + "/C3/output/elevation.csv",delimiter=",")
 xx = data[:,0]
 yy = data[:,1]
 zz = data[:,2]

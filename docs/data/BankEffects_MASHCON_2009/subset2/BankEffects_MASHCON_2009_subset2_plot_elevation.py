@@ -13,7 +13,7 @@ g = 9.80665
 
 stagnation_pressure = 0.5*rho*u*u
 
-data = np.genfromtxt(current_dir+"/B/output/elevation.csv", delimiter=",")
+data = np.genfromtxt(current_dir+"/J/output/elevation.csv", delimiter=",")
 y0 = 0.265
 xx = data[:, 0]
 yy = data[:, 1]-y0

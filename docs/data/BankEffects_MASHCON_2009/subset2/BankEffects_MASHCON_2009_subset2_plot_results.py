@@ -6,6 +6,8 @@ from pandas.core.frame import DataFrame
 import os
 import glob
 
+np.set_printoptions(precision=2)
+
 current_dir = os.path.dirname(os.path.abspath(__file__))
 
 g = 9.80665
@@ -17,8 +19,7 @@ Sw = 2*1.36418245
 
 sheetname = 'Open data'
 
-df = pd.read_excel(
-    '/home/ole/dev/projects/pi-BEM/docs/data/BankEffects_MASHCON_2009/open_data_bankeffects/subset2/opendata_subset2.xlsx', sheet_name=sheetname)
+df = pd.read_excel( current_dir + '/../open_data_bankeffects/subset2/opendata_subset2.xlsx', sheet_name=sheetname)
 df = df.set_index('short name test')
 print(df)
 testIds = list(df.columns[1:])
@@ -44,7 +45,7 @@ print(Frh)
 
 swayforce = []
 heaveforce = []
-for testId in testIds[7]:
+for testId in testIds:
 
     filename = current_dir + "/" + testId + "/output/hydrodynamic_force.csv"
     print(filename)
@@ -57,8 +58,8 @@ heaveforce = np.array(heaveforce)
 sinkage = (heaveforce-30)/(g*density*A)
 
 print("Sway force")
-print(swayforceEFD)
-print(swayforce)
+print(np.array(swayforceEFD))
+print(np.array(swayforce))
 
 print("Sinkage")
 print(0.5*(zaEFD+zfEFD))

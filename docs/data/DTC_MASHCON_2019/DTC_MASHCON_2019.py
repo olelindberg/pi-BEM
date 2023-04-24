@@ -1,5 +1,8 @@
 import numpy as np 
 import matplotlib.pyplot as plt
+import os
+
+current_dir = os.path.dirname(os.path.abspath(__file__))
 
 savefigures = True
 
@@ -16,20 +19,20 @@ FnL              = velocity_model/np.sqrt(g*Lpp_model)
 Fnh              = velocity_model/np.sqrt(g*depth_model)
 velocity_full   = FnL*np.sqrt(g*Lpp_full)
 
-F1 = np.genfromtxt("C1/output/force.csv",delimiter=",")
-F2 = np.genfromtxt("C2/output/force.csv",delimiter=",")
-F3 = np.genfromtxt("C3/output/force.csv",delimiter=",")
+F1 = np.genfromtxt(current_dir + "/C1/output/hydrodynamic_force.csv",delimiter=",")
+F2 = np.genfromtxt(current_dir + "/C2/output/hydrodynamic_force.csv",delimiter=",")
+F3 = np.genfromtxt(current_dir + "/C3/output/hydrodynamic_force.csv",delimiter=",")
 print(F1)
 print(F2)
 print(F3)
-heaveforce = np.array([F1[0][2],F2[0][2],F3[0][2]])
+heaveforce = np.array([F1[5],F2[5],F3[5]])
 print(heaveforce)
 sinkage         = heaveforce/(g*density*waterplanearea)
 print(sinkage)
 
-C1 = np.genfromtxt("C1.dat",delimiter="")
-C2 = np.genfromtxt("C2.dat",delimiter="")
-C3 = np.genfromtxt("C3.dat",delimiter="")
+C1 = np.genfromtxt(current_dir + "/C1.dat",delimiter="")
+C2 = np.genfromtxt(current_dir + "/C2.dat",delimiter="")
+C3 = np.genfromtxt(current_dir + "/C3.dat",delimiter="")
 
 t = np.array([0,230])
 
