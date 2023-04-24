@@ -1,6 +1,6 @@
 {
     "areaRefinement": {
-        "area_max": 0.005,
+        "area_min": 0.005,
         "aspect_ratio_max": 2.0,
         "manifold_ids": [
             1,

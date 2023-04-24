@@ -43,6 +43,7 @@ GridRefinementCreator::create(const std::string &filename, dealii::ConditionalOS
         auto child = node.second;
         if (!child.empty())
         {
+          pcout << "Creating aspect ratio refinement ...\n";
           double           aspect_ratio_max = child.get<double>("aspect_ratio_max");
           std::vector<int> manifold_ids;
           for (pt::ptree::value_type &id : child.get_child("manifold_ids"))
@@ -59,6 +60,7 @@ GridRefinementCreator::create(const std::string &filename, dealii::ConditionalOS
         auto child = node.second;
         if (!child.empty())
         {
+          pcout << "Creating height ratio refinement ...\n";
           double height_ratio_max  = child.get<double>("height_ratio_max");
           double refinement_levels = child.get<double>("refinement_levels");
           gridrefinement.push_back(
@@ -71,6 +73,7 @@ GridRefinementCreator::create(const std::string &filename, dealii::ConditionalOS
         auto child = node.second;
         if (!child.empty())
         {
+          pcout << "Creating area refinement ...\n";
           std::vector<int> manifold_ids;
           for (pt::ptree::value_type &id : child.get_child("manifold_ids"))
             manifold_ids.push_back(id.second.get_value<int>());
@@ -91,6 +94,8 @@ GridRefinementCreator::create(const std::string &filename, dealii::ConditionalOS
         auto child = node.second;
         if (!child.empty())
         {
+          pcout << "Creating distance ratio refinement ...\n";
+
           int    manifold_id        = child.get<int>("manifold_id");
           int    refinement_levels  = child.get<int>("refinement_levels");
           double distance_ratio_max = child.get<double>("distance_ratio_max");
@@ -128,6 +133,8 @@ GridRefinementCreator::create(const std::string &filename, dealii::ConditionalOS
         auto child = node.second;
         if (!child.empty())
         {
+          pcout << "Creating box refinement ...\n";
+
           int    manifold_id       = child.get<int>("manifold_id");
           int    refinement_levels = child.get<int>("refinement_levels");
           double aspect_ratio_max  = child.get<double>("aspect_ratio_max");

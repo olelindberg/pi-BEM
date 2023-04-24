@@ -1,19 +1,16 @@
-mpiexec -np 4 ./bem_fma_3d 4 --input-path /home/ole/dev/projects/pi-BEM/docs/data/BankEffects_MASHCON_2009/subset1/position1speed1/
-mpiexec -np 4 ./bem_fma_3d 4 --input-path /home/ole/dev/projects/pi-BEM/docs/data/BankEffects_MASHCON_2009/subset1/position2speed1/
-mpiexec -np 4 ./bem_fma_3d 4 --input-path /home/ole/dev/projects/pi-BEM/docs/data/BankEffects_MASHCON_2009/subset1/position3speed1/
-mpiexec -np 4 ./bem_fma_3d 4 --input-path /home/ole/dev/projects/pi-BEM/docs/data/BankEffects_MASHCON_2009/subset1/position4speed1/
-
-mpiexec -np 4 ./bem_fma_3d 4 --input-path /home/ole/dev/projects/pi-BEM/docs/data/BankEffects_MASHCON_2009/subset1/position1speed2/
-mpiexec -np 4 ./bem_fma_3d 4 --input-path /home/ole/dev/projects/pi-BEM/docs/data/BankEffects_MASHCON_2009/subset1/position2speed2/
-mpiexec -np 4 ./bem_fma_3d 4 --input-path /home/ole/dev/projects/pi-BEM/docs/data/BankEffects_MASHCON_2009/subset1/position3speed2/
-mpiexec -np 4 ./bem_fma_3d 4 --input-path /home/ole/dev/projects/pi-BEM/docs/data/BankEffects_MASHCON_2009/subset1/position4speed2/
-
-mpiexec -np 4 ./bem_fma_3d 4 --input-path /home/ole/dev/projects/pi-BEM/docs/data/BankEffects_MASHCON_2009/subset1/position1speed3/
-mpiexec -np 4 ./bem_fma_3d 4 --input-path /home/ole/dev/projects/pi-BEM/docs/data/BankEffects_MASHCON_2009/subset1/position2speed3/
-mpiexec -np 4 ./bem_fma_3d 4 --input-path /home/ole/dev/projects/pi-BEM/docs/data/BankEffects_MASHCON_2009/subset1/position3speed3/
-mpiexec -np 4 ./bem_fma_3d 4 --input-path /home/ole/dev/projects/pi-BEM/docs/data/BankEffects_MASHCON_2009/subset1/position4speed3/
-
-mpiexec -np 4 ./bem_fma_3d 4 --input-path /home/ole/dev/projects/pi-BEM/docs/data/BankEffects_MASHCON_2009/subset1/position1speed4/
-mpiexec -np 4 ./bem_fma_3d 4 --input-path /home/ole/dev/projects/pi-BEM/docs/data/BankEffects_MASHCON_2009/subset1/position2speed4/
-mpiexec -np 4 ./bem_fma_3d 4 --input-path /home/ole/dev/projects/pi-BEM/docs/data/BankEffects_MASHCON_2009/subset1/position3speed4/
-mpiexec -np 4 ./bem_fma_3d 4 --input-path /home/ole/dev/projects/pi-BEM/docs/data/BankEffects_MASHCON_2009/subset1/position4speed4/
+#mpiexec -np 4 ./../../../../build/bem_fma_3d 4 --input-path position1speed1/
+#mpiexec -np 4 ./../../../../build/bem_fma_3d 4 --input-path position2speed1/
+#mpiexec -np 4 ./../../../../build/bem_fma_3d 4 --input-path position3speed1/
+#mpiexec -np 4 ./../../../../build/bem_fma_3d 4 --input-path position4speed1/
+#mpiexec -np 4 ./../../../../build/bem_fma_3d 4 --input-path position1speed2/
+#mpiexec -np 4 ./../../../../build/bem_fma_3d 4 --input-path position2speed2/
+#mpiexec -np 4 ./../../../../build/bem_fma_3d 4 --input-path position3speed2/
+#mpiexec -np 4 ./../../../../build/bem_fma_3d 4 --input-path position4speed2/
+#mpiexec -np 4 ./../../../../build/bem_fma_3d 4 --input-path position1speed3/
+#mpiexec -np 4 ./../../../../build/bem_fma_3d 4 --input-path position2speed3/
+mpiexec -np 4 ./../../../../build/bem_fma_3d 4 --input-path position3speed3/
+#mpiexec -np 4 ./../../../../build/bem_fma_3d 4 --input-path position4speed3/
+#mpiexec -np 4 ./../../../../build/bem_fma_3d 4 --input-path position1speed4/
+mpiexec -np 4 ./../../../../build/bem_fma_3d 4 --input-path position2speed4/
+#mpiexec -np 4 ./../../../../build/bem_fma_3d 4 --input-path position3speed4/
+#mpiexec -np 4 ./../../../../build/bem_fma_3d 4 --input-path position4speed4/

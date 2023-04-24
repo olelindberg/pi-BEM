@@ -1,8 +1,3 @@
-# Parameter file generated with 
-# D2K_GIT_BRANCH=       master
-# D2K_GIT_SHORTREV=     9762009
-# DEAL_II_GIT_BRANCH=   master
-# DEAL_II_GIT_SHORTREV= d984c95
 subsection BEMProblem<3>
   set Continuos gradient across edges = true
   set Mapping Q Degree                = 1

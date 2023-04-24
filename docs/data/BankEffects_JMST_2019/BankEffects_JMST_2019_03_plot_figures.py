@@ -1,7 +1,7 @@
 import pyvista as pv
 import numpy as np
 
-show = False
+show = True
 showPotential = False
 show_edges = True
 zoom = 0.5

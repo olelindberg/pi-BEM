@@ -14,5 +14,6 @@
         "iterMax": 1000,
         "number_of_elements_max": 3000,
         "top_fraction_max": 0.05
-    }
+    },
+    "route_enabled": "false"
 }
