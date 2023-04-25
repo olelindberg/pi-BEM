@@ -158,6 +158,21 @@ GridRefinementCreator::create(const std::string &filename, dealii::ConditionalOS
             pcout, box, aspect_ratio_max, area_min, manifold_id, refinement_levels));
         }
       }
+
+      if (node.first == "manifoldRefinement")
+      {
+        auto child = node.second;
+        if (!child.empty())
+        {
+          pcout << "Creating manifold refinement ...\n";
+
+          int manifold_id       = child.get<int>("manifold_id");
+          int refinement_levels = child.get<int>("refinement_levels");
+
+          gridrefinement.push_back(
+            std::make_shared<ManifoldRefinement>(pcout, manifold_id, refinement_levels));
+        }
+      }
     }
   }
   catch (const std::exception &e)

@@ -1,0 +1,17 @@
+{
+    "name": "Wigley_hull",
+    "materialIndices": [
+        1,
+        2
+    ],
+    "waterlineIndices": [
+        12,
+        13
+    ],
+    "draft": 20.8,
+    "centerOfGravity": [
+        172.86628,
+        0.0,
+        19.75749
+    ]
+}

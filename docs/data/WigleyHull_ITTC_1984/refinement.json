@@ -1,0 +1,21 @@
+{
+    "areaRefinement": {
+        "area_min": 0.001,
+        "aspect_ratio_max": 2.0,
+        "manifold_ids": [
+            1,
+            2
+        ],
+        "refinement_levels": 1000,
+        "verbose": "false"
+    },
+    "areaRefinement": {
+        "area_min": 0.1,
+        "aspect_ratio_max": 2.0,
+        "manifold_ids": [
+            3
+        ],
+        "refinement_levels": 1000,
+        "verbose": "false"
+    }
+}

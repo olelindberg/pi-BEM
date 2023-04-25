@@ -1,3 +1,5 @@
+import os
+current_dir = os.path.dirname(os.path.abspath(__file__))
 import matplotlib.pyplot as plt
 import numpy as np
 import math
@@ -16,20 +18,20 @@ Fn_h   = vel/math.sqrt(grav*depth)
 heaveAll  = np.zeros((7,1))
 velxAll  = np.zeros((7,1))
 
-cfddata    = np.genfromtxt('WigleyHull_CFDResults.csv',delimiter=',')
+cfddata    = np.genfromtxt(current_dir + '/WigleyHull_CFDResults.csv',delimiter=',')
 cfdFr      = cfddata[:,1]
 cfdsinkage = cfddata[:,4]
 
-efddata    = np.genfromtxt('WigleyHullSinkageFig10.csv',delimiter=',')
+efddata    = np.genfromtxt(current_dir + '/WigleyHullSinkageFig10.csv',delimiter=',')
 efdFr      = efddata[:,1]
 efdsinkage = efddata[:,2]
 
 
-bswdata    = np.genfromtxt('WigleyHullSinkageBoussinesq.csv',delimiter=',')
+bswdata    = np.genfromtxt(current_dir + '/WigleyHullSinkageBoussinesq.csv',delimiter=',')
 bswFr      = bswdata[:,1]
 bswsinkage = bswdata[:,2]
 
-bemdata    = np.genfromtxt('WigleyHullSinkage_piBEM.csv',delimiter=',')
+bemdata    = np.genfromtxt(current_dir + '/WigleyHullSinkage_piBEM.csv',delimiter=',')
 bemFr      = bemdata[:,1]
 bemsinkage = bemdata[:,2]
 

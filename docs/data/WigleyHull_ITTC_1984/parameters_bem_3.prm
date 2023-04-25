@@ -1,20 +1,6 @@
-# Parameter file generated with 
-# D2K_GIT_BRANCH=       master
-# D2K_GIT_SHORTREV=     9762009
-# DEAL_II_GIT_BRANCH=   master
-# DEAL_II_GIT_SHORTREV= d984c95
-subsection BEMFMA<3>
-  subsection FMA Params
-    set FMA Truncation Order = 6
-  end
-  subsection Octree Params
-    set Maximum Number of Collocation Points per Childless Block = 20
-    set Number of Octree Levels                                  = 10
-  end
-end
 subsection BEMProblem<3>
   set Continuos gradient across edges = true
-  set Mapping Q Degree                = 3
+  set Mapping Q Degree                = 1
   set Mapping Type                    = FE
   set Preconditioner                  = ILU
   set Solution method                 = Direct
@@ -74,7 +60,7 @@ subsection Driver<3>
 end
 subsection Scalar FE
   set Blocking of the finite element = u
-  set Finite element space           = FE_Q(3)
+  set Finite element space           = FE_Q(1)
 end
 subsection Scalar data out
   set Files to save in run directory = 
@@ -87,7 +73,7 @@ subsection Scalar data out
 end
 subsection Vector FE
   set Blocking of the finite element = u,u,u
-  set Finite element space           = FESystem[FE_Q(3)^3]
+  set Finite element space           = FESystem[FE_Q(1)^3]
 end
 subsection Vector data out
   set Files to save in run directory = 
@@ -97,11 +83,4 @@ subsection Vector data out
   set Problem base name              = solution
   set Solution names                 = u
   set Subdivisions                   = 1
-end
-subsection deal2lkit::ParsedGridRefinement
-  set Bottom fraction                        = 0.100000
-  set Maximum number of cells (if available) = 0
-  set Order (optimize)                       = 2
-  set Refinement strategy                    = fraction
-  set Top fraction                           = 0.300000
 end
