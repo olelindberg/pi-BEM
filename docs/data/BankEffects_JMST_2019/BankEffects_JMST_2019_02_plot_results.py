@@ -4,8 +4,8 @@ import sys
 current_dir = os.path.dirname(os.path.realpath(__file__))
 print(current_dir)
 sys.path.insert(0, current_dir + '/../pyNumericalUncertainty')
-
 from NumericalUncertainty import NumericalUncertainty
+
 import pyvista as pv
 import numpy as np
 import matplotlib.pyplot as plt

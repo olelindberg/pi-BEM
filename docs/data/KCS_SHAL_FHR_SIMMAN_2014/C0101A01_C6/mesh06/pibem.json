@@ -3,8 +3,13 @@
     "density": 1000,
     "potentialErrorEstimatorMax": 2.05,
     "velocityErrorEstimatorMax": 2.05,
-    "aspectRatioMax": 2.5,
-    "cellSizeMin": 0.0843603389937964,
-    "adaptiveRefinementLevels": 1000,
-    "iterMax": 1000
+    "adaptive_mesh_refinement": {
+        "aspectRatioMax": 2.5,
+        "cellSizeMin": 0.0000001,
+        "adaptiveRefinementLevels": 0,
+        "iterMax": 1000,
+        "number_of_elements_max": 3000,
+        "top_fraction_max": 0.05
+    },
+    "route_enabled": "false"
 }

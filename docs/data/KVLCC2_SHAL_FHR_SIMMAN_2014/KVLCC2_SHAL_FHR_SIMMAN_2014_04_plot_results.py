@@ -1,3 +1,7 @@
+import os
+current_dir = os.path.dirname(os.path.abspath(__file__))
+import sys
+sys.path.insert(0, current_dir + '/../pyNumericalUncertainty')
 from NumericalUncertainty import NumericalUncertainty
 import numpy as np
 import pyvista as pv
@@ -6,7 +10,7 @@ from numpy.core.fromnumeric import argsort
 import pandas as pd
 import glob
 
-meshes = [2, 4, 5, 6, 7]
+meshes = [2,3,4,5,6]
 showNumericalUncertainty = False
 showHeaveForce = False
 showPitchMoment = False
@@ -29,8 +33,8 @@ Lpp_model = 1/scale*Lpp_full
 Tm_model = 1/scale*Tm_full
 
 
-df = pd.read_csv('pmm_app_shal_fhr_App01_pure_surge.csv')
-df_fs = pd.read_csv('pmm_app_shal_fhr_App01_pure_surge_full_scale.csv')
+df = pd.read_csv(current_dir + '/pmm_app_shal_fhr_App01_pure_surge.csv')
+df_fs = pd.read_csv(current_dir + '/pmm_app_shal_fhr_App01_pure_surge_full_scale.csv')
 
 U_fullscale = df_fs['surge velocity [m/s]'].values
 h = df_fs['depth [m]'].values
@@ -58,8 +62,8 @@ pitchmomentAll = []
 elementSizeAll = []
 numElementsAll = []
 
-
-for testId in range(0, len(testNames)):
+print(testNames)
+for testId in range(0,len(testNames)):
 
     testName = testNames[testId]
 
@@ -71,18 +75,20 @@ for testId in range(0, len(testNames)):
     for meshId in meshes:
 
         meshName = "mesh0" + str(meshId)
-        pathName = testName + "/" + meshName
+        pathName = current_dir + "/" + testName + "/" + meshName
 
-        filename = pathName + "/output/force.csv"
+        filename = pathName + "/output/hydrodynamic_force.csv"
+        print(filename)
         data = np.genfromtxt(filename, delimiter=",")
 
         filename = pathName + "/output/result_scalar_results.vtu"
+        print(filename)
         mesh = pv.read(filename)
         mesh = mesh.compute_cell_sizes(length=False, volume=False)
 
-        heaveforce.append(data[0][2])
-        pitchmoment.append(data[0][4])
-        elementSize.append(np.sqrt(np.min(mesh.get_array('Area'))))
+        heaveforce.append(data[5])
+        pitchmoment.append(data[7])
+        elementSize.append(np.sqrt(np.sqrt(np.mean(mesh.get_array('Area')**2))))
         numElements.append(mesh.number_of_cells)
 
     heaveforceAll.append(heaveforce)
@@ -127,7 +133,7 @@ if (showSinkage):
                      -(sinkage[perm, cnt] +
                        sink_unc[perm, cnt]) / Tm_full,
                      -(sinkage[perm, cnt] -
-                       sink_unc[perm, cnt]) / Tm_full, color='lightgray', edgeColor="gray", label="95% confidence band")
+                       sink_unc[perm, cnt]) / Tm_full, color='lightgray', label="95% confidence band")
     plt.plot(Frh[perm], -sinkage[perm, cnt] /
              Tm_full, 'ro-', label="BEM")
     plt.xlabel(r"$Fr_h$")

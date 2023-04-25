@@ -1,15 +1,13 @@
 import os
-import sys
-
 current_dir = os.path.dirname(os.path.abspath(__file__))
-#from NumericalUncertainty import NumericalUncertainty
+import sys
+sys.path.insert(0, current_dir + '/../pyNumericalUncertainty')
+from NumericalUncertainty import NumericalUncertainty
 import pyvista as pv
 import numpy as np
 import matplotlib.pyplot as plt
 from numpy.core.fromnumeric import argsort
 import pandas as pd
-
-
 
 saveFigures = True
 
@@ -21,7 +19,7 @@ showSinkage = True
 showPitch = False
 
 numMeshes = 7
-meshes = [0, 2, 4, 5, 6]
+meshes = [0,1, 2, 3, 4, 5, 6]
 g = 9.80665
 density = 1000
 scale = 52.667
@@ -77,17 +75,19 @@ for testId in range(0, len(testNames)):
         meshName = "mesh0" + str(meshId)
         pathName = current_dir + "/" + testName + "/" + meshName
 
-        filename = pathName + "/output/force.csv"
+        filename = pathName + "/output/hydrodynamic_force.csv"
+        print(filename)
         data = np.genfromtxt(filename, delimiter=",")
 
-        filename = pathName + "/output/result_scalar_results.vtu"
+        filename = pathName + "/output/result_scalar_results_0.vtu"
+        print(filename)
         mesh = pv.read(filename)
 
         mesh = mesh.compute_cell_sizes(length=False, volume=False)
-        heaveforce.append(data[0][2])
-        pitchmoment.append(data[0][4])
+        heaveforce.append(data[5])
+        pitchmoment.append(data[7])
         numElements.append(len(mesh.get_array('Area')))
-        elementSize.append(np.sqrt(np.min(mesh.get_array('Area'))))
+        elementSize.append(np.sqrt(np.sqrt(np.mean(mesh.get_array('Area')**2))))
 
     heaveforceAll.append(heaveforce)
     pitchmomentAll.append(pitchmoment)
@@ -108,10 +108,10 @@ pitch = pitchmomentAll/((g*density*V0*GML))
 
 perm = argsort(Frh)
 
-# sink_unc = 0*sinkage
-# for i in range(sinkage.shape[0]):
-#     sink_unc[i, :] = NumericalUncertainty(
-#         elementSizeAll[i, :], sinkage[i, :], showNumericalUncertainty)
+sink_unc = 0*sinkage
+for i in range(sinkage.shape[0]):
+    sink_unc[i, :] = NumericalUncertainty(
+        elementSizeAll[i, :], sinkage[i, :], showNumericalUncertainty)
 
 cnt = sinkage.shape[1]-1
 
@@ -126,11 +126,11 @@ if (showHeaveForce):
 if (showSinkage):
     plt.figure(2)
     plt.plot(Frh[perm], 0.001*sink_m[perm]/Tm_model, 'ko-', label="EFD")
-    # plt.fill_between(Frh[perm],
-    #                  -(sinkage[perm, cnt] +
-    #                    sink_unc[perm, cnt]) / Tm_full,
-    #                  -(sinkage[perm, cnt] -
-    #                    sink_unc[perm, cnt]) / Tm_full, color='lightgray', edgeColor="gray", label="95% confidence band")
+    plt.fill_between(Frh[perm],
+                     -(sinkage[perm, cnt] +
+                       sink_unc[perm, cnt]) / Tm_full,
+                     -(sinkage[perm, cnt] -
+                       sink_unc[perm, cnt]) / Tm_full, color='lightgray', label="95% confidence band")
     plt.plot(Frh[perm], -sinkage[perm, cnt] /
              Tm_full, 'ro-', label="BEM")
     plt.xlabel(r"$Fr_h$")
