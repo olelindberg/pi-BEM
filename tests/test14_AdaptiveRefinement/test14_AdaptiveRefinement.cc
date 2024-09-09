@@ -16,7 +16,6 @@
 #include <deal.II/fe/mapping_c1.h>
 #include <deal.II/grid/grid_tools.h>
 
-#include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
 
 #include "./../tests.h"
@@ -101,7 +100,8 @@ private:
 int
 main(int argc, char **argv)
 {
-  unsigned int np;
+
+/*  unsigned int np;
   if (argc == 1)
     np = numbers::invalid_unsigned_int;
   else
@@ -255,4 +255,5 @@ main(int argc, char **argv)
     }
   }
   std::cout << pid << " done\n";
+  */
 }

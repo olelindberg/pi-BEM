@@ -1,0 +1,21 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"cmake.configureArgs": [
+			"-Ddeal.II_DIR=/usr/local/dealii-9.4.0/lib/cmake/deal.II/",
+			"-Ddeal2lkit_DIR=/usr/local/dealiikit_v9.4.0/lib/cmake/deal2lkit/"						
+		],
+			
+
+	},
+	"launch": {
+		"version": "0.2.0",
+		"configurations": [				
+
+		]
+	}
+}

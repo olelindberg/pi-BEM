@@ -185,7 +185,16 @@ public:
 
   virtual void update_triangulation() override;
 
-private:
+
+  /// method to refine the imported mesh
+  /// according to the level requested in
+  /// the parameters file
+
+  bool read_cad_files(std::string input_path = "");
+
+  void assign_manifold_projectors(double tolerance);
+
+// MCJ private:
   ComputationalDomainSettings setup;
 
   /// method to declare the parameters
@@ -199,13 +208,9 @@ private:
   virtual void parse_parameters(ParameterHandler &prm);
 
 
-  /// method to refine the imported mesh
-  /// according to the level requested in
-  /// the parameters file
+  
 
-  bool read_cad_files(std::string input_path = "");
-
-  void assign_manifold_projectors(double tolerance);
+  
 
   double read_cad_files_and_assign_manifold_projectors(std::string input_path);
 

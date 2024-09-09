@@ -1,12 +1,13 @@
 
 
-#include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
 
 #include <exception>
 #include <iostream>
 
 #include "driver.h"
+
+#include <filesystem>
 
 class Options
 {
@@ -54,17 +55,17 @@ int main(int argc, char *argv[])
     Utilities::MPI::MPI_InitFinalize mpi_initialization(argc, argv, threads);
     std::cout << "MPI initialized with " << threads << " threads" << std::endl;
 
-    auto output_path = boost::filesystem::path(options.get_input_path()).append("output").string();
-    if (!boost::filesystem::exists(output_path))
+    auto output_path = std::filesystem::path(options.get_input_path()).append("output").string();
+    if (!std::filesystem::exists(output_path))
     {
       std::cout << "Creating output directory: " << output_path << "\n";
-      boost::filesystem::create_directory(output_path);
+      std::filesystem::create_directory(output_path);
     }
-    std::string pname = boost::filesystem::path(options.get_input_path())
+    std::string pname = std::filesystem::path(options.get_input_path())
                           .append("parameters_bem_" + std::to_string(DEAL_II_DIMENSION) + ".prm")
                           .string();
     std::string pname2 =
-      boost::filesystem::path(output_path)
+      std::filesystem::path(output_path)
         .append("used_parameters_bem_" + std::to_string(DEAL_II_DIMENSION) + ".prm")
         .string();
 

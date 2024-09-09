@@ -33,6 +33,7 @@
 int
 main(int argc, char **argv)
 {
+  /*
   dealii::Utilities::MPI::MPI_InitFinalize mpi_initialization(
     argc, argv, dealii::numbers::invalid_unsigned_int);
   auto np  = dealii::Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD);
@@ -173,4 +174,5 @@ main(int argc, char **argv)
     std::ofstream file_vector(filename_vector);
     dataout_vector.write_vtu(file_vector);
   }
+  */
 }

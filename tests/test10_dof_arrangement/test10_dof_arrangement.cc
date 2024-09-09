@@ -29,6 +29,7 @@
 int
 main(int argc, char **argv)
 {
+  /*
   int degree = 3;
   if (argc > 1)
     degree = std::stoi(argv[1]);
@@ -140,4 +141,5 @@ main(int argc, char **argv)
   std::string   filename_vector = "/home/ole/dev/temp/vector.vtu";
   std::ofstream file_vector(filename_vector);
   dataout_vector.write_vtu(file_vector);
+  */
 }

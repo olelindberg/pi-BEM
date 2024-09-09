@@ -7,7 +7,6 @@
 #include <deal.II/grid/grid_tools.h>
 #include <deal.II/grid/manifold_lib.h>
 
-#include <boost/filesystem.hpp>
 
 #include <BRepBndLib.hxx>
 #include <BRepBuilderAPI_MakeVertex.hxx>
@@ -261,7 +260,7 @@ bool ComputationalDomain<dim>::read_domain(std::string input_path)
   Teuchos::TimeMonitor localTimer(*readDomainTime);
   pcout << "\nReading domain ...\n";
 
-  std::string filename = boost::filesystem::path(input_path)
+  std::string filename = std::filesystem::path(input_path)
                            .append(setup.input_grid_name + "." + setup.input_grid_format)
                            .string();
   pcout << "Reading grid file: " << filename << std::endl;
@@ -308,7 +307,7 @@ bool ComputationalDomain<dim>::read_cad_files(std::string input_path)
     std::string color_filename =
       (setup.input_cad_path + "Color_" + Utilities::int_to_string(ii) + ".iges");
     std::string cad_surface_filename =
-      boost::filesystem::path(input_path).append(color_filename).string();
+      std::filesystem::path(input_path).append(color_filename).string();
 
     std::ifstream f(cad_surface_filename);
     if (f.good())
@@ -339,7 +338,7 @@ bool ComputationalDomain<dim>::read_cad_files(std::string input_path)
     std::string edge_filename =
       (setup.input_cad_path + "Curve_" + Utilities::int_to_string(ii) + ".iges");
     std::string cad_curve_filename =
-      boost::filesystem::path(input_path).append(edge_filename).string();
+      std::filesystem::path(input_path).append(edge_filename).string();
     std::ifstream f(cad_curve_filename);
     if (f.good())
     {
@@ -440,7 +439,7 @@ ComputationalDomain<dim>::read_cad_files_and_assign_manifold_projectors(std::str
 template <int dim>
 void ComputationalDomain<dim>::refine_and_resize(std::string input_path)
 {
-  auto filename       = boost::filesystem::path(input_path).append("refinement.json").string();
+  auto filename       = std::filesystem::path(input_path).append("refinement.json").string();
   auto gridrefinement = GridRefinementCreator::create(filename, pcout);
 
   // Do the refinement:

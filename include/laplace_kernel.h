@@ -2,6 +2,7 @@
 #include <deal.II/base/point.h>
 #include <deal.II/base/smartpointer.h>
 #include <deal.II/base/utilities.h>
+#include <deal.II/base/exceptions.h>
 
 // And here are a few C++ standard header
 // files that we will need:
@@ -27,7 +28,7 @@ namespace LaplaceKernel
           return (1. / (R.norm() * 4 * dealii::numbers::PI));
 
         default:
-          Assert(false, ExcInternalError());
+          Assert(false, dealii::ExcInternalError());
           return 0.;
       }
   }
@@ -46,7 +47,7 @@ namespace LaplaceKernel
           return R / (-4 * dealii::numbers::PI * R.square() * R.norm());
 
         default:
-          Assert(false, ExcInternalError());
+          Assert(false, dealii::ExcInternalError());
           return dealii::Point<dim>();
       }
   }
@@ -68,7 +69,7 @@ namespace LaplaceKernel
           D = R / (-4 * dealii::numbers::PI * r2 * r);
           break;
         default:
-          Assert(false, ExcInternalError());
+          Assert(false, dealii::ExcInternalError());
       }
   }
 

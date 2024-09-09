@@ -16,7 +16,6 @@
 
 #include <deal.II/grid/grid_tools.h>
 
-#include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
 
 #include "./../tests.h"
@@ -58,6 +57,7 @@ private:
 int
 main(int argc, char **argv)
 {
+  /*
   Options options(argc, argv);
   std::cout << "Input file: " << options.get_input_file() << "\n";
 
@@ -97,4 +97,6 @@ main(int argc, char **argv)
   //  std::ofstream logfile0(filename0.c_str());
   //  GridOut       grid_out0;
   //  grid_out0.write_ucd(computational_domain.getTria(), logfile0);
+
+  */
 }

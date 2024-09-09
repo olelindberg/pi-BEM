@@ -26,6 +26,7 @@
 int
 main(int argc, char **argv)
 {
+  /*
   Utilities::MPI::MPI_InitFinalize mpi_initialization(argc, argv, 1);
   // initlog();
   MPI_Comm               mpi_communicator(MPI_COMM_WORLD);
@@ -61,4 +62,5 @@ main(int argc, char **argv)
     std::cout << "Sxy : " << sm.getSxy() << std::endl;
     std::cout << "Syy : " << sm.getSyy() << std::endl;
   }
+  */
 }

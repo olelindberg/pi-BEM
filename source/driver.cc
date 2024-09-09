@@ -2,7 +2,6 @@
 #include "../include/ErrorMessage.h"
 #include "../include/UTM.h"
 
-#include <boost/filesystem.hpp>
 
 #include <sys/time.h>
 
@@ -24,6 +23,8 @@
 
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
+
+#include <filesystem>
 
 
 using Teuchos::RCP;
@@ -172,7 +173,7 @@ void Driver<dim>::post_process(const std::string &output_path, int i)
     {
       std::fstream file;
       std::string  filename =
-        boost::filesystem::path(output_path).append("hydrodynamic_force.csv").string();
+        std::filesystem::path(output_path).append("hydrodynamic_force.csv").string();
       if (i == 0)
       {
         file.open(filename, std::fstream::out);
@@ -197,7 +198,7 @@ void Driver<dim>::post_process(const std::string &output_path, int i)
     {
       std::fstream file;
       std::string  filename =
-        boost::filesystem::path(output_path).append("hydrostatic_force.csv").string();
+        std::filesystem::path(output_path).append("hydrostatic_force.csv").string();
       if (i == 0)
       {
         file.open(filename, std::fstream::out);
@@ -223,7 +224,7 @@ void Driver<dim>::post_process(const std::string &output_path, int i)
     //-------------------------------------------------------------------------
     {
       std::fstream file;
-      std::string  filename = boost::filesystem::path(output_path).append("elevation.csv").string();
+      std::string  filename = std::filesystem::path(output_path).append("elevation.csv").string();
       file.open(filename, std::fstream::out);
       if (file.is_open())
       {
@@ -238,7 +239,7 @@ void Driver<dim>::post_process(const std::string &output_path, int i)
 
 
   std::string filename =
-    boost::filesystem::path(output_path).append(boundary_conditions->output_file_name).string();
+    std::filesystem::path(output_path).append(boundary_conditions->output_file_name).string();
   boundary_conditions->output_results(filename, i); // \todo change to Writer in Writer.h
 }
 
@@ -284,7 +285,7 @@ void Driver<dim>::run(std::string input_path, std::string output_path)
     //-------------------------------------------------------------------------
     // Pre steps:
     //-------------------------------------------------------------------------
-    std::string pibemFilename = boost::filesystem::path(input_path).append("pibem.json").string();
+    std::string pibemFilename = std::filesystem::path(input_path).append("pibem.json").string();
     if (!PiBEMSettingsReaderJSON::read(pibemFilename, pibem_setup))
     {
       pcout << "Reading json pibem settings file failed ..." << std::endl;
@@ -295,7 +296,7 @@ void Driver<dim>::run(std::string input_path, std::string output_path)
     //-------------------------------------------------------------------------
     // Read and create body/ship:
     //-------------------------------------------------------------------------
-    std::string bodyfilename = boost::filesystem::path(input_path).append("body.json").string();
+    std::string bodyfilename = std::filesystem::path(input_path).append("body.json").string();
     if (!BodySettingsReaderJSON::read(bodyfilename, body))
     {
       pcout << "Reading json body file failed ..." << std::endl;
@@ -323,7 +324,7 @@ void Driver<dim>::run(std::string input_path, std::string output_path)
       try
       {
         std::string route_filename =
-          boost::filesystem::path(input_path).append("KCS_Limfjord_route.xml").string();
+          std::filesystem::path(input_path).append("KCS_Limfjord_route.xml").string();
         boost::property_tree::ptree tree;
         boost::property_tree::read_xml(route_filename, tree);
         readgpx(tree, route);
@@ -363,7 +364,7 @@ void Driver<dim>::run(std::string input_path, std::string output_path)
   {
     pcout << e.what() << std::endl;
     std::string filename =
-      boost::filesystem::path(output_path)
+      std::filesystem::path(output_path)
         .append(std::string("error_dump_").append(boundary_conditions->output_file_name))
         .string();
     boundary_conditions->output_results(filename, 0); // \todo change to Writer in Writer.h

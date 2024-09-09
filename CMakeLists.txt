@@ -18,7 +18,6 @@
 SET(TARGET bem_fma)
 SET(_main source/main.cc)
 
-
 set(OPENCASCADE_DIR /usr/local/oce-upstream-V7_5_0)
 message("OpenCASCADE directory:")
 message(${OPENCASCADE_DIR})
@@ -135,7 +134,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 #if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/tests AND BEM_ENABLE_TESTING)
   ADD_SUBDIRECTORY(tests)
-#  ENABLE_TESTING()
+  ENABLE_TESTING()
 #endif()
 
 

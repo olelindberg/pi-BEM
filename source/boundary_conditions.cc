@@ -9,7 +9,8 @@
 
 #include <deal.II/grid/filtered_iterator.h>
 
-#include <boost/filesystem.hpp>
+#include <filesystem>
+
 
 template <int dim, class DH = DoFHandler<dim, dim + 1>>
 class FilteredDataOut : public DataOut<dim, dim + 1>
@@ -364,7 +365,7 @@ void BoundaryConditions<dim>::compute_errors(std::string output_path)
     pcout << "Phi Cells Gradient  error L_2 norm: " << grad_L2_error << std::endl;
 
     std::string filename_vector =
-      boost::filesystem::path(output_path).append("vector_error.vtu").string();
+      std::filesystem::path(output_path).append("vector_error.vtu").string();
     std::vector<DataComponentInterpretation::DataComponentInterpretation>
       data_component_interpretation(dim, DataComponentInterpretation::component_is_part_of_vector);
     DataOut<dim - 1, dim> dataout_vector;
@@ -383,7 +384,7 @@ void BoundaryConditions<dim>::compute_errors(std::string output_path)
     dataout_vector.write_vtu(file_vector);
 
     std::string filename_scalar =
-      boost::filesystem::path(output_path).append("scalar_error.vtu").string();
+      std::filesystem::path(output_path).append("scalar_error.vtu").string();
     DataOut<dim - 1, dim> dataout_scalar;
     dataout_scalar.attach_dof_handler(bem.dh);
     dataout_scalar.add_data_vector(phi_node_error,
