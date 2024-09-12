@@ -7,3 +7,13 @@ output/
 .vscode/
 *.fls
 *.fdb_latexmk
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
