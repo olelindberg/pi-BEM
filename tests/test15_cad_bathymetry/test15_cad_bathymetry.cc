@@ -12,10 +12,14 @@
 #include <filesystem>
 
 
+std::filesystem::path prog_root = {"../../.."};
 
 int main(int argc, char **argv)
-{
-  std::filesystem::path root = "/home/ole/dev/projects/pi-BEM/docs/data/KCS_Limfjord";
+{  
+  std::filesystem::path root = std::filesystem::path(prog_root).append("docs/data/KCS_Limfjord");
+  root = std::filesystem::absolute(root);
+
+  std::cout << "Reading inp mesh file: " << root << std::endl;
 
   KCS_LimfjordSetup setup;
 

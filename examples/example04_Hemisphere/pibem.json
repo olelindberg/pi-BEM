@@ -1,0 +1,15 @@
+{
+    "gravity": 9.80665,
+    "density": 1000,
+    "potentialErrorEstimatorMax": 0.1,
+    "velocityErrorEstimatorMax": 0.1,
+    "adaptive_mesh_refinement": {
+        "aspectRatioMax": 1.5,
+        "cellSizeMin": 0.1,
+        "adaptiveRefinementLevels": 10,
+        "iterMax": 1000,
+        "number_of_elements_max": 100000,
+        "top_fraction_max": 0.05
+    },
+    "route_enabled": "false"
+}

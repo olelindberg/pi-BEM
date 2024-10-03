@@ -1,4 +1,4 @@
-#ifndef MESH_UTIL_H
+  #ifndef MESH_UTIL_H
 #define MESH_UTIL_H
 
 #include <deal.II/base/geometry_info.h>

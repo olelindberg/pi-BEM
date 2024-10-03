@@ -7,7 +7,7 @@
             2
         ],
         "refinement_levels": 1000,
-        "verbose": "false"
+        "verbose": "true"
     },
     "heightRatioRefinement": {
         "height_ratio_max": 0.15,

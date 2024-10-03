@@ -28,6 +28,7 @@ void HeightRatioRefinement::refine(dealii::Triangulation<2, 3> &tria)
       }
     }
 
+    // we get a crash here in debug mode !!
     if (isrefining)
     {
       tria.prepare_coarsening_and_refinement();
@@ -36,5 +37,6 @@ void HeightRatioRefinement::refine(dealii::Triangulation<2, 3> &tria)
     else
       break;
   }
+  
   std::cout << "Number of global active cells: " << tria.n_global_active_cells() << std::endl;
 }

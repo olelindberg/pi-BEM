@@ -27,6 +27,8 @@
 // #include <deal.II/base/mpi.h>
 // #include <deal.II/grid/grid_tools.h>
 
+#include <deal.II/grid/grid_out.h>
+
 #include <filesystem>
 
 
@@ -69,8 +71,21 @@ void MultiMeshDomain<dim>::refine_and_resize(std::string input_path)
   auto gridrefinement = GridRefinementCreator::create(filename, pcout);
 
   // Do the refinement:
+  int i = 0;
   for (const auto &refinement : gridrefinement)
+  {
+    pcout << "Refinement step: " << i << std::endl;
     refinement->refine(*_mesh);
+    {
+      std::string   filename0 = ("/tmp/meshResult_"  + std::to_string(i++) + ".inp");      
+      std::ofstream logfile0(filename0.c_str());
+
+      std::cout << "Writing mesh to file: " << filename0 << std::endl;
+      logfile0 << std::setprecision(16);
+      dealii::GridOut grid_out0;
+      grid_out0.write_ucd(*_mesh, logfile0);
+    }
+  }
 }
 
 template <int dim>
