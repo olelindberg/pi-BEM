@@ -255,14 +255,18 @@ void ComputationalDomain<dim>::parse_parameters(ParameterHandler &prm)
 // object to which it is attached.
 
 template <int dim>
-bool ComputationalDomain<dim>::read_domain(std::string input_path)
+bool ComputationalDomain<dim>::read_domain(const std::string &input_path)
 {
   Teuchos::TimeMonitor localTimer(*readDomainTime);
   pcout << "\nReading domain ...\n";
 
-  std::string filename = std::filesystem::path(input_path)
-                           .append(setup.input_grid_name + "." + setup.input_grid_format)
-                           .string();
+  std::filesystem::path file_path =
+    std::filesystem::path(input_path).append(setup.input_grid_name + "." + setup.input_grid_format);
+
+  // Convert to absolute path
+  std::filesystem::path absolute_path = std::filesystem::absolute(file_path);
+  std::string           filename      = absolute_path.string();
+
   pcout << "Reading grid file: " << filename << std::endl;
   if (std::filesystem::is_directory(filename))
   {
@@ -297,19 +301,19 @@ bool ComputationalDomain<dim>::read_domain(std::string input_path)
 }
 
 template <int dim>
-bool ComputationalDomain<dim>::read_cad_files(std::string input_path)
+bool ComputationalDomain<dim>::read_cad_files(const std::string &input_path)
 {
   pcout << "Color Files" << std::endl;
   unsigned int ii    = 1;
   bool         go_on = true;
   while (go_on == true)
   {
-    std::string color_filename =
-      (setup.input_cad_path + "Color_" + Utilities::int_to_string(ii) + ".iges");
-    std::string cad_surface_filename =
-      std::filesystem::path(input_path).append(color_filename).string();
-
-    std::ifstream f(cad_surface_filename);
+    std::filesystem::path cad_surface_filename =
+      std::filesystem::path(input_path)
+        .append(setup.input_cad_path)
+        .append("Color_" + Utilities::int_to_string(ii) + ".iges");
+  
+    std::ifstream f(cad_surface_filename.string());
     if (f.good())
     {
       pcout << ii << "-th file exists" << std::endl;
@@ -437,7 +441,7 @@ ComputationalDomain<dim>::read_cad_files_and_assign_manifold_projectors(std::str
 #include <memory>
 
 template <int dim>
-void ComputationalDomain<dim>::refine_and_resize(std::string input_path)
+void ComputationalDomain<dim>::refine_and_resize(const std::string &input_path)
 {
   auto filename       = std::filesystem::path(input_path).append("refinement.json").string();
   auto gridrefinement = GridRefinementCreator::create(filename, pcout);

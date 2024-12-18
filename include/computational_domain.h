@@ -154,6 +154,11 @@ template <int dim>
 class ComputationalDomain : public deal2lkit::ParameterAcceptor, public IPhysicalDomain<dim>
 {
 public:
+  static std::shared_ptr<ComputationalDomain<dim>> create(MPI_Comm comm = MPI_COMM_WORLD)
+  {
+    return std::make_shared<ComputationalDomain<dim>>(comm);
+  }
+
   ComputationalDomain(MPI_Comm comm = MPI_COMM_WORLD);
   ~ComputationalDomain();
 
@@ -179,9 +184,9 @@ public:
 
   /// alternative method to read initial mesh
   /// from file
-  virtual bool read_domain(std::string input_path = "") override;
+  virtual bool read_domain(const std::string& input_path = "") override;
 
-  virtual void refine_and_resize(std::string input_path = "") override;
+  virtual void refine_and_resize(const std::string& input_path = "") override;
 
   virtual void update_triangulation() override;
 
@@ -190,11 +195,11 @@ public:
   /// according to the level requested in
   /// the parameters file
 
-  bool read_cad_files(std::string input_path = "");
+  bool read_cad_files(const std::string& input_path = "");
 
   void assign_manifold_projectors(double tolerance);
 
-// MCJ private:
+  // MCJ private:
   ComputationalDomainSettings setup;
 
   /// method to declare the parameters
@@ -208,9 +213,6 @@ public:
   virtual void parse_parameters(ParameterHandler &prm);
 
 
-  
-
-  
 
   double read_cad_files_and_assign_manifold_projectors(std::string input_path);
 

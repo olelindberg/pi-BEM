@@ -71,7 +71,7 @@ RCP<Time> ReinitTime          = Teuchos::TimeMonitor::getNewTimer("BEM Reinitial
 // is static, and has no knowledge of
 // the number of components.
 template <>
-BEMProblem<3>::BEMProblem(std::shared_ptr<IPhysicalDomain<3>> &comp_dom,
+BEMProblem<3>::BEMProblem(std::shared_ptr<IPhysicalDomain<3>> comp_dom,
                           // const unsigned int fe_degree,
                           MPI_Comm comm)
   : pcout(std::cout)

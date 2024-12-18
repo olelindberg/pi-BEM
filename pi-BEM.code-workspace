@@ -8,9 +8,14 @@
 		"cmake.configureArgs": [
 			"-Ddeal.II_DIR=/usr/local/dealii-9.4.0/lib/cmake/deal.II/",
 			"-Ddeal2lkit_DIR=/usr/local/dealiikit_v9.4.0/lib/cmake/deal2lkit/"
-		],		
-		"cmake.debugConfig": {
-			
+		],	
+				
+		"cmake.environment": {
+
+			"name": "LD_LIBRARY_PATH",
+			"value": "/usr/local/dealii-9.4.0/lib/;/usr/local/oce-upstream-V7_5_0/lib"
+		},
+		"cmake.debugConfig": {			
 			"environment": [
 				{
 					"name": "LD_LIBRARY_PATH",
@@ -20,13 +25,13 @@
 			"additionalSOLibSearchPath": "/usr/local/dealii-9.4.0/lib/;/usr/local/oce-upstream-V7_5_0/lib",
 			"name": "Debug CMake project",
 			"type": "lldb", // https://github.com/vadimcn/vscode-lldb
-			"cwd": "${workspaceFolder}/output",
+			"cwd": "${command:cmake.launchTargetDirectory}",
 			"request": "launch",
 			"program": "${command:cmake.launchTargetPath}",
 			"args": [				
 				"1",
-				"--input-path",
-				"/home/mcj/dev/RK/pi-BEM/examples/example04_Hemisphere"
+				//"--input-path",
+				//"/home/mcj/dev/RK/pi-BEM/examples/example04_Hemisphere"
 			]
 		}
 	},

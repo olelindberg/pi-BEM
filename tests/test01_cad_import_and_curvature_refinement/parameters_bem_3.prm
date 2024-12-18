@@ -1,0 +1,29 @@
+# Listing of Parameters
+# ---------------------
+subsection ComputationalDomain<3>
+  set Axis x dimension                                                         = 2.
+  set Axis y dimension                                                         = 3.
+  set Axis z dimension                                                         = 4.
+  set Cad tolerance to projectors tolerance ratio                              = 100
+  set Cells per circle                                                         = 12
+  set Input grid format                                                        = inp
+  set Input grid name                                                          = naca0012
+  set Input path to CAD files                                                  = .
+  set Max aspect ratio                                                         = 3.5
+  set Max length                                                               = 1000.0
+  set Maximum number of curvature adaptive refinement cycles                   = 5
+  set Number of cycles                                                         = 2
+  set Number of global refinement to be executed before local refinement cycle = 0
+  set Surface curvature adaptive refinement                                    = false
+  set Use a spheroid                                                           = false
+  set Use iges surfaces and curves                                             = false
+
+
+  subsection Boundary Conditions ID Numbers
+    set Dirichlet boundary ids = 1,110,110
+    set Neumann boundary ids   = 0,110,110
+  end
+
+end
+
+

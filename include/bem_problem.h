@@ -126,7 +126,7 @@ public:
   typedef typename DoFHandler<dim - 1, dim>::active_cell_iterator cell_it;
   typedef typename DoFHandler<dim - 1, dim>::active_line_iterator line_it;
 
-  BEMProblem(std::shared_ptr<IPhysicalDomain<dim>> &comp_dom, const MPI_Comm comm = MPI_COMM_WORLD);
+  BEMProblem(std::shared_ptr<IPhysicalDomain<dim>> comp_dom, const MPI_Comm comm = MPI_COMM_WORLD);
 
   void solve(TrilinosWrappers::MPI::Vector &      phi,
              TrilinosWrappers::MPI::Vector &      dphi_dn,

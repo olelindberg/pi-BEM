@@ -51,7 +51,7 @@ MultiMeshDomain<dim>::~MultiMeshDomain()
 {}
 
 template <int dim>
-bool MultiMeshDomain<dim>::read_domain(std::string input_path)
+bool MultiMeshDomain<dim>::read_domain(const std::string& input_path)
 {
   std::filesystem::path root = input_path;
 
@@ -65,7 +65,7 @@ bool MultiMeshDomain<dim>::read_domain(std::string input_path)
 }
 
 template <int dim>
-void MultiMeshDomain<dim>::refine_and_resize(std::string input_path)
+void MultiMeshDomain<dim>::refine_and_resize(const std::string& input_path)
 {
   auto filename       = std::filesystem::path(input_path).append("refinement.json").string();
   auto gridrefinement = GridRefinementCreator::create(filename, pcout);

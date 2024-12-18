@@ -18,9 +18,9 @@ public:
   MultiMeshDomain(MPI_Comm comm = MPI_COMM_WORLD);
   ~MultiMeshDomain();
 
-  virtual bool read_domain(std::string input_path = "") override;
+  virtual bool read_domain(const std::string& input_path = "") override;
 
-  virtual void refine_and_resize(std::string input_path = "") override;
+  virtual void refine_and_resize(const std::string& input_path = "") override;
 
   virtual void update_triangulation() override;
 

@@ -81,7 +81,7 @@ template <int dim>
 class BoundaryConditions : public deal2lkit::ParameterAcceptor
 {
 public:
-  BoundaryConditions(std::shared_ptr<IPhysicalDomain<dim>> &comp_dom,
+  BoundaryConditions(std::shared_ptr<IPhysicalDomain<dim>>  comp_dom,
                      BEMProblem<dim> &                      bem,
                      const MPI_Comm                         comm = MPI_COMM_WORLD)
     : wind(dim)

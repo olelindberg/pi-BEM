@@ -3988,8 +3988,7 @@ void BEMFMA<dim>::generate_octree_blocking()
               blocks[blocksCount]->GetBlockQuadPointsList();
             typename std::map<cell_it, std::vector<types::global_dof_index>>::iterator it;
             for (it = blockQuadPointsList.begin(); it != blockQuadPointsList.end(); it++)
-            {
-              cell_it cell = (*it).first;
+            {              
               for (types::global_dof_index kk = 0; kk < (*it).second.size(); kk++)
               {
                 quad_point_to_block[(*it).first][(*it).second[kk]].push_back(blocksCount);
@@ -4097,8 +4096,7 @@ void BEMFMA<dim>::generate_octree_blocking()
               blocks[blocksCount]->GetBlockQuadPointsList();
             typename std::map<cell_it, std::vector<types::global_dof_index>>::iterator it;
             for (it = blockQuadPointsList.begin(); it != blockQuadPointsList.end(); it++)
-            {
-              cell_it cell = (*it).first;
+            {              
               for (types::global_dof_index kk = 0; kk < (*it).second.size(); kk++)
               {
                 quad_point_to_block[(*it).first][(*it).second[kk]].push_back(blocksCount);
