@@ -12,19 +12,23 @@
 // Read a file in iges format, and write it out again in the same
 // format.
 
-#include "computational_domain.h"
 #include "./../tests.h"
+#include "computational_domain.h"
 
 #include <filesystem>
 
-int
-main(int argc, char **argv)
-{
-  std::string thisFileName {__FILE__};
-  std::filesystem::path cwd = std::filesystem::path(thisFileName).parent_path();
-  std::filesystem::current_path(cwd);
 
-  std::filesystem::path dataPath = std::filesystem::path("../test_data/NACA_FILES/");
+
+void write_mesh_to_file(ComputationalDomain<3> &computational_domain, std::filesystem::path &filename);
+
+int main(int argc, char **argv)
+{
+  std::string           this_file_name{__FILE__};
+  std::filesystem::path cwd = std::filesystem::path(this_file_name).parent_path();
+  std::filesystem::current_path(cwd);
+  std::filesystem::path data_path = std::filesystem::path("../test_data/NACA_FILES/");
+  std::filesystem::path output_path =
+    cwd / std::filesystem::path("../output") / std::filesystem::path(this_file_name).stem();
 
 
   Utilities::MPI::MPI_InitFinalize mpi_initialization(argc, argv, 1);
@@ -32,8 +36,28 @@ main(int argc, char **argv)
   MPI_Comm               mpi_communicator(MPI_COMM_WORLD);
   ComputationalDomain<3> computational_domain(mpi_communicator);
 
-  deal2lkit::ParameterAcceptor::initialize(cwd / std::filesystem::path("parameters_bem_3.prm"), "used.prm");  
-  computational_domain.read_domain(dataPath);
-  computational_domain.read_cad_files(dataPath);
+  deal2lkit::ParameterAcceptor::initialize(cwd / std::filesystem::path("parameters_bem_3.prm"), "used.prm");
+  computational_domain.read_domain(data_path);
+  computational_domain.read_cad_files(data_path);
   computational_domain.refine_and_resize(cwd);
+
+  if (std::filesystem::exists(output_path) == false)
+  {
+    std::filesystem::create_directories(output_path);
+  }
+
+  std::filesystem::path filename = output_path / std::filesystem::path("meshResult.inp");
+
+  write_mesh_to_file(computational_domain, filename);
+}
+
+void write_mesh_to_file(ComputationalDomain<3> &computational_domain, std::filesystem::path &filename)
+{
+  auto &mesh = computational_domain.getTria();
+  {
+    std::ofstream logfile(filename.c_str());
+    logfile << std::setprecision(16);
+    GridOut grid_out;
+    grid_out.write_ucd(mesh, logfile);
+  }
 }

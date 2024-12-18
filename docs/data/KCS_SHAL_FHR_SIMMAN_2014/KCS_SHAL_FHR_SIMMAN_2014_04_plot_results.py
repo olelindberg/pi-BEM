@@ -9,14 +9,14 @@ import matplotlib.pyplot as plt
 from numpy.core.fromnumeric import argsort
 import pandas as pd
 
-saveFigures = True
+saveFigures = False
 
 showNumericalUncertainty = False
 
-showHeaveForce = False
-showPitchMoment = False
+showHeaveForce = True
+showPitchMoment = True
 showSinkage = True
-showPitch = False
+showPitch = True
 
 numMeshes = 7
 meshes = [0,1, 2, 3, 4, 5, 6]
@@ -162,3 +162,4 @@ if (showPitch):
 cnt = cnt + 1
 
 plt.show()
+pass

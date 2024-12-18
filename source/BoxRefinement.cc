@@ -29,6 +29,8 @@ void BoxRefinement::refine(dealii::Triangulation<2, 3> &tria)
          cell != tria.end();
          ++cell)
     {
+
+      //std::cout << "manifold_id= " << cell->manifold_id() << std::endl;
       if (cell->manifold_id() == manifold_id)
       {
         Bnd_Box boxx;

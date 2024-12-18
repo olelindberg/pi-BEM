@@ -18,9 +18,10 @@ public:
   MultiMeshDomain(MPI_Comm comm = MPI_COMM_WORLD);
   ~MultiMeshDomain();
 
-  virtual bool read_domain(const std::string& input_path = "") override;
+  virtual bool read_domain(const std::string &input_path = "") override;
 
-  virtual void refine_and_resize(const std::string& input_path = "") override;
+  virtual void refine_and_resize(const std::string &input_path = "",
+                                 const std::string &file_name  = "refinement.json") override;
 
   virtual void update_triangulation() override;
 
@@ -38,6 +39,9 @@ public:
   {
     return dirichlet_boundary_ids;
   };
+
+
+
 
   virtual std::vector<unsigned int> get_neumann_boundary_ids() override
   {

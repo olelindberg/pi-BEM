@@ -7,6 +7,8 @@
 
 #include "driver.h"
 
+#include<fmt/core.h>
+
 #include <filesystem>
 
 class Options
@@ -43,6 +45,9 @@ private:
 
 int main(int argc, char *argv[])
 {
+
+  fmt::print("Hello, World!\n");
+
   try
   {
     Options options(argc, argv);

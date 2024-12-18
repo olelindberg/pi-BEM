@@ -84,6 +84,7 @@ FOREACH(_build_type ${_d2_build_types})
 		ADD_EXECUTABLE(${_exe} ${_main})
 		target_compile_definitions(${_exe} PUBLIC DEAL_II_DIMENSION=${_dim})
 		TARGET_LINK_LIBRARIES(${_exe} ${_lib} Boost::program_options Boost::filesystem)
+    target_link_libraries(${_exe} fmt::fmt)
 		D2K_SETUP_TARGET(${_exe} ${_BUILD_TYPE})
  	ENDFOREACH()
 

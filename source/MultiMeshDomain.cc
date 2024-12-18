@@ -51,7 +51,7 @@ MultiMeshDomain<dim>::~MultiMeshDomain()
 {}
 
 template <int dim>
-bool MultiMeshDomain<dim>::read_domain(const std::string& input_path)
+bool MultiMeshDomain<dim>::read_domain(const std::string &input_path)
 {
   std::filesystem::path root = input_path;
 
@@ -65,9 +65,10 @@ bool MultiMeshDomain<dim>::read_domain(const std::string& input_path)
 }
 
 template <int dim>
-void MultiMeshDomain<dim>::refine_and_resize(const std::string& input_path)
+void MultiMeshDomain<dim>::refine_and_resize(const std::string &input_path,
+                                             const std::string &file_name)
 {
-  auto filename       = std::filesystem::path(input_path).append("refinement.json").string();
+  auto filename       = std::filesystem::path(input_path).append(file_name).string();
   auto gridrefinement = GridRefinementCreator::create(filename, pcout);
 
   // Do the refinement:
@@ -77,7 +78,7 @@ void MultiMeshDomain<dim>::refine_and_resize(const std::string& input_path)
     pcout << "Refinement step: " << i << std::endl;
     refinement->refine(*_mesh);
     {
-      std::string   filename0 = ("/tmp/meshResult_"  + std::to_string(i++) + ".inp");      
+      std::string   filename0 = ("/tmp/meshResult_" + std::to_string(i++) + ".inp");
       std::ofstream logfile0(filename0.c_str());
 
       std::cout << "Writing mesh to file: " << filename0 << std::endl;

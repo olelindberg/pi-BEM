@@ -186,7 +186,7 @@ public:
   /// from file
   virtual bool read_domain(const std::string& input_path = "") override;
 
-  virtual void refine_and_resize(const std::string& input_path = "") override;
+  virtual void refine_and_resize(const std::string& input_path = "", const std::string &file_name = "refinement.json") override;
 
   virtual void update_triangulation() override;
 

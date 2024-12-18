@@ -22,6 +22,13 @@ set(OPENCASCADE_DIR /usr/local/oce-upstream-V7_5_0)
 message("OpenCASCADE directory:")
 message(${OPENCASCADE_DIR})
 
+include(FetchContent)
+FetchContent_Declare(
+  fmt
+  GIT_REPOSITORY https://github.com/fmtlib/fmt
+  GIT_TAG        e69e5f977d458f2650bb346dadf2ad30c5320281) # 10.2.1
+FetchContent_MakeAvailable(fmt)
+
 # Set the _main variable to empty if you don't want an executable
 # but only a library
 #SET(_main "")
@@ -108,6 +115,7 @@ FOREACH(_build_type ${_d2_build_types})
 		target_compile_definitions(${_exe} PUBLIC DEAL_II_DIMENSION=${_dim})
 		TARGET_LINK_LIBRARIES(${_exe} ${_lib})
     target_link_libraries(${_exe} Boost::program_options Boost::filesystem)
+    target_link_libraries(${_exe} fmt::fmt)
 		D2K_SETUP_TARGET(${_exe} ${_BUILD_TYPE})
     
  	ENDFOREACH()

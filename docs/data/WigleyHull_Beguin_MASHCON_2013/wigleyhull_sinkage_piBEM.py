@@ -13,6 +13,8 @@ density = 1000
 waterplanearea = 0.416666666666667
 Tm = 0.15625
 
+Fn_L = [0.05, 0.08, 0.11, 0.15, 0.18, 0.21, 0.24]
+
 Fz = []
 for i in range(1,8):
     filename = current_dir + '/wigleyhull_h2_0' + str(i)  + '/output/hydrodynamic_force.csv'
@@ -20,6 +22,10 @@ for i in range(1,8):
     Fz.append(float(data[5]))
 
 sinkage = np.array(Fz)/(waterplanearea*gravity*density)
+
+data = {'Fz' : Fz, 'sinkage' : sinkage,}
+
+
 
 print('vertical force:')
 print(Fz)

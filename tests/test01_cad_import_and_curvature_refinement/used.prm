@@ -14,7 +14,7 @@ subsection ComputationalDomain<3>
   set Number of global refinement to be executed before local refinement cycle = 0
   set Surface curvature adaptive refinement                                    = false
   set Use a spheroid                                                           = false
-  set Use iges surfaces and curves                                             = false
+  set Use iges surfaces and curves                                             = true
   subsection Boundary Conditions ID Numbers
     set Dirichlet boundary ids = 1,110,110
     set Neumann boundary ids   = 0,110,110

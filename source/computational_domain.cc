@@ -441,7 +441,7 @@ ComputationalDomain<dim>::read_cad_files_and_assign_manifold_projectors(std::str
 #include <memory>
 
 template <int dim>
-void ComputationalDomain<dim>::refine_and_resize(const std::string &input_path)
+void ComputationalDomain<dim>::refine_and_resize(const std::string &input_path, const std::string &file_name)
 {
   auto filename       = std::filesystem::path(input_path).append("refinement.json").string();
   auto gridrefinement = GridRefinementCreator::create(filename, pcout);
